@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +50,8 @@ import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.DataConnection;
 import com.android.internal.telephony.MccTable;
+import com.android.internal.telephony.cdma.CdmaCall;
+import com.android.internal.telephony.cdma.CdmaMmiCode;
 import com.android.internal.telephony.IccCard;
 import com.android.internal.telephony.IccException;
 import com.android.internal.telephony.IccFileHandler;
@@ -67,6 +70,7 @@ import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OP
 import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC;
 import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OPERATOR_ISO_COUNTRY;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -101,6 +105,7 @@ public class CDMAPhone extends PhoneBase {
     RuimFileHandler mRuimFileHandler;
     RuimRecords mRuimRecords;
     RuimCard mRuimCard;
+    ArrayList <CdmaMmiCode> mPendingMmis = new ArrayList<CdmaMmiCode>();
     RuimPhoneBookInterfaceManager mRuimPhoneBookInterfaceManager;
     RuimSmsInterfaceManager mRuimSmsInterfaceManager;
     PhoneSubInfo mSubInfo;
@@ -218,6 +223,8 @@ public class CDMAPhone extends PhoneBase {
             mCM.unregisterForNVReady(this); //EVENT_NV_READY
             mSST.unregisterForNetworkAttach(this); //EVENT_REGISTERED_TO_NETWORK
             mCM.unSetOnSuppServiceNotification(this);
+
+            mPendingMmis.clear();
 
             //Force all referenced classes to unregister their former registered events
             mCT.dispose();
@@ -355,8 +362,7 @@ public class CDMAPhone extends PhoneBase {
 
     public List<? extends MmiCode>
     getPendingMmiCodes() {
-        Log.e(LOG_TAG, "method getPendingMmiCodes is NOT supported in CDMA!");
-        return null;
+        return mPendingMmis;
     }
 
     public void registerForSuppServiceNotification(
@@ -371,6 +377,16 @@ public class CDMAPhone extends PhoneBase {
     public boolean handleInCallMmiCommands(String dialString) {
         Log.e(LOG_TAG, "method handleInCallMmiCommands is NOT supported in CDMA!");
         return false;
+    }
+
+    boolean isInCall() {
+        CdmaCall.State foregroundCallState = getForegroundCall().getState();
+        CdmaCall.State backgroundCallState = getBackgroundCall().getState();
+        CdmaCall.State ringingCallState = getRingingCall().getState();
+
+       return (foregroundCallState.isAlive() ||
+                backgroundCallState.isAlive() ||
+                ringingCallState.isAlive());
     }
 
     public void
@@ -477,7 +493,18 @@ public class CDMAPhone extends PhoneBase {
     }
 
     public boolean handlePinMmi(String dialString) {
-        Log.e(LOG_TAG, "method handlePinMmi is NOT supported in CDMA!");
+        CdmaMmiCode mmi = CdmaMmiCode.newFromDialString(dialString, this);
+
+        if (mmi == null) {
+            Log.e(LOG_TAG, "Mmi is NULL!");
+            return false;
+        } else if (mmi.isPukCommand()) {
+            mPendingMmis.add(mmi);
+            mMmiRegistrants.notifyRegistrants(new AsyncResult(null, mmi, null));
+            mmi.processCode();
+            return true;
+        }
+        Log.e(LOG_TAG, "Unrecognized mmi!");
         return false;
     }
 
@@ -488,6 +515,22 @@ public class CDMAPhone extends PhoneBase {
                 getServiceState().getState() == ServiceState.STATE_IN_SERVICE &&
                 (mDataConnection.getDataOnRoamingEnabled() || !getServiceState().getRoaming());
     }
+
+    /**
+     * Removes the given MMI from the pending list and notifies
+     * registrants that it is complete.
+     * @param mmi MMI that is done
+     */
+    void onMmiDone(CdmaMmiCode mmi) {
+        /* Only notify complete if it's on the pending list.
+         * Otherwise, it's already been handled (eg, previously canceled).
+         */
+        if (mPendingMmis.remove(mmi)) {
+            mMmiCompleteRegistrants.notifyRegistrants(
+                new AsyncResult(null, mmi, null));
+        }
+    }
+
 
     public void setLine1Number(String alphaTag, String number, Message onComplete) {
         Log.e(LOG_TAG, "setLine1Number: not possible in CDMA");
