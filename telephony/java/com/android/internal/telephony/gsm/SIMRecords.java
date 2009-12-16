@@ -852,6 +852,7 @@ public final class SIMRecords extends IccRecords {
                     break;
                 }
 
+                Log.i(LOG_TAG, "SPDI: " + IccUtils.bytesToHexString(data));
                 parseEfSpdi(data);
             break;
 
@@ -1472,6 +1473,18 @@ public final class SIMRecords extends IccRecords {
         SimTlv tlv = new SimTlv(data, 0, data.length);
 
         byte[] plmnEntries = null;
+        byte tagSpdiPlmnListOffset = 2;
+
+        //As per spec 3GPP TS 31.102/51.011, EF_SPDI contains
+        //SERVICE_PROVIDER_DISPLAY_INFO_TAG byte and its associated Length
+        //byte followed by TAG_SPDI_PLMN_LIST and its corresponding data.
+        //To process service provider PLMN list,we need to start from
+        //TAG_SPDI_PLMN_LIST. So incrementing the current offset which
+        //is now at SERVICE_PROVIDER_DISPLAY_INFO_TAG.
+        if (!tlv.incrementCurOffset(tagSpdiPlmnListOffset)) {
+            Log.w(LOG_TAG, "SPDI: invalid call to incrementCurOffset.");
+            return;
+        }
 
         // There should only be one TAG_SPDI_PLMN_LIST
         for ( ; tlv.isValidObject() ; tlv.nextObject()) {
@@ -1482,14 +1495,31 @@ public final class SIMRecords extends IccRecords {
         }
 
         if (plmnEntries == null) {
+            Log.w(LOG_TAG, "SPDI: plmnEntries is null");
             return;
         }
 
         spdiNetworks = new ArrayList<String>(plmnEntries.length / 3);
 
+        byte[] plmnData = new byte[3];
+        int indMnc3;
         for (int i = 0 ; i + 2 < plmnEntries.length ; i += 3) {
             String plmnCode;
-            plmnCode = IccUtils.bcdToString(plmnEntries, i, 3);
+
+            //Convert PLMN hex data to string.
+            plmnData[0] = (byte)(((plmnEntries[i] << 4) & 0xf0) | ((plmnEntries[i] >> 4) & 0x0f));/*mcc1mcc2*/
+            plmnData[1] = (byte)(((plmnEntries[i + 1] << 4) & 0xf0) | (plmnEntries[i + 2] & 0x0f));/*mcc3mnc1*/
+            plmnData[2] = (byte)(plmnEntries[i + 2] & 0xf0 | ((plmnEntries[i + 1] >> 4) & 0x0f));/*mnc2mnc3*/
+            plmnCode = IccUtils.bytesToHexString(plmnData);
+
+            //MNC3 can be 'f', in that case we should not consider it and
+            //treat this as 2 digit MNC.
+            indMnc3 = plmnCode.length() - 1;
+            if (plmnCode.charAt(indMnc3) == 'f') {
+                Log.w(LOG_TAG,"SPDI: Strip MNC3");
+                plmnCode = plmnCode.substring(0, indMnc3);
+            }
+            log("SPDI: plmnCode " + plmnCode);
 
             // Valid operator codes are 5 or 6 digits
             if (plmnCode.length() >= 5) {
