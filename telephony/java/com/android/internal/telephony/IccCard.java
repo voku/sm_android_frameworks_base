@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +85,7 @@ public abstract class IccCard {
     private static final int EVENT_CHANGE_ICC_PASSWORD_DONE = 9;
     private static final int EVENT_QUERY_FACILITY_FDN_DONE = 10;
     private static final int EVENT_CHANGE_FACILITY_FDN_DONE = 11;
+    protected static final int EVENT_ICC_STATUS_CHANGED = 12;
 
     /*
       UNKNOWN is a transient state, for example, after uesr inputs ICC pin under
@@ -588,6 +590,10 @@ public abstract class IccCard {
                                                         = ar.exception;
                     ((Message)ar.userObj).sendToTarget();
                     break;
+                case EVENT_ICC_STATUS_CHANGED:
+                    Log.d(mLogTag, "Received EVENT_ICC_STATUS_CHANGED, calling getIccCardStatus");
+                    mPhone.mCM.getIccCardStatus(obtainMessage(EVENT_GET_ICC_STATUS_DONE));
+                    break;
                 default:
                     Log.e(mLogTag, "[IccCard] Unknown Event " + msg.what);
             }
@@ -652,7 +658,20 @@ public abstract class IccCard {
                 return IccCard.State.PUK_REQUIRED;
             }
             if (app.app_state.isSubscriptionPersoEnabled()) {
-                return IccCard.State.NETWORK_LOCKED;
+                //"At present ME de-personalization is supported only for
+                //SIM/USIM Network Depersonalization (as specified in 3GPP TS
+                //22.022, section 5.1). If SIM_STATUS_CHANGED is handled,
+                //perso substate should be checked for declaring SIM/USIM
+                //Network depersonalization. Otherwise, any personalization
+                //will be treated as SIM/USIM Network Personalization. Besides
+                //this, there is no support for ME personalization for RUIM."
+                if (app.perso_substate.isPersoSubStateSimNetwork()) {
+                    return IccCard.State.NETWORK_LOCKED;
+                } else {
+                    Log.e(mLogTag,"[IccCard] UnSupported De-Personalization, substate "
+                          + app.perso_substate + " assuming ICC_NOT_READY");
+                    return IccCard.State.NOT_READY;
+                }
             }
             if (app.app_state.isAppReady()) {
                 return IccCard.State.READY;
