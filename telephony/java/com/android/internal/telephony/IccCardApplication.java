@@ -97,6 +97,22 @@ public class IccCardApplication {
         }
     };
 
+    public enum PinState{
+        PINSTATE_UNKNOWN,
+        PINSTATE_ENABLED_NOT_VERIFIED,
+        PINSTATE_ENABLED_VERIFIED,
+        PINSTATE_DISABLED,
+        PINSTATE_ENABLED_BLOCKED,
+        PINSTATE_ENABLED_PERM_BLOCKED;
+
+        boolean isPinBlocked() {
+            return this == PINSTATE_ENABLED_BLOCKED;
+        }
+        boolean isPukBlocked() {
+            return this == PINSTATE_ENABLED_PERM_BLOCKED;
+        }
+    };
+
     public AppType        app_type;
     public AppState       app_state;
     // applicable only if app_state == RIL_APPSTATE_SUBSCRIPTION_PERSO
@@ -107,8 +123,8 @@ public class IccCardApplication {
     public String         app_label;
     // applicable to USIM and CSIM
     public int            pin1_replaced;
-    public int            pin1;
-    public int            pin2;
+    public PinState       pin1;
+    public PinState       pin2;
 
     AppType AppTypeFromRILInt(int type) {
         AppType newType;
@@ -177,6 +193,23 @@ public class IccCardApplication {
                             "Unrecognized RIL_PersoSubstate: " +substate);
         }
         return newSubState;
+    }
+
+    PinState PinStateFromRILInt(int type) {
+        PinState newState;
+        /* RIL_PinState ril.h */
+        switch(type) {
+            case 0: newState = PinState.PINSTATE_UNKNOWN; break;
+            case 1: newState = PinState.PINSTATE_ENABLED_NOT_VERIFIED; break;
+            case 2: newState = PinState.PINSTATE_ENABLED_VERIFIED; break;
+            case 3: newState = PinState.PINSTATE_DISABLED; break;
+            case 4: newState = PinState.PINSTATE_ENABLED_BLOCKED; break;
+            case 5: newState = PinState.PINSTATE_ENABLED_PERM_BLOCKED; break;
+            default:
+                throw new RuntimeException(
+                            "Unrecognized RIL_PIN_STATE: " +type);
+        }
+        return newState;
     }
 
 }

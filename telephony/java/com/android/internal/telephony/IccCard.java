@@ -49,6 +49,10 @@ public abstract class IccCard {
     private boolean mIccPinLocked = true; // Default to locked
     private boolean mIccFdnEnabled = false; // Default to disabled.
                                             // Will be updated when SIM_READY.
+    private boolean mIccPin2Blocked = false; // Default to disabled.
+                                             // Will be updated when sim status changes.
+    private boolean mIccPuk2Blocked = false; // Default to disabled.
+                                             // Will be updated when sim status changes.
 
 
     /* The extra data for broacasting intent INTENT_ICC_STATE_CHANGE */
@@ -650,6 +654,21 @@ public abstract class IccCard {
                 return IccCard.State.ABSENT;
             }
 
+            Log.i(mLogTag, "PIN1 Status " + app.pin1 + "PIN2 Status " + app.pin2);
+            if (app.pin2.isPinBlocked()) {
+                Log.i(mLogTag, "PIN2 is blocked, PUK2 required.");
+                mIccPin2Blocked = true;
+                mIccPuk2Blocked = false;
+            } else if (app.pin2.isPukBlocked()) {
+                Log.i(mLogTag, "PUK2 is permanently blocked.");
+                mIccPuk2Blocked = true;
+                mIccPin2Blocked = false;
+            } else {
+                Log.i(mLogTag, "Neither PIN2 nor PUK2 is blocked.");
+                mIccPin2Blocked = false;
+                mIccPuk2Blocked = false;
+            }
+
             // check if PIN required
             if (app.app_state.isPinRequired()) {
                 return IccCard.State.PIN_REQUIRED;
@@ -709,6 +728,20 @@ public abstract class IccCard {
             // TODO: Make work with a CDMA device with a RUIM card.
             return false;
         }
+    }
+
+    /**
+     * @return true if ICC card is PIN2 blocked
+     */
+    public boolean getIccPin2Blocked() {
+        return mIccPin2Blocked;
+    }
+
+    /**
+     * @return true if ICC card is PUK2 blocked
+     */
+    public boolean getIccPuk2Blocked() {
+        return mIccPuk2Blocked;
     }
 
     private void log(String msg) {
