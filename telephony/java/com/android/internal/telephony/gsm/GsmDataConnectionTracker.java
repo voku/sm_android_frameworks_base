@@ -671,17 +671,39 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
         // TODO: It'd be nice to only do this if the changed entrie(s)
         // match the current operator.
         createAllApnList();
-        if (state != State.DISCONNECTING) {
-            cleanUpConnection(isConnected, Phone.REASON_APN_CHANGED);
-            if (!isConnected) {
-                // reset reconnect timer
-                mRetryMgr.resetRetryCount();
-                mReregisterOnReconnectFailure = false;
-                trySetupData(Phone.REASON_APN_CHANGED);
-            }
-        }
+        if (IsPreferredApnChanged()) {
+           if (state != State.DISCONNECTING) {
+              cleanUpConnection(isConnected, Phone.REASON_APN_CHANGED);
+              if (!isConnected) {
+                 // reset reconnect timer
+                 mRetryMgr.resetRetryCount();
+                 mReregisterOnReconnectFailure = false;
+                 trySetupData(Phone.REASON_APN_CHANGED);
+             }
+          }
+       }
     }
 
+    /**
+     * Checks if the PreferredApn is Changed
+     **/
+    private boolean IsPreferredApnChanged() {
+       boolean change = true;
+       Log.d(LOG_TAG, "mActiveApn: "+ mActiveApn);
+       Log.d(LOG_TAG, "Preferred APN: " +  preferredApn );
+
+       if ((preferredApn != null) && (mActiveApn != null))  {
+           if ((mActiveApn.toString().equals(preferredApn.toString() )) &&
+               ((mActiveApn.user != null && mActiveApn.user.equals(preferredApn.user)) ||
+                (mActiveApn.user == null && preferredApn.user == null)) &&
+               ((mActiveApn.password != null && mActiveApn.password.equals(preferredApn.password)) ||
+                (mActiveApn.password == null && preferredApn.password == null)))  {
+                change = false;
+          }
+       }
+       Log.d(LOG_TAG, "Is Preferred APN changed: "+ change);
+       return change;
+    }
     /**
      * @param explicitPoll if true, indicates that *we* polled for this
      * update while state == CONNECTED rather than having it delivered
