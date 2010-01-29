@@ -24,6 +24,8 @@ import java.nio.charset.CharsetDecoder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Vector;
+
 import com.android.internal.util.HexDump;
 import android.os.Parcel;
 import android.util.Log;
@@ -222,6 +224,21 @@ public final class CdmaInformationRecords {
             this.mValue = value;
         }
         public byte value() { return mValue; }
+
+        /**
+          * Return a 0-based ordinal number corresponding to the tag
+          * (e.g. 0 for X_DISPLAY_TAG_BLANK, 1 for X_DISPLAY_TAG_SKIP, etc)
+          */
+        public int asIndex() {
+            int ret = (mValue & 0xff) & ~0x80;
+            Log.d("DisplayTag", toString() + " as index: " + ret);
+            return ret;
+        }
+
+        /**
+          * Create a new ExtendedDisplayTag from the wire byte it represents
+          * (e.g. 0x80 for X_DISPLAY_TAG_BLANK, 0x81 for X_DISPLAY_TAG_SKIP, etc)
+          */
         public static ExtendedDisplayTag fromByte(byte value) {
             Log.d("DisplayTag", "DisplayTag.fromByte(" + value + ")");
             ExtendedDisplayTag ret = null;
@@ -238,7 +255,7 @@ public final class CdmaInformationRecords {
         public int id;
         public String alpha;
 
-        public Map<ExtendedDisplayTag, ExtendedDisplayItemRec> itemrecs;
+        public Vector<ExtendedDisplayItemRec> itemrecs;
 
         public CdmaDisplayInfoRec(int id, String alpha) {
             this.id = id;
@@ -251,7 +268,7 @@ public final class CdmaInformationRecords {
             readItems(data);
         }
 
-        public void readItems(byte []data) {
+        private void readItems(byte []data) {
             Log.d("CdmaInformationRecords","CdmaDisplayInfoRec.readItems(len: " + data.length + ")");
             Log.d("CdmaInformationRecords",HexDump.dumpHexString(data));
 
@@ -259,7 +276,7 @@ public final class CdmaInformationRecords {
             int linelen = 0;
             StringBuffer buffer = new StringBuffer();
             if(itemrecs == null)
-                itemrecs = new TreeMap<ExtendedDisplayTag, ExtendedDisplayItemRec>();
+                itemrecs = new Vector<ExtendedDisplayItemRec>();
             for(read = 0; read < data.length; ) {
                 ExtendedDisplayTag itag = ExtendedDisplayTag.fromByte(data[read++]);
                 if(itag == null) {
@@ -301,7 +318,7 @@ public final class CdmaInformationRecords {
                     buffer.append(s);
                     linelen += s.length();
                 }
-                itemrecs.put(itag, item);
+                itemrecs.add(item);
                 Log.d("CdmaInformationRecords", "readItems: Added a new DisplayItemRec");
             }
             alpha = buffer.toString();
@@ -324,7 +341,7 @@ public final class CdmaInformationRecords {
             }
             buffer.append("CdmaDisplayInfoRec(extended): { id: ");
             buffer.append(CdmaInformationRecords.idToString(id));
-            for (ExtendedDisplayItemRec rec : itemrecs.values()) {
+            for (ExtendedDisplayItemRec rec : itemrecs) {
                 buffer.append(" [");
                 buffer.append(rec.toString());
                 buffer.append("]");
