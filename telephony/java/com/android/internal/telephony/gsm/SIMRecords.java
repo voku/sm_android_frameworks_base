@@ -1421,6 +1421,7 @@ public final class SIMRecords extends IccRecords {
                     phone.setSystemProperty(PROPERTY_ICC_OPERATOR_ALPHA, spn);
 
                     spnState = Get_Spn_Fsm_State.IDLE;
+                    ((GSMPhone) phone).mSST.updateSpnDisplay();
                 } else {
                     phone.getIccFileHandler().loadEFTransparent( EF_SPN_CPHS,
                             obtainMessage(EVENT_GET_SPN_DONE));
@@ -1443,6 +1444,7 @@ public final class SIMRecords extends IccRecords {
                     phone.setSystemProperty(PROPERTY_ICC_OPERATOR_ALPHA, spn);
 
                     spnState = Get_Spn_Fsm_State.IDLE;
+                    ((GSMPhone) phone).mSST.updateSpnDisplay();
                 } else {
                     phone.getIccFileHandler().loadEFTransparent(
                             EF_SPN_SHORT_CPHS, obtainMessage(EVENT_GET_SPN_DONE));
@@ -1459,6 +1461,7 @@ public final class SIMRecords extends IccRecords {
 
                     if (DBG) log("Load EF_SPN_SHORT_CPHS: " + spn);
                     phone.setSystemProperty(PROPERTY_ICC_OPERATOR_ALPHA, spn);
+                    ((GSMPhone) phone).mSST.updateSpnDisplay();
                 }else {
                     if (DBG) log("No SPN loaded in either CHPS or 3GPP");
                 }
