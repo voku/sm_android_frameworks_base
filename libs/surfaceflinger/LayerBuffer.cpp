@@ -668,11 +668,10 @@ LayerBuffer::OverlaySource::~OverlaySource()
 void LayerBuffer::OverlaySource::onDraw(const Region& clip) const
 {
     // this would be where the color-key would be set, should we need it.
-    GLclampx color = 0x0F070F;
-    GLclampx red = (color&0x00ff0000);
-    GLclampx green = (color&0x0000ff00)<<8;
-    GLclampx blue = (color&0x000000ff)<<16;
-    mLayer.clearWithOpenGL(clip, red/255, green/255, blue/255, 0);
+    GLclampx red = 0;
+    GLclampx green = 0;
+    GLclampx blue = 0;
+    mLayer.clearWithOpenGL(clip, red, green, blue, 0);
 }
 
 void LayerBuffer::OverlaySource::onTransaction(uint32_t flags)
