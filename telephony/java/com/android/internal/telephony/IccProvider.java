@@ -515,8 +515,13 @@ public class IccProvider extends ContentProvider {
                     newAdn.add(record);
                 }
             }
-            // Sort the list in ascending order of names
-            Collections.sort(newAdn, mAdnComparator);
+
+            try {
+                // Sort the list in ascending order of names
+                Collections.sort(newAdn, mAdnComparator);
+            } catch (ClassCastException ex) {
+                Log.e(TAG,"Exception occured while sorting ADN records");
+            }
 
             if (DBG)
                 log("loadFromEf: results =" + newAdn);
