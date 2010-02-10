@@ -225,7 +225,7 @@ public class IccProvider extends ContentProvider {
         }
     }
 
-    private AdnComparator mAdnComparator;
+    private AdnComparator mAdnComparator = new AdnComparator();
     @Override
     public boolean onCreate() {
         String device = SystemProperties.get("ro.product.device");
@@ -508,7 +508,7 @@ public class IccProvider extends ContentProvider {
             if (DBG)
                 log("adnRecords.size=" + N);
             // Making a local copy of records which are non empty
-            List newAdn = new ArrayList<AdnRecord>();
+            List<AdnRecord> newAdn = new ArrayList<AdnRecord>();
             for (int i = 0; i < N; i++) {
                 AdnRecord record = adnRecords.get(i);
                 if (!record.isEmpty()) {
