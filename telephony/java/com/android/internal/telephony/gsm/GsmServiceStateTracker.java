@@ -359,8 +359,6 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                             EVENT_SIM_RECORDS_LOADED, null);
                     mNeedToRegForSimLoaded = false;
                 }
-                // restore the previous network selection.
-                phone.restoreSavedNetworkSelection(null);
                 pollState();
                 // Signal strength polling stops when radio is off
                 queueNextSignalStrengthPoll();
