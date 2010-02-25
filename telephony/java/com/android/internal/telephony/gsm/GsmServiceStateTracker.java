@@ -1284,6 +1284,11 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
      * returns true if registered roam, false otherwise
      */
     private boolean regCodeIsRoaming (int code) {
+        //If ADAPT is enabled, roaming indication should not be displayed.
+        if (SystemProperties.getBoolean("persist.cust.tel.adapt",false)) {
+            Log.w(LOG_TAG,"Setting Roaming Status to false");
+            return false;
+        }
         // 5 is  "in service -- roam"
         return 5 == code;
     }
