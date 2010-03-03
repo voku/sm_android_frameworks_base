@@ -107,14 +107,22 @@ public final class CdmaCallTracker extends CallTracker {
         cm.unregisterForCallWaitingInfo(this);
         for(CdmaConnection c : connections) {
             try {
-                if(c != null) hangup(c);
+                if(c != null) {
+                    hangup(c);
+                    // Since by now we are unregistered, we won't notify
+                    // PhoneApp that the call is gone. Do that here
+                    c.onDisconnect(Connection.DisconnectCause.LOST_SIGNAL);
+                }
             } catch (CallStateException ex) {
                 Log.e(LOG_TAG, "unexpected error on hangup during dispose");
             }
         }
 
         try {
-            if(pendingMO != null) hangup(pendingMO);
+            if(pendingMO != null) {
+                hangup(pendingMO);
+                pendingMO.onDisconnect(Connection.DisconnectCause.LOST_SIGNAL);
+            }
         } catch (CallStateException ex) {
             Log.e(LOG_TAG, "unexpected error on hangup during dispose");
         }
