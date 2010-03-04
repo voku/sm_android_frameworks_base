@@ -134,7 +134,10 @@ public class NeighboringCellInfo implements Parcelable
             case NETWORK_TYPE_EDGE:
                 mNetworkType = radioType;
                 mLac = Integer.valueOf(location.substring(0, 4), 16);
-                mCid = Integer.valueOf(location.substring(4), 16);
+                // check if 0xFFFFFFFF for UNKNOWN_CID
+                if (!location.equalsIgnoreCase(String.valueOf("FFFFFFFF"))) {
+                    mCid = Integer.valueOf(location.substring(4), 16);
+                }
                 break;
             case NETWORK_TYPE_UMTS:
             case NETWORK_TYPE_HSDPA:
