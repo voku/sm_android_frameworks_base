@@ -410,11 +410,12 @@ public class FmTransceiver
    *                 configure failed.
    */
    public boolean configure(FmConfig configSettings){
-
+      boolean status=true;
+      int lowerFreq = configSettings.getLowerLimit();
       Log.d(TAG, "fmConfigure");
-
-      return  FmConfig.fmConfigure (sFd, configSettings);
-
+      status = FmConfig.fmConfigure (sFd, configSettings);
+      status = setStation (lowerFreq);
+      return status;
    }
 
    /*==============================================================
