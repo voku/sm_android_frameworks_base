@@ -1527,10 +1527,6 @@ public class AudioService extends IAudioService.Stub {
 
         private void setSystemVolume(VolumeStreamState streamState) {
 
-            // Make sure for STREAM_VOICE_CALL, RX volume never gets muted
-            if(streamState.mStreamType == AudioSystem.STREAM_VOICE_CALL
-                                      && streamState.mIndex == 0)
-                streamState.adjustIndex(AudioManager.ADJUST_RAISE);
             // Adjust volume
             setStreamVolumeIndex(streamState.mStreamType, streamState.mIndex);
 
