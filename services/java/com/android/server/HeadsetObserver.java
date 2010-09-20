@@ -37,7 +37,7 @@ class HeadsetObserver extends UEventObserver {
     private static final String TAG = HeadsetObserver.class.getSimpleName();
     private static final boolean LOG = true;
 
-    private static final String HEADSET_UEVENT_MATCH = "DEVPATH=/devices/virtual/switch/h2w";
+    private static final String HEADSET_UEVENT_MATCH = "DEVPATH=/class/switch/h2w";
     private static final String HEADSET_STATE_PATH = "/sys/class/switch/h2w/state";
     private static final String HEADSET_NAME_PATH = "/sys/class/switch/h2w/name";
 
