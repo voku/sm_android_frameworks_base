@@ -180,7 +180,8 @@ class StatusBarIcon {
                 data.textColor = Settings.System.getInt(context.getContentResolver(),
                         data.colorSetting, data.textColor);
                 mNumberView.setTextColor(data.textColor);
-                mNumberView.setTextSize(12);
+                mNumberView.setTypeface(Typeface.SANS_SERIF,Typeface.NORMAL);
+                mNumberView.setTextSize(9);
 
                 if (data.number == 100) {
                     nv.setText("" + 99);
