@@ -91,8 +91,6 @@ class NotificationManagerService extends INotificationManager.Stub {
 
     private static final int DEFAULT_STREAM_TYPE = AudioManager.STREAM_NOTIFICATION;
 
-    private static final Calendar CALENDAR = Calendar.getInstance();
-
     final Context mContext;
 
     final IActivityManager mAm;
@@ -934,7 +932,8 @@ class NotificationManagerService extends INotificationManager.Stub {
     private boolean inQuietHours() {
         if (mQuietHoursEnabled && (mQuietHoursStart != mQuietHoursEnd)) {
             // Get the date in "quiet hours" format.
-            int minutes = CALENDAR.get(Calendar.HOUR_OF_DAY) * 60 + CALENDAR.get(Calendar.MINUTE);
+            Calendar calendar = Calendar.getInstance();
+            int minutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE);
             if (mQuietHoursEnd < mQuietHoursStart) {
                 // Starts at night, ends in the morning.
                 return ((minutes > mQuietHoursStart) || (minutes < mQuietHoursEnd));
@@ -1358,8 +1357,6 @@ class NotificationManagerService extends INotificationManager.Stub {
         if (mLedNotification == null || (mScreenOn && (mPulseScreen == 0)) || mInCall) {
             mNotificationLight.turnOff();
             isTimer = false;
-            if(powerWake != null && powerWake.isHeld())
-                powerWake.release();
         } else {
             if (mSuccession == 1) {
                 int n = mLights.size();
