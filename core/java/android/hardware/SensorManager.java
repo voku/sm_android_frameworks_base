@@ -368,7 +368,7 @@ public class SensorManager
             }
 
             public void run() {
-                //Log.d(TAG, "entering main sensor thread");
+                Log.d(TAG, "entering main sensor thread");
                 final float[] values = new float[3];
                 final int[] status = new int[1];
                 final long timestamp[] = new long[1];
@@ -419,7 +419,7 @@ public class SensorManager
                         }
                     }
                 }
-                //Log.d(TAG, "exiting main sensor thread");
+                Log.d(TAG, "exiting main sensor thread");
             }
         }
     }
@@ -559,8 +559,8 @@ public class SensorManager
                     i = sensors_module_get_next_sensor(sensor, i);
 
                     if (i>=0) {
-                        //Log.d(TAG, "found sensor: " + sensor.getName() +
-                        //        ", handle=" + sensor.getHandle());
+                        Log.d(TAG, "found sensor: " + sensor.getName() +
+                                ", handle=" + sensor.getHandle());
                         sensor.setLegacyType(getLegacySensorType(sensor.getType()));
                         fullList.add(sensor);
                         sHandleToSensor.append(sensor.getHandle(), sensor);
