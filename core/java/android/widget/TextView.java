@@ -944,6 +944,22 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         setTypeface(tf, styleIndex);
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (enabled == isEnabled()) {
+            return;
+        }
+
+        if (!enabled) {
+            // Hide the soft input if the currently active TextView is disabled
+            InputMethodManager imm = InputMethodManager.peekInstance();
+            if (imm != null && imm.isActive(this)) {
+                imm.hideSoftInputFromWindow(getWindowToken(), 0);
+            }
+        }
+        super.setEnabled(enabled);
+    }
+
     /**
      * Sets the typeface and style in which the text should be displayed,
      * and turns on the fake bold and italic bits in the Paint if the
@@ -4436,7 +4452,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
     
     @Override public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-        if (onCheckIsTextEditor()) {
+        if (onCheckIsTextEditor() && isEnabled()) {
             if (mInputMethodState == null) {
                 mInputMethodState = new InputMethodState();
             }
@@ -6566,7 +6582,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             return superResult;
         }
 
-        if ((mMovement != null || onCheckIsTextEditor()) && mText instanceof Spannable && mLayout != null) {
+        if ((mMovement != null || onCheckIsTextEditor()) && isEnabled()
+                && mText instanceof Spannable && mLayout != null) {
             
             boolean handled = false;
             
@@ -6934,34 +6951,64 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             return null;
         }
 
-        int start = end;
-        int len = mText.length();
+        int start = getSelectionStart();
 
-        for (; start > 0; start--) {
-            char c = mTransformed.charAt(start - 1);
-            int type = Character.getType(c);
-
-            if (c != '\'' &&
-                type != Character.UPPERCASE_LETTER &&
-                type != Character.LOWERCASE_LETTER &&
-                type != Character.TITLECASE_LETTER &&
-                type != Character.MODIFIER_LETTER &&
-                type != Character.DECIMAL_DIGIT_NUMBER) {
-                break;
+        // Use the selection if it is a valid word
+        if (start != end && start >= 0) {
+            if (start > end) {
+                int temp = start;
+                start = end;
+                end = temp;
             }
-        }
 
-        for (; end < len; end++) {
-            char c = mTransformed.charAt(end);
-            int type = Character.getType(c);
+            for (int i = start; i < end; i++) {
+                char c = mTransformed.charAt(i);
+                int type = Character.getType(c);
 
-            if (c != '\'' &&
-                type != Character.UPPERCASE_LETTER &&
-                type != Character.LOWERCASE_LETTER &&
-                type != Character.TITLECASE_LETTER &&
-                type != Character.MODIFIER_LETTER &&
-                type != Character.DECIMAL_DIGIT_NUMBER) {
-                break;
+                if (c != '\'' &&
+                    type != Character.UPPERCASE_LETTER &&
+                    type != Character.LOWERCASE_LETTER &&
+                    type != Character.TITLECASE_LETTER &&
+                    type != Character.MODIFIER_LETTER &&
+                    type != Character.OTHER_LETTER &&
+                    type != Character.DECIMAL_DIGIT_NUMBER) {
+                    return null;
+                }
+            }
+
+        // Use the word around the cursor if no selection
+        } else {
+            start = end;
+
+            for (; start > 0; start--) {
+                char c = mTransformed.charAt(start - 1);
+                int type = Character.getType(c);
+
+                if (c != '\'' &&
+                    type != Character.UPPERCASE_LETTER &&
+                    type != Character.LOWERCASE_LETTER &&
+                    type != Character.TITLECASE_LETTER &&
+                    type != Character.MODIFIER_LETTER &&
+                    type != Character.OTHER_LETTER &&
+                    type != Character.DECIMAL_DIGIT_NUMBER) {
+                    break;
+                }
+            }
+
+            int len = mText.length();
+            for (; end < len; end++) {
+                char c = mTransformed.charAt(end);
+                int type = Character.getType(c);
+
+                if (c != '\'' &&
+                    type != Character.UPPERCASE_LETTER &&
+                    type != Character.LOWERCASE_LETTER &&
+                    type != Character.TITLECASE_LETTER &&
+                    type != Character.MODIFIER_LETTER &&
+                    type != Character.OTHER_LETTER &&
+                    type != Character.DECIMAL_DIGIT_NUMBER) {
+                    break;
+                }
             }
         }
 
@@ -7268,6 +7315,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
             case ID_ADD_TO_DICTIONARY:
                 String word = getWordForDictionary();
+
+                if (mText instanceof Spannable) {
+                    MetaKeyKeyListener.stopSelecting(this, (Spannable) mText);
+                    if (min != max) {
+                        Selection.setSelection((Spannable) mText, max);
+                    }
+                }
 
                 if (word != null) {
                     Intent i = new Intent("com.android.settings.USER_DICTIONARY_INSERT");

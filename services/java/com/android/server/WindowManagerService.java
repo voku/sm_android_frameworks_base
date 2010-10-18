@@ -8795,7 +8795,9 @@ public class WindowManagerService extends IWindowManager.Stub
             for (int i=0; i<N; i++) {
                 WindowState win = allAppWindows.get(i);
                 if (win == startingWindow || win.mAppFreezing
-                        || win.mViewVisibility != View.VISIBLE) {
+                        || win.mViewVisibility != View.VISIBLE
+                        || win.mAttrs.type == TYPE_APPLICATION_STARTING
+                        || win.mDestroying) {
                     continue;
                 }
                 if (DEBUG_VISIBILITY) {
@@ -11494,6 +11496,7 @@ public class WindowManagerService extends IWindowManager.Stub
                             "DimSurface",
                             -1, 16, 16, PixelFormat.OPAQUE,
                             Surface.FX_SURFACE_DIM);
+                    mDimSurface.setAlpha(0.0f);
                 } catch (Exception e) {
                     Slog.e(TAG, "Exception creating Dim surface", e);
                 }

@@ -3410,7 +3410,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     // being started, which means not bringing it to the front
                     // if the caller is not itself in the front.
                     HistoryRecord curTop = topRunningNonDelayedActivityLocked(notTop);
-                    if (curTop.task != taskTop.task) {
+                    if (curTop != null && curTop.task != taskTop.task) {
                         r.intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
                         boolean callerAtFront = sourceRecord == null
                                 || curTop.task == sourceRecord.task;
@@ -9252,6 +9252,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             sb.append("Subject: ").append(subject).append("\n");
         }
         sb.append("Build: ").append(Build.FINGERPRINT).append("\n");
+        if (Debug.isDebuggerConnected()) {
+            sb.append("Debugger: Connected\n");
+        }
         sb.append("\n");
 
         // Do the rest in a worker thread to avoid blocking the caller on I/O
@@ -11918,8 +11921,10 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                 if (DEBUG_SERVICE) Slog.v(TAG, "unbindFinished in " + r
                         + " at " + b + ": apps="
                         + (b != null ? b.apps.size() : 0));
+
+                boolean inStopping = mStoppingServices.contains(r);
                 if (b != null) {
-                    if (b.apps.size() > 0) {
+                    if (b.apps.size() > 0 && !inStopping) {
                         // Applications have already bound since the last
                         // unbind, so just rebind right here.
                         requestServiceBindingLocked(r, b, true);
@@ -11930,7 +11935,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     }
                 }
 
-                serviceDoneExecutingLocked(r, mStoppingServices.contains(r));
+                serviceDoneExecutingLocked(r, inStopping);
 
                 Binder.restoreCallingIdentity(origId);
             }
