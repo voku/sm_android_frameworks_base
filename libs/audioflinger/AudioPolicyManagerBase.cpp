@@ -15,7 +15,7 @@
  */
 
 #define LOG_TAG "AudioPolicyManagerBase"
-//#define LOG_NDEBUG 0
+#define LOG_NDEBUG 0
 #include <utils/Log.h>
 #include <hardware_legacy/AudioPolicyManagerBase.h>
 #include <media/mediarecorder.h>
@@ -322,7 +322,8 @@ void AudioPolicyManagerBase::setPhoneState(int state)
     }
 
     // change routing is necessary
-    setOutputDevice(mHardwareOutput, newDevice, force, delayMs);
+    //setOutputDevice(mHardwareOutput, newDevice, force, delayMs);
+    setOutputDevice(mHardwareOutput, newDevice, force, 0);	
 
     // if entering in call state, handle special case of active streams
     // pertaining to sonification strategy see handleIncallSonification()
@@ -1615,7 +1616,10 @@ void AudioPolicyManagerBase::setOutputDevice(audio_io_handle_t output, uint32_t 
     //  - the requestede device is 0
     //  - the requested device is the same as current device and force is not specified.
     // Doing this check here allows the caller to call setOutputDevice() without conditions
-    if ((device == 0 || device == prevDevice) && !force) {
+    //if ((device == 0 || device == prevDevice) && !force) {  //vflashbirdv: this condition check is not matched up-descripted, modified.
+    if (device == 0 || (device == prevDevice && !force)) {
+	//LOGV("force setOutputDevice > %d, device: %d, predeivce: %d", (int)force, device,prevDevice);
+        LOGV("setOutputDevice > %d, device: %d, predeivce: %d", (int)force, device,prevDevice);
         LOGV("setOutputDevice() setting same device %x or null device for output %d", device, output);
         return;
     }
@@ -1825,10 +1829,12 @@ status_t AudioPolicyManagerBase::checkAndSetVolume(int stream, int index, audio_
             volume = 0.01 + 0.99 * volume;
             if (stream == AudioSystem::VOICE_CALL) {
                 voiceVolume = (float)index/(float)mStreams[stream].mIndexMax;
+                LOGV("setStreamVolume() for voice call voiceVolume: %d, index: %d, mIndexMax: %d.",voiceVolume,index,mStreams[stream].mIndexMax);
             } else if (stream == AudioSystem::BLUETOOTH_SCO) {
                 voiceVolume = 1.0;
             }
             if (voiceVolume >= 0 && output == mHardwareOutput) {
+		LOGV("mpClientInterface.setStreamVolume() voiceVolume: %d.",voiceVolume);
                 mpClientInterface->setVoiceVolume(voiceVolume, delayMs);
             }
         } else if (stream == AudioSystem::FM) {
