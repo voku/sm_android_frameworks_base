@@ -31,6 +31,10 @@ endif
 
 LOCAL_SHARED_LIBRARIES:= libui
 
+ifeq ($(BOARD_CAMERA_USE_GETBUFFERINFO),true)
+    LOCAL_CFLAGS += -DUSE_GETBUFFERINFO
+endif
+
 include $(BUILD_STATIC_LIBRARY)
 endif # USE_CAMERA_STUB
 
@@ -64,11 +68,19 @@ ifeq ($(TARGET_SIMULATOR),true)
 LOCAL_CFLAGS += -DSINGLE_PROCESS
 endif
 
+ifeq ($(BOARD_OVERLAY_FORMAT_YCbCr_420_SP),true)
+LOCAL_CFLAGS += -DUSE_OVERLAY_FORMAT_YCbCr_420_SP
+endif
+
 ifeq ($(USE_CAMERA_STUB), true)
 LOCAL_STATIC_LIBRARIES += libcamerastub
 LOCAL_CFLAGS += -include CameraHardwareStub.h
 else
 LOCAL_SHARED_LIBRARIES += libcamera 
+endif
+
+ifeq ($(BOARD_CAMERA_USE_GETBUFFERINFO),true)
+    LOCAL_CFLAGS += -DUSE_GETBUFFERINFO
 endif
 
 include $(BUILD_SHARED_LIBRARY)

@@ -1,6 +1,8 @@
 /*
 **
 ** Copyright (C) 2008, The Android Open Source Project
+** Copyright (C) 2008 HTC Inc.
+** Copyright (C) 2010, Code Aurora Forum. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -156,6 +158,13 @@ sp<ICamera> CameraService::connect(const sp<ICameraClient>& cameraClient)
     // create a new Client object
     client = new Client(this, cameraClient, callingPid);
     mClient = client;
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+    if (client->mHardware == NULL) {
+        client = NULL;
+        mClient = NULL;
+        return client;
+    }
+#endif
 #if DEBUG_CLIENT_REFERENCES
     // Enable tracking for this object, and track increments and decrements of
     // the refcount.
@@ -237,27 +246,33 @@ CameraService::Client::Client(const sp<CameraService>& cameraService,
     mCameraClient = cameraClient;
     mClientPid = clientPid;
     mHardware = openCameraHardware();
-    mUseOverlay = mHardware->useOverlay();
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+    if (mHardware != NULL) {
+#endif
+        mUseOverlay = mHardware->useOverlay();
 
-    mHardware->setCallbacks(notifyCallback,
-                            dataCallback,
-                            dataCallbackTimestamp,
-                            mCameraService.get());
+        mHardware->setCallbacks(notifyCallback,
+                                dataCallback,
+                                dataCallbackTimestamp,
+                                mCameraService.get());
 
-    // Enable zoom, error, and focus messages by default
-    mHardware->enableMsgType(CAMERA_MSG_ERROR |
-                             CAMERA_MSG_ZOOM |
-                             CAMERA_MSG_FOCUS);
+        // Enable zoom, error, and focus messages by default
+        mHardware->enableMsgType(CAMERA_MSG_ERROR |
+                                 CAMERA_MSG_ZOOM |
+                                 CAMERA_MSG_FOCUS);
 
-    mMediaPlayerClick = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
-    mMediaPlayerBeep = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
-    mOverlayW = 0;
-    mOverlayH = 0;
+        mMediaPlayerClick = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
+        mMediaPlayerBeep = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
+        mOverlayW = 0;
+        mOverlayH = 0;
 
-    // Callback is disabled by default
-    mPreviewCallbackFlag = FRAME_CALLBACK_FLAG_NOOP;
-    mOrientation = 0;
-    cameraService->incUsers();
+        // Callback is disabled by default
+        mPreviewCallbackFlag = FRAME_CALLBACK_FLAG_NOOP;
+        mOrientation = 0;
+        cameraService->incUsers();
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+    }
+#endif
     LOGV("Client::Client X (pid %d)", callingPid);
 }
 
@@ -437,6 +452,12 @@ void CameraService::Client::disconnect()
     // Release the held overlay resources.
     if (mUseOverlay)
     {
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+        /* Release previous overlay handle */
+        if (mOverlay != NULL) {
+            mOverlay->destroy();
+        }
+#endif
         mOverlayRef = 0;
     }
     mHardware.clear();
@@ -477,9 +498,15 @@ status_t CameraService::Client::setPreviewDisplay(const sp<ISurface>& surface)
         mOverlayRef = 0;
         // If preview has been already started, set overlay or register preview
         // buffers now.
-        if (mHardware->previewEnabled()) {
+        if (mHardware->previewEnabled() || mUseOverlay) {
             if (mUseOverlay) {
-                result = setOverlay();
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+                if (mSurface != NULL) {
+                  result = setOverlay();
+                }
+#else
+       		  result = setOverlay();
+#endif
             } else if (mSurface != 0) {
                 result = registerPreviewBuffers();
             }
@@ -588,6 +615,11 @@ status_t CameraService::Client::setOverlay()
         sp<Overlay> dummy;
         mHardware->setOverlay( dummy );
         mOverlayRef = 0;
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+        if (mOverlay != NULL) {
+            mOverlay->destroy();
+        }
+#endif
     }
 
     status_t ret = NO_ERROR;
@@ -598,10 +630,15 @@ status_t CameraService::Client::setOverlay()
             // Surfaceflinger may hold onto the previous overlay reference for some
             // time after we try to destroy it. retry a few times. In the future, we
             // should make the destroy call block, or possibly specify that we can
-            // wait in the createOverlay call if the previous overlay is in the 
+            // wait in the createOverlay call if the previous overlay is in the
             // process of being destroyed.
             for (int retry = 0; retry < 50; ++retry) {
-                mOverlayRef = mSurface->createOverlay(w, h, OVERLAY_FORMAT_DEFAULT,
+                mOverlayRef = mSurface->createOverlay(w, h, 
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+                                                      OVERLAY_FORMAT_YCbCr_420_SP,
+#else
+                                                      OVERLAY_FORMAT_DEFAULT,
+#endif
                                                       mOrientation);
                 if (mOverlayRef != NULL) break;
                 LOGW("Overlay create failed - retrying");
@@ -612,7 +649,12 @@ status_t CameraService::Client::setOverlay()
                 LOGE("Overlay Creation Failed!");
                 return -EINVAL;
             }
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+            mOverlay = new Overlay(mOverlayRef);
+            ret = mHardware->setOverlay(mOverlay);
+#else
             ret = mHardware->setOverlay(new Overlay(mOverlayRef));
+#endif
         }
     } else {
         ret = mHardware->setOverlay(NULL);
@@ -674,8 +716,13 @@ status_t CameraService::Client::startPreviewMode()
         if (mSurface != 0) {
             ret = setOverlay();
         }
-        if (ret != NO_ERROR) return ret;
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
         ret = mHardware->startPreview();
+#endif
+        if (ret != NO_ERROR) return ret;
+#ifndef USE_OVERLAY_FORMAT_YCbCr_420_SP
+        ret = mHardware->startPreview();
+#endif
     } else {
         mHardware->enableMsgType(CAMERA_MSG_PREVIEW_FRAME);
         ret = mHardware->startPreview();
@@ -689,6 +736,19 @@ status_t CameraService::Client::startPreviewMode()
     }
     return ret;
 }
+
+#ifdef USE_GETBUFFERINFO
+status_t CameraService::Client::getBufferInfo(sp<IMemory>& Frame, size_t *alignedSize)
+{
+    LOGD(" getBufferInfo : E");
+    if (mHardware == NULL) {
+        LOGE("mHardware is NULL, returning.");
+        Frame = NULL;
+	return INVALID_OPERATION;
+    }
+    return mHardware->getBufferInfo(Frame, alignedSize);
+}
+#endif
 
 status_t CameraService::Client::startPreview()
 {
@@ -738,6 +798,11 @@ void CameraService::Client::stopPreview()
 
         if (mSurface != 0 && !mUseOverlay) {
             mSurface->unregisterBuffers();
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+        } else {
+          mOverlayW = 0;
+          mOverlayH = 0;
+#endif
         }
     }
 

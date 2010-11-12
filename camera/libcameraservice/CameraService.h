@@ -1,6 +1,8 @@
 /*
 **
 ** Copyright (C) 2008, The Android Open Source Project
+** Copyright (C) 2008 HTC Inc.
+** Copyright (C) 2010, Code Aurora Forum. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -84,6 +86,10 @@ private:
         // preview are handled.
         virtual void            setPreviewCallbackFlag(int callback_flag);
 
+#ifdef USE_GETBUFFERINFO
+        // get the recording buffers information from HAL Layer.
+        virtual status_t        getBufferInfo(sp<IMemory>& Frame, size_t *alignedSize);
+#endif
         // start preview mode, must call setPreviewDisplay first
         virtual status_t        startPreview();
 
@@ -194,6 +200,9 @@ private:
                     bool                        mUseOverlay;
 
                     sp<OverlayRef>              mOverlayRef;
+#ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
+                    sp<Overlay>                 mOverlay;
+#endif
                     int                         mOverlayW;
                     int                         mOverlayH;
 
