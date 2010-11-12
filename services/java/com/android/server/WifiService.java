@@ -1285,8 +1285,7 @@ public class WifiService extends IWifiManager.Stub {
                 String value = field.value();
                 if (value != null) {
                     if (field != config.eap) {
-//                        value = (value.length() == 0) ? "NULL" : convertToQuotedString(value);
-                        value = convertToQuotedString(value);
+                        value = (value.length() == 0) ? "NULL" : convertToQuotedString(value);
                     }
                     if (!mWifiStateTracker.setNetworkVariable(
                                 netId,
