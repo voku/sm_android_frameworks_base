@@ -123,7 +123,7 @@ public class GSMPhone extends PhoneBase {
     private String mImei;
     private String mImeiSv;
     private String mVmNumber;
-
+    boolean bothImeiSv;
 
     // Constructors
 
@@ -1244,7 +1244,17 @@ public class GSMPhone extends PhoneBase {
                     break;
                 }
 
-                mImei = (String)ar.result;
+                String mTempImei = (String)ar.result;
+                if (mTempImei.length() > 15) {
+                    bothImeiSv = true;
+                    Log.e(LOG_TAG, "Original IMEI from baseband: " + mTempImei);
+                    mImei = mTempImei.substring(0, 14) + mTempImei.substring(15, 16);
+                    mImeiSv = mTempImei.substring(17, 19);
+                    Log.e(LOG_TAG, "IMEI translated from baseband. IMEI : " + mImei + ", SV : " + mImeiSv);
+                }
+                else {
+                    mImei = mTempImei;
+                }
             break;
 
             case EVENT_GET_IMEISV_DONE:
@@ -1253,8 +1263,9 @@ public class GSMPhone extends PhoneBase {
                 if (ar.exception != null) {
                     break;
                 }
-
-                mImeiSv = (String)ar.result;
+                if(!bothImeiSv) {
+                    mImeiSv = (String)ar.result;
+                }
             break;
 
             case EVENT_USSD:
