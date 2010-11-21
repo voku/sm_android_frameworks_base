@@ -12024,6 +12024,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             }
             if (inStopping) {
                 mStoppingServices.remove(r);
+                r.bindings.clear();
             }
             updateOomAdjLocked(r.app);
         }
@@ -13200,6 +13201,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                             performReceive(r.callerApp, r.resultTo,
                                 new Intent(r.intent), r.resultCode,
                                 r.resultData, r.resultExtras, false, false);
+                            // Set this to null so that the reference
+                            // (local and remote) isnt kept in the mBroadcastHistory.
+                            r.resultTo = null;
                         } catch (RemoteException e) {
                             Slog.w(TAG, "Failure sending broadcast result of " + r.intent, e);
                         }
