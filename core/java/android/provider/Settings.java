@@ -2671,6 +2671,7 @@ public final class Settings {
         @Deprecated
         public static final String WIFI_WATCHDOG_PING_TIMEOUT_MS =
             Secure.WIFI_WATCHDOG_PING_TIMEOUT_MS;
+
     }
 
     /**
@@ -4146,7 +4147,13 @@ public final class Settings {
          * @hide
          */
         public static final String KILL_APP_LONGPRESS_BACK = "kill_app_on_longpress_back";
-        
+
+        /**
+         * Virtual network roaming
+         * @hide
+         */
+        public static final String MVNO_ROAMING = "button_mvno_roaming_key";
+
         /**
          * @hide
          */

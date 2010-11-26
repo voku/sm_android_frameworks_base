@@ -1286,7 +1286,18 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
      * @return true for roaming state set
      */
     private boolean isRoamingBetweenOperators(boolean gsmRoaming, ServiceState s) {
-        String spn = SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_ALPHA, "");
+
+        boolean mvnoRoaming = Settings.System.getInt(
+                phone.getContext().getContentResolver(),
+                Settings.Secure.MVNO_ROAMING, 0) == 1;
+
+        String spn;
+
+        if (!mvnoRoaming) {
+            spn = SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_ALPHA, "empty");
+        } else {
+            spn = SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_ALPHA, "");
+        }
 
         String onsl = s.getOperatorAlphaLong();
         String onss = s.getOperatorAlphaShort();
