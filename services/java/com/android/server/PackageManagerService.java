@@ -5826,8 +5826,12 @@ class PackageManagerService extends IPackageManager.Stub {
         if ((newPackage.applicationInfo.flags&ApplicationInfo.FLAG_HAS_CODE) != 0) {
             retCode = mInstaller.movedex(newPackage.mScanPath, newPackage.mPath);
             if (retCode != 0) {
-                Slog.e(TAG, "Couldn't rename dex file: " + newPackage.mPath);
-                return PackageManager.INSTALL_FAILED_INSUFFICIENT_STORAGE;
+                // if move dex fails, e.g. moving to /sd-ext, generate dex
+                retCode = mInstaller.dexopt(newPackage.mPath, newPackage.applicationInfo.uid, !isForwardLocked(newPackage));
+                if (retCode != 0) {
+                    Slog.e(TAG, "Couldn't rename dex file: " + newPackage.mPath);
+                    return PackageManager.INSTALL_FAILED_INSUFFICIENT_STORAGE;
+                }
             }
         }
         return PackageManager.INSTALL_SUCCEEDED;
