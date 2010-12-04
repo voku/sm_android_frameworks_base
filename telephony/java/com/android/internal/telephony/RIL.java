@@ -1528,11 +1528,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
     public void
     getNetworkSelectionMode(Message response) {
 
-        Message DeactivateDataCallMessage = null;
-        for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
-            deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
-        }
-
         RILRequest rr
                 = RILRequest.obtain(RIL_REQUEST_QUERY_NETWORK_SELECTION_MODE,
                                     response);
