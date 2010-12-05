@@ -204,6 +204,8 @@ extmap FILE_EXTS [] =  {
         {".wma", PV_PLAYER},
         {".wmv", PV_PLAYER},
         {".asf", PV_PLAYER},
+        {".mp4", PV_PLAYER},
+        {".avi", PV_PLAYER},
 #endif
         {".flac", FLAC_PLAYER},
 };
@@ -717,6 +719,13 @@ player_type getPlayerType(int fd, int64_t offset, int64_t length)
     if (ident == 0x75b22630) {
         // The magic number for .asf files, i.e. wmv and wma content.
         // These are not currently supported through stagefright.
+        return PV_PLAYER;
+    }
+    long ident2 = *((long*)&buf[4]);
+    long ident3 = *((long*)&buf[8]);
+    LOGV("ident2 = %ld. ident3 = %ld.", ident2, ident3);
+    if (ident2 == 0x70797466 && (ident3 == 0x6d6f7369 || ident3 == 0x3234706d)) {
+        //use pv player for mp4 playing. indentity of ftypmp42 or ftypisom.
         return PV_PLAYER;
     }
 #endif

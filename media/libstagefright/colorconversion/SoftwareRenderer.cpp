@@ -40,7 +40,7 @@ SoftwareRenderer::SoftwareRenderer(
       mDecodedHeight(decodedHeight),
       mFrameSize(mDecodedWidth * mDecodedHeight * 2),  // RGB565
       mIndex(0) {
-    mMemoryHeap = new MemoryHeapBase("/dev/pmem_adsp", 2 * mFrameSize);
+    mMemoryHeap = new MemoryHeapBase("/dev/pmem_stream", 2 * mFrameSize);
     if (mMemoryHeap->heapID() < 0) {
         LOGI("Creating physical memory heap failed, reverting to regular heap.");
         mMemoryHeap = new MemoryHeapBase(2 * mFrameSize);
