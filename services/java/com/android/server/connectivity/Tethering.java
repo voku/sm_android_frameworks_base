@@ -42,6 +42,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
 import android.os.ServiceManager;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -1133,6 +1134,10 @@ public class Tethering extends INetworkManagementEventObserver.Stub {
                     return false;
                 }
                 try {
+                    String currentDns = SystemProperties.get("net.dns1");
+                    if (currentDns!=null)
+                      mDnsServers[0] = currentDns;
+                    Log.d(TAG, "Dns Server : "+mDnsServers[0]);
                     service.setDnsForwarders(mDnsServers);
                 } catch (Exception e) {
                     transitionTo(mSetDnsForwardersErrorState);
