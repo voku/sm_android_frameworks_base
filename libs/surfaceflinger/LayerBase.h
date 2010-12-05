@@ -36,6 +36,7 @@
 #include <pixelflinger/pixelflinger.h>
 
 #include "Transform.h"
+#include "BufferConvert16.h"
 
 namespace android {
 
@@ -304,6 +305,7 @@ protected:
 private:
     LayerBase(const LayerBase& rhs);
     void validateTexture(GLint textureName) const;
+    BufferConvert16* converter;
 };
 
 

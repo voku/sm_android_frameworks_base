@@ -14,7 +14,8 @@ LOCAL_SRC_FILES:= \
     MessageQueue.cpp \
     SurfaceFlinger.cpp \
     Tokenizer.cpp \
-    Transform.cpp
+    Transform.cpp \
+    BufferConvert16.cpp
 
 LOCAL_CFLAGS:= -DLOG_TAG=\"SurfaceFlinger\"
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES

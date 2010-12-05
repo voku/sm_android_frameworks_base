@@ -68,10 +68,13 @@ LayerBase::LayerBase(SurfaceFlinger* flinger, DisplayID display)
 {
     const DisplayHardware& hw(flinger->graphicPlane(0).displayHardware());
     mFlags = hw.getFlags();
+    converter = new BufferConvert16();
 }
 
 LayerBase::~LayerBase()
 {
+    delete converter;
+    converter = 0;
 }
 
 void LayerBase::setName(const String8& name) {
@@ -623,6 +626,8 @@ void LayerBase::loadTexture(Texture* texture,
 
     Rect bounds(dirty.bounds());
     GLvoid* data = 0;
+    GLvoid* rgbBuffer = 0;
+
     if (texture->width != t.width || texture->height != t.height) {
         texture->width  = t.width;
         texture->height = t.height;
@@ -650,9 +655,19 @@ void LayerBase::loadTexture(Texture* texture,
                     GL_RGBA, GL_UNSIGNED_BYTE, data);
         } else if (isSupportedYuvFormat(t.format)) {
             // just show the Y plane of YUV buffers
+/*
             glTexImage2D(GL_TEXTURE_2D, 0,
                     GL_LUMINANCE, texture->potWidth, texture->potHeight, 0,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+*/
+            // use converted rgb data.
+            converter->Init(t.width, t.height);
+            rgbBuffer = (GLvoid*)converter->GetRGBBuffer((uint8_t *)data);
+            
+            glTexImage2D(GL_TEXTURE_2D, 0,
+                    GL_RGB, texture->potWidth, texture->potHeight, 0,
+                    GL_RGB, GL_UNSIGNED_SHORT_5_6_5, rgbBuffer);
+
         } else {
             // oops, we don't handle this format!
             LOGE("layer %p, texture=%d, using format %d, which is not "
@@ -678,10 +693,19 @@ void LayerBase::loadTexture(Texture* texture,
                     t.data + bounds.top*t.stride*4);
         } else if (isSupportedYuvFormat(t.format)) {
             // just show the Y plane of YUV buffers
+
+/*
             glTexSubImage2D(GL_TEXTURE_2D, 0,
                     0, bounds.top, t.width, bounds.height(),
                     GL_LUMINANCE, GL_UNSIGNED_BYTE,
                     t.data + bounds.top*t.stride);
+*/
+            rgbBuffer = (GLvoid*)converter->GetRGBBuffer((uint8_t *)(t.data + bounds.top*t.stride*2));
+            glTexSubImage2D(GL_TEXTURE_2D, 0,
+                    0, bounds.top, t.width, bounds.height(),
+                    GL_RGB, GL_UNSIGNED_SHORT_5_6_5,
+                    rgbBuffer);
+
         }
     }
 }
