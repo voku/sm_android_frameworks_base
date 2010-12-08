@@ -489,9 +489,15 @@ public final class SIMRecords extends IccRecords {
 
                 imsi = (String) ar.result;
 
+                // Samsung RIL sends first 8 digits of IMSI at first time and
+                // first 8 digits + complete 15 digets (23 total) each next
+                // requiest (ex. 12345678 and 12345678123456780011223).
+                // So we always have to use first 8 digits only:
+                imsi = imsi.substring(0, 8);
+
                 // IMSI (MCC+MNC+MSIN) is at least 6 digits, but not more
-                // than 15 (and usually 15). -- Samsung RIL sends 23 :)
-                if (imsi != null && (imsi.length() < 6 || imsi.length() > 23)) {
+                // than 15 (and usually 15).
+                if (imsi != null && (imsi.length() < 6 || imsi.length() > 15)) {
                     Log.e(LOG_TAG, "invalid IMSI " + imsi);
                     imsi = null;
                 }
