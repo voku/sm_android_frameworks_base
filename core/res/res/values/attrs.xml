@@ -918,6 +918,8 @@
         <enum name="KEYCODE_MEDIA_REWIND" value="89" />
         <enum name="KEYCODE_MEDIA_FAST_FORWARD" value="90" />
         <enum name="KEYCODE_MUTE" value="91" />
+        <enum name="KEYCODE_DUMP" value="92" />
+        <enum name="KEYCODE_HOLD" value="93" />
         <enum name="KEYCODE_USER1" value="92" />
         <enum name="KEYCODE_USER2" value="93" />
         <enum name="KEYCODE_USER3" value="94" />

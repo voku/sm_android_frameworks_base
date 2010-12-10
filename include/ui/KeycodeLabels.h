@@ -114,6 +114,8 @@ static const KeycodeLabel KEYCODES[] = {
     { "MEDIA_REWIND", 89 },
     { "MEDIA_FAST_FORWARD", 90 },
     { "MUTE", 91 },
+    { "DUMP", 92 },
+    { "HOLD", 93 },
 #if defined(VISION_KEYPAD)
     { "USER1", 92 },
     { "USER2", 93 },
@@ -245,6 +247,8 @@ typedef enum KeyCode {
     kKeyCodeRewind = 89,
     kKeyCodeForward = 90,
     kKeyCodeMute = 91,
+    kKeyCodeDump = 92,
+    kKeyCodeHold = 93,
 } KeyCode;
 
 static const KeycodeLabel FLAGS[] = {

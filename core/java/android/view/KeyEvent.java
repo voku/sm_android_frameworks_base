@@ -120,6 +120,8 @@ public class KeyEvent implements Parcelable {
     public static final int KEYCODE_MEDIA_REWIND    = 89;
     public static final int KEYCODE_MEDIA_FAST_FORWARD = 90;
     public static final int KEYCODE_MUTE            = 91;
+    public static final int KEYCODE_DUMP            = 92;
+    public static final int KEYCODE_HOLD            = 93;
     public static final int KEYCODE_USER1           = 92;
     public static final int KEYCODE_USER2           = 93;
     public static final int KEYCODE_USER3           = 94;
@@ -682,7 +684,9 @@ public class KeyEvent implements Parcelable {
         case KEYCODE_HOME:
         case KEYCODE_BACK:
         case KEYCODE_CALL:
+        case KEYCODE_DUMP:
         case KEYCODE_ENDCALL:
+        case KEYCODE_HOLD:
         case KEYCODE_VOLUME_UP:
         case KEYCODE_VOLUME_DOWN:
         case KEYCODE_MUTE:
