@@ -560,6 +560,7 @@ void Context::setSurface(uint32_t w, uint32_t h, android_native_window_t *sur)
             glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &mGL.mMaxFragmentUniformVectors);
 
             mGL.OES_texture_npot = NULL != strstr((const char *)mGL.mExtensions, "GL_OES_texture_npot");
+            mGL.GL_IMG_texture_npot = NULL != strstr((const char *)mGL.mExtensions, "GL_IMG_texture_npot");
         }
 
     }
