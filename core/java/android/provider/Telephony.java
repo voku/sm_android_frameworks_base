@@ -1715,6 +1715,8 @@ public final class Telephony {
 
         public static final String TYPE = "type";
 
+        public static final String IPVERSION = "ipversion";
+
         public static final String CURRENT = "current";
     }
 
