@@ -155,6 +155,9 @@ public interface CommandsInterface {
 
     RadioState getRadioState();
 
+    void getCdmaSubscriptionSource(Message result);
+    void getCdmaPrlVersion(Message result);
+
     /**
      * Fires on any RadioState transition
      * Always fires immediately as well
@@ -165,6 +168,12 @@ public interface CommandsInterface {
      */
     void registerForRadioStateChanged(Handler h, int what, Object obj);
     void unregisterForRadioStateChanged(Handler h);
+
+    void registerForCdmaSubscriptionSourceChanged(Handler h, int what, Object obj);
+    void unregisterForCdmaSubscriptionSourceChanged(Handler h);
+
+    void registerForCdmaPrlChanged(Handler h, int what, Object obj);
+    void unregisterForCdmaPrlChanged(Handler h);
 
     /**
      * Fires on any transition into RadioState.isOn()
