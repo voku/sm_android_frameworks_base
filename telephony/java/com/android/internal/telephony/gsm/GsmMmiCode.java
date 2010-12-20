@@ -488,7 +488,7 @@ public final class GsmMmiCode  extends Handler implements MmiCode {
     static boolean isExcludedShortCode(String dialString) {
         return ( (dialString.charAt(0) == '*' || dialString.charAt(0) == '#')
                 && (dialString
-                .charAt(1) >= '1' && dialString.charAt(1) <= '9'));
+                .charAt(1) >= '0' && dialString.charAt(1) <= '9'));
     }
 
     /**
