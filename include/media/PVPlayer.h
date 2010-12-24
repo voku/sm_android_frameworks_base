@@ -64,6 +64,9 @@ public:
     // make available to PlayerDriver
     void        sendEvent(int msg, int ext1=0, int ext2=0) { MediaPlayerBase::sendEvent(msg, ext1, ext2); }
 
+    bool    isNotPaused();
+    int     getCurrentPlayerState();
+
 private:
     static void         do_nothing(status_t s, void *cookie, bool cancelled) { }
     static void         run_init(status_t s, void *cookie, bool cancelled);
