@@ -404,7 +404,8 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                 ar = (AsyncResult) msg.obj;
 
                 if (ar.exception == null) {
-                    String states[] = (String[])ar.result;
+                    RegStateResponse r = (RegStateResponse)ar.result;
+                    String states[] = r.getRecord(0);
                     int lac = -1;
                     int cid = -1;
                     if (states.length >= 3) {
