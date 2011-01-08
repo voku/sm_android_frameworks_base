@@ -42,7 +42,7 @@ class UsbObserver extends UEventObserver {
 
     private static final String USB_CONFIGURATION_MATCH = "DEVPATH=/devices/virtual/switch/usb_configuration";
     private static final String USB_FUNCTIONS_MATCH = "DEVPATH=/devices/virtual/usb_composite/";
-    private static final String USB_CONFIGURATION_PATH = "/sys/class/switch/usb_configuration/state";
+    private static final String USB_CONFIGURATION_PATH = "/sys/class/switch/usb_mass_storage/state";
     private static final String USB_COMPOSITE_CLASS_PATH = "/sys/class/usb_composite";
     private static final String USB_CONFIGURATION_MATCH_LEGACY = "DEVPATH=/devices/virtual/switch/usb_mass_storage";
 
@@ -134,14 +134,15 @@ class UsbObserver extends UEventObserver {
         try {
             FileReader file = new FileReader(USB_CONFIGURATION_PATH);
             int len = file.read(buffer, 0, 1024);
-            mPreviousUsbConfig = mUsbConfig = Integer.valueOf((new String(buffer, 0, len)).trim());
+            String strUsbConfig = (new String(buffer, 0, len)).trim();
+            mPreviousUsbConfig = mUsbConfig = (strUsbConfig.compareTo("online")==0)?1:0;
 
         } catch (FileNotFoundException e) {
             Slog.w(TAG, "This kernel does not have USB configuration switch support");
         } catch (Exception e) {
             Slog.e(TAG, "" , e);
         }
-
+/*
         try {
             File[] files = new File(USB_COMPOSITE_CLASS_PATH).listFiles();
             for (int i = 0; i < files.length; i++) {
@@ -161,6 +162,7 @@ class UsbObserver extends UEventObserver {
         } catch (Exception e) {
             Slog.e(TAG, "" , e);
         }
+*/
     }
 
     void systemReady() {
