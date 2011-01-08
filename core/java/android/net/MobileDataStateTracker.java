@@ -89,7 +89,7 @@ public class MobileDataStateTracker extends NetworkStateTracker {
 
         String[] ifNames = SystemProperties.get(
             "mobiledata.interfaces",
-            "rmnet0,eth0,gprs,ppp0"
+            "pdp0,eth0,gprs,ppp0"
         ).split(",");
 
         mDnsPropNames = new String[2 * ifNames.length];

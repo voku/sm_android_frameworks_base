@@ -1118,7 +1118,7 @@ public final class BatteryStatsImpl extends BatteryStats {
      */
     private long getCurrentRadioDataUptime() {
         try {
-            File awakeTimeFile = new File("/sys/devices/virtual/net/rmnet0/awake_time_ms");
+            File awakeTimeFile = new File("/sys/class/net/pdp0/awake_time_ms");
             if (!awakeTimeFile.exists()) return 0;
             BufferedReader br = new BufferedReader(new FileReader(awakeTimeFile));
             String line = br.readLine();
