@@ -10470,9 +10470,38 @@ public final class ActivityManagerService extends ActivityManagerNative
             Intent intent, String resolvedType, IIntentReceiver resultTo,
             int resultCode, String resultData, Bundle map,
             String requiredPermission, boolean serialized, boolean sticky) {
+
+// fix based on vflashbirdv //
+
+        if (intent != null && intent.hasFileDescriptors() == true) {
+            throw new IllegalArgumentException("File descriptors passed in Intent");
+        }
+
         synchronized(this) {
-            intent = verifyBroadcastLocked(intent);
-            
+
+            int flags = intent.getFlags();
+
+            if (!mProcessesReady) {
+                 // if the caller really truly claims to know what they're doing, go
+                // ahead and allow the broadcast without launching any receivers
+                if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT) != 0) {
+                    intent = new Intent(intent);
+                    intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
+                } else if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY) == 0) {
+                    Slog.e(TAG, "Attempt to launch receivers of broadcast intent " + intent
+                            + " before boot completion");
+//                throw new IllegalStateException("Cannot broadcast before boot completed");
+                      return BROADCAST_SUCCESS;
+                }
+            }
+
+            if ((flags&Intent.FLAG_RECEIVER_BOOT_UPGRADE) != 0) {
+                 throw new IllegalArgumentException(
+                        "Can't use FLAG_RECEIVER_BOOT_UPGRADE here");
+            }
+
+// fix based on vflashbirdv //
+
             final ProcessRecord callerApp = getRecordForAppLocked(caller);
             final int callingPid = Binder.getCallingPid();
             final int callingUid = Binder.getCallingUid();
