@@ -2850,6 +2850,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             dc.numberPresentation = DriverCall.presentationFromCLIP(np);
             dc.name = p.readString();
             dc.namePresentation = p.readInt();
+/* FIX for GT-I5700 -- Call waiting problem
             int uusInfoPresent = p.readInt();
             if (uusInfoPresent == 1) {
                 dc.uusInfo = new UUSInfo();
@@ -2867,7 +2868,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                         + IccUtils.bytesToHexString(dc.uusInfo.getUserData()));
             } else {
                 Log.v(LOG_TAG, "Incoming UUS : NOT present!");
-            }
+            } */
 
             // Make sure there's a leading + on addresses with a TOA of 145
             dc.number = PhoneNumberUtils.stringFromStringAndTOA(dc.number, dc.TOA);
