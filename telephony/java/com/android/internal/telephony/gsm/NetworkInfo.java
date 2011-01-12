@@ -104,7 +104,8 @@ public class NetworkInfo implements Parcelable {
         return "NetworkInfo " + operatorAlphaLong
                 + "/" + operatorAlphaShort
                 + "/" + operatorNumeric
-                + "/" + state;
+                + "/" + state
+                + "/" + NumState;
     }
 
     /**
@@ -128,6 +129,7 @@ public class NetworkInfo implements Parcelable {
         dest.writeString(operatorAlphaShort);
         dest.writeString(operatorNumeric);
         dest.writeSerializable(state);
+        dest.writeString(NumState);
     }
 
     /**
@@ -141,7 +143,8 @@ public class NetworkInfo implements Parcelable {
                         in.readString(), /*operatorAlphaLong*/
                         in.readString(), /*operatorAlphaShort*/
                         in.readString(), /*operatorNumeric*/
-                        (State) in.readSerializable()); /*state*/
+                        (State) in.readSerializable(), /*state*/
+                        in.readString());
                 return netInfo;
             }
 
