@@ -24,6 +24,8 @@
 #include <media/stagefright/MediaDebug.h>
 #include <surfaceflinger/ISurface.h>
 
+//#define FORCE_TO_SW_REDERING
+
 namespace android {
 
 SoftwareRenderer::SoftwareRenderer(
@@ -38,7 +40,11 @@ SoftwareRenderer::SoftwareRenderer(
       mDisplayHeight(displayHeight),
       mDecodedWidth(decodedWidth),
       mDecodedHeight(decodedHeight),
+#ifdef FORCE_TO_SW_REDERING
       mFrameSize(mDecodedWidth * mDecodedHeight * 2),  // RGB565
+#else
+      mFrameSize((mDecodedWidth * mDecodedHeight * 3) / 2),  // YUV420
+#endif
       mIndex(0) {
     mMemoryHeap = new MemoryHeapBase("/dev/pmem_stream", 2 * mFrameSize);
     if (mMemoryHeap->heapID() < 0) {
@@ -54,6 +60,7 @@ SoftwareRenderer::SoftwareRenderer(
     CHECK(mDecodedWidth > 0);
     CHECK(mDecodedHeight > 0);
     CHECK(mMemoryHeap->heapID() >= 0);
+#ifdef FORCE_TO_SW_REDERING
     CHECK(mConverter.isValid());
 
     ISurface::BufferHeap bufferHeap(
@@ -61,6 +68,13 @@ SoftwareRenderer::SoftwareRenderer(
             mDecodedWidth, mDecodedHeight,
             PIXEL_FORMAT_RGB_565,
             mMemoryHeap);
+#else
+    ISurface::BufferHeap bufferHeap(
+            mDisplayWidth, mDisplayHeight,
+            mDecodedWidth, mDecodedHeight,
+            HAL_PIXEL_FORMAT_YCbCr_420_P,
+            mMemoryHeap);
+#endif
 
     status_t err = mISurface->registerBuffers(bufferHeap);
     CHECK_EQ(err, OK);
@@ -75,9 +89,13 @@ void SoftwareRenderer::render(
     size_t offset = mIndex * mFrameSize;
     void *dst = (uint8_t *)mMemoryHeap->getBase() + offset;
 
+#ifdef FORCE_TO_SW_REDERING
     mConverter.convert(
             mDecodedWidth, mDecodedHeight,
             data, 0, dst, 2 * mDecodedWidth);
+#else
+    memcpy(dst, data, mFrameSize);
+#endif
 
     mISurface->postBuffer(offset);
     mIndex = 1 - mIndex;
