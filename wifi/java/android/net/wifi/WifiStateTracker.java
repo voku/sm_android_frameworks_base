@@ -368,7 +368,7 @@ public class WifiStateTracker extends NetworkStateTracker {
 
         mSettingsObserver = new SettingsObserver(new Handler());
 
-        mInterfaceName = SystemProperties.get("wifi.interface", "tiwlan0");
+        mInterfaceName = SystemProperties.get("wifi.interface", "eth0");
         mDnsPropNames = new String[] {
             "net." + mInterfaceName + ".dns1",
             "net." + mInterfaceName + ".dns2"
