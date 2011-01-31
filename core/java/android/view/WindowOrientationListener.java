@@ -207,18 +207,18 @@ public abstract class WindowOrientationListener {
 
         // Maximum absolute tilt angle at which to consider orientation changes.  Beyond this (i.e.
         // when screen is facing the sky or ground), we refuse to make any orientation changes.
-        private static final int MAX_TILT = 65;
+        private static final int MAX_TILT = 45;
 
         // Additional limits on tilt angle to transition to each new orientation.  We ignore all
         // vectors with tilt beyond MAX_TILT, but we can set stricter limits on transition to a
         // particular orientation here.
-        private final int[] MAX_TRANSITION_TILT = new int[] {MAX_TILT, MAX_TILT, MAX_TILT, MAX_TILT};
+        private final int[] MAX_TRANSITION_TILT = new int[] {MAX_TILT, MAX_TILT, MAX_TILT, MAX_TILT}; // w pierwszym lub drugim dac 45 lub 30
 
         // Between this tilt angle and MAX_TILT, we'll allow orientation changes, but we'll filter
         // with a higher time constant, making us less sensitive to change.  This primarily helps
         // prevent momentary orientation changes when placing a device on a table from the side (or
         // picking one up).
-        private static final int PARTIAL_TILT = 45;
+        private static final int PARTIAL_TILT = 45; // potem zmienic na 60 lub 30
 
         // Maximum allowable deviation of the magnitude of the sensor vector from that of gravity,
         // in m/s^2.  Beyond this, we assume the phone is under external forces and we can't trust
