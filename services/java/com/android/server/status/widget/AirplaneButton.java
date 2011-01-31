@@ -52,6 +52,10 @@ public class AirplaneButton extends PowerButton {
         context.sendBroadcast(intent);
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     /**
      * Gets the state of Airplane.
      *

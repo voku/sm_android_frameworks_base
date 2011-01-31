@@ -97,6 +97,10 @@ public class NetworkModeButton extends PowerButton{
         }
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     public void toggleState(Context context, boolean switchModes) {
         Intent intent = new Intent(MODIFY_NETWORK_MODE);
         switch (networkMode ) {

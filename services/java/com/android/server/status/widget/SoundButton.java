@@ -193,6 +193,10 @@ public class SoundButton extends PowerButton {
     void initButton(int position) {
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     @Override
     public void updateState(Context context) {
         mContext = context;

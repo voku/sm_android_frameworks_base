@@ -103,7 +103,9 @@ public class WifiApButton extends PowerButton {
         }
     }
 
-
+    public boolean launchActivity(Context context) {
+        return false;
+    }
 
     public void updateState(Context context) {
 

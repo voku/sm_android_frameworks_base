@@ -4,6 +4,7 @@ import com.android.internal.R;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.graphics.PorterDuff.Mode;
@@ -48,6 +49,7 @@ public abstract class PowerButton {
     abstract void initButton(int position);
     abstract public void toggleState(Context context);
     public abstract void updateState(Context context);
+    public abstract boolean launchActivity(Context context);
 
     public void setupButton(int position) {
         currentPosition = position;

@@ -73,6 +73,10 @@ public class ScreenTimeoutButton extends PowerButton {
                 Settings.System.SCREEN_OFF_TIMEOUT, screentimeout);
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     public static ScreenTimeoutButton getInstance() {
         if (ownButton == null) ownButton = new ScreenTimeoutButton();
         return ownButton;

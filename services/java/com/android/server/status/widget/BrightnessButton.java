@@ -192,6 +192,9 @@ Low High Max
         }
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
 
     public static BrightnessButton getInstance() {
         if (ownButton == null) ownButton = new BrightnessButton();

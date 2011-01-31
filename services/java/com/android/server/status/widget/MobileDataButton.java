@@ -81,6 +81,10 @@ public class MobileDataButton extends PowerButton {
         }
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     public static MobileDataButton getInstance() {
         if (ownButton == null) ownButton = new MobileDataButton();
 

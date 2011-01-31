@@ -44,6 +44,10 @@ public class FlashlightButton extends PowerButton {
         mContext.sendBroadcast(new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT"));
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     public static FlashlightButton getInstance() {
         if (ownButton==null) ownButton = new FlashlightButton();
         return ownButton;

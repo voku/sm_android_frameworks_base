@@ -83,7 +83,9 @@ public class SyncButton extends PowerButton {
         return backgroundData && sync;
     }
 
-
+    public boolean launchActivity(Context context) {
+        return false;
+    }
 
     public void updateState(Context context) {
         mContext = context;

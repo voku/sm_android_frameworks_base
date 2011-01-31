@@ -36,6 +36,10 @@ public class SleepButton extends PowerButton {
         mPowerManager.goToSleep(SystemClock.uptimeMillis() + 1);
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     public static SleepButton getInstance() {
         if (ownButton==null) ownButton = new SleepButton();
 

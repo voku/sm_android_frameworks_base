@@ -47,6 +47,10 @@ public class AutoRotateButton extends PowerButton {
         }
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     public static int getOrientationState(Context context) {
         return Settings.System.getInt(
                 context.getContentResolver(),

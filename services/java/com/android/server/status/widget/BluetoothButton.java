@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.util.Log;
 import android.provider.Settings;
 
@@ -103,6 +104,14 @@ public class BluetoothButton extends PowerButton{
     @Override
     public void toggleState(Context context) {
         sBluetoothState.toggleState(context);
+    }
+
+    public boolean launchActivity(Context context) {
+        Intent intentBluetooth = new Intent();
+        intentBluetooth.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+        intentBluetooth.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentBluetooth);
+        return true;
     }
 
     @Override

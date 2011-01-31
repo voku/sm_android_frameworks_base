@@ -84,6 +84,10 @@ public class LockScreenButton extends PowerButton {
         }
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     /**
      * Gets the state of GPS location.
      *

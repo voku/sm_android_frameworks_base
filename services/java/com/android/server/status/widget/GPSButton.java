@@ -46,6 +46,10 @@ public class GPSButton extends PowerButton {
                 LocationManager.GPS_PROVIDER, !enabled);
     }
 
+    public boolean launchActivity(Context context) {
+        return false;
+    }
+
     private static boolean getGpsState(Context context) {
         ContentResolver resolver = context.getContentResolver();
         return Settings.Secure.isLocationProviderEnabled(resolver,

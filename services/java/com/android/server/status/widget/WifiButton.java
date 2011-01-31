@@ -4,13 +4,12 @@ import com.android.internal.R;
 import com.android.server.status.widget.PowerButton;
 import com.android.server.status.widget.StateTracker;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.util.Log;
 import android.provider.Settings;
 
@@ -159,6 +158,13 @@ public class WifiButton extends PowerButton{
         sWifiState.toggleState(context);
     }
 
+    public boolean launchActivity(Context context) {
+        Intent intentWifi = new Intent();
+        intentWifi.setAction(android.provider.Settings.ACTION_WIFI_SETTINGS);
+        intentWifi.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentWifi);
+        return true;
+    }
 
     public static WifiButton getInstance() {
         if (ownButton == null) {
