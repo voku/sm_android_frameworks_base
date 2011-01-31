@@ -305,13 +305,13 @@ public abstract class Layout {
                     if (spans[n] instanceof LeadingMarginSpan) {
                         LeadingMarginSpan margin = (LeadingMarginSpan) spans[n];
 
-                        if (dir == DIR_RIGHT_TO_LEFT) {
-                            margin.drawLeadingMargin(c, paint, right, dir, ltop,
-                                                     lbaseline, lbottom, buf,
-                                                     start, end, isFirstParaLine, this);
-                                
-                            right -= margin.getLeadingMargin(isFirstParaLine);
-                        } else {
+                       // if (dir == DIR_RIGHT_TO_LEFT) {
+                       //     margin.drawLeadingMargin(c, paint, right, dir, ltop,
+                         //                            lbaseline, lbottom, buf,
+                          //                           start, end, isFirstParaLine, this);
+                          //      
+                         //   right -= margin.getLeadingMargin(isFirstParaLine);
+                        //} else {
                             margin.drawLeadingMargin(c, paint, left, dir, ltop,
                                                      lbaseline, lbottom, buf,
                                                      start, end, isFirstParaLine, this);
@@ -320,7 +320,7 @@ public abstract class Layout {
                             if (margin instanceof LeadingMarginSpan.LeadingMarginSpan2) {
                                 int count = ((LeadingMarginSpan.LeadingMarginSpan2)margin).getLeadingMarginLineCount();
                                 useMargin = count > i;
-                            }
+                          //  }
                             left += margin.getLeadingMargin(useMargin);
                         }
                     }
@@ -364,8 +364,7 @@ public abstract class Layout {
                     Assert.assertTrue(dir == DIR_LEFT_TO_RIGHT);
                     Assert.assertNotNull(c);
                 }
-                // XXX: assumes there's nothing additional to be done
-                c.drawText(buf, start, end, x, lbaseline, paint);
+                c.drawText(buf, start, end, x, lbaseline, paint,false);
             } else {
                 drawText(c, buf, start, end, dir, directions,
                     x, ltop, lbaseline, lbottom, paint, mWorkPaint,
@@ -749,6 +748,9 @@ public abstract class Layout {
         if (line == getLineCount() - 1)
             max++;
 
+        if (line != getLineCount() - 1)
+            max = TextUtils.getOffsetBefore(mText, getLineEnd(line));
+
         int best = min;
         float bestdist = Math.abs(getPrimaryHorizontal(best) - horiz);
 
@@ -893,7 +895,7 @@ public abstract class Layout {
         Directions dirs = getLineDirections(line);
 
         if (line != getLineCount() - 1)
-            end--;
+            end = TextUtils.getOffsetBefore(mText, end);
 
         float horiz = getPrimaryHorizontal(offset);
 
@@ -993,7 +995,7 @@ public abstract class Layout {
         Directions dirs = getLineDirections(line);
 
         if (line != getLineCount() - 1)
-            end--;
+            end = TextUtils.getOffsetBefore(mText, end);
 
         float horiz = getPrimaryHorizontal(offset);
 
@@ -1564,7 +1566,8 @@ public abstract class Layout {
                         h = dir * nextTab(text, start, end, h * dir, tabs);
                     }
 
-                    if (bm != null) {
+                    if (j != there && bm != null) {
+                        if (offset == start + j) return h;
                         workPaint.set(paint);
                         Styled.measureText(paint, workPaint, text,
                                            j, j + 2, null);
@@ -1823,6 +1826,36 @@ public abstract class Layout {
         /* package */ Directions(short[] dirs) {
             mDirections = dirs;
         }
+
+        static int baseDirection(Directions dir,int length) {
+            if (dir == DIRS_ALL_LEFT_TO_RIGHT) {
+                return DIR_LEFT_TO_RIGHT;
+            } else if (dir == DIRS_ALL_RIGHT_TO_LEFT) {
+                return DIR_RIGHT_TO_LEFT;
+            } 
+
+            int sum=0;
+            int lastSwitch=0;
+            int i=0;
+            while ((i+1) < dir.mDirections.length) {
+                sum+=dir.mDirections[i];//-lastSwitch;
+                sum-=dir.mDirections[i+1];//-dir.mDirections[i];
+                lastSwitch=dir.mDirections[i+1];
+                i+=2;
+            }
+
+            if ((i+1)==dir.mDirections.length) {
+                sum+=dir.mDirections[i];//-lastSwitch);
+            } else if (i==dir.mDirections.length) {
+                sum-=length-lastSwitch;
+            }
+
+            if (sum>=0) {
+                return DIR_LEFT_TO_RIGHT;
+            } else {
+                return DIR_RIGHT_TO_LEFT;
+            }
+        }
     }
 
     /**
@@ -1958,4 +1991,3 @@ public abstract class Layout {
                                        new Directions(new short[] { 0, 32767 });
 
 }
-

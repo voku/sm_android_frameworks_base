@@ -313,7 +313,9 @@ extends Layout
                                                       class);
 
                 if (spanned == null) {
-                    paint.getTextWidths(sub, i, next, widths);
+                    final int actualNum = paint.getTextWidths(sub, i, next, widths);
+                    if (next - i > actualNum)
+                        adjustTextWidths(widths, sub, i, next, actualNum);
                     System.arraycopy(widths, 0, widths,
                                      end - start + (i - start), next - i);
                                      
@@ -321,9 +323,11 @@ extends Layout
                 } else {
                     mWorkPaint.baselineShift = 0;
 
-                    Styled.getTextWidths(paint, mWorkPaint,
-                                         spanned, i, next,
-                                         widths, fm);
+                    final int actualNum = Styled.getTextWidths(paint, mWorkPaint,
+                            spanned, i, next,
+                            widths, fm);
+                    if (next - i > actualNum)
+                        adjustTextWidths(widths, spanned, i, next, actualNum);
                     System.arraycopy(widths, 0, widths,
                                      end - start + (i - start), next - i);
 
@@ -689,6 +693,7 @@ extends Layout
                  if (cur ==
                     Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC)
                     chInfo[j] = Character.DIRECTIONALITY_ARABIC_NUMBER;
+		else chInfo[j] = Character.DIRECTIONALITY_LEFT_TO_RIGHT;
             }
         }
 
@@ -777,7 +782,7 @@ extends Layout
                 cur = d;
 
             if (d == Character.DIRECTIONALITY_EUROPEAN_NUMBER)
-                chInfo[j] = cur;
+                chInfo[j] = Character.DIRECTIONALITY_LEFT_TO_RIGHT;
         }
 
         // dump(chdirs, n, "W7");
@@ -790,9 +795,10 @@ extends Layout
             if (d == Character.DIRECTIONALITY_LEFT_TO_RIGHT ||
                 d == Character.DIRECTIONALITY_RIGHT_TO_LEFT) {
                 cur = d;
-            } else if (d == Character.DIRECTIONALITY_EUROPEAN_NUMBER ||
-                       d == Character.DIRECTIONALITY_ARABIC_NUMBER) {
+            } else if (d == Character.DIRECTIONALITY_EUROPEAN_NUMBER) {
                 cur = Character.DIRECTIONALITY_RIGHT_TO_LEFT;
+            } else if (d == Character.DIRECTIONALITY_ARABIC_NUMBER) {
+                cur = Character.DIRECTIONALITY_LEFT_TO_RIGHT;
             } else {
                 byte dd = SOR;
                 int k;
@@ -804,8 +810,10 @@ extends Layout
                         dd == Character.DIRECTIONALITY_RIGHT_TO_LEFT) {
                         break;
                     }
-                    if (dd == Character.DIRECTIONALITY_EUROPEAN_NUMBER ||
-                        dd == Character.DIRECTIONALITY_ARABIC_NUMBER) {
+                    if (dd == Character.DIRECTIONALITY_EUROPEAN_NUMBER) {
+                        dd = Character.DIRECTIONALITY_LEFT_TO_RIGHT;
+                        break;
+                    } else if (dd == Character.DIRECTIONALITY_ARABIC_NUMBER) {
                         dd = Character.DIRECTIONALITY_RIGHT_TO_LEFT;
                         break;
                     }
@@ -964,6 +972,22 @@ extends Layout
             return start;
         else
             return low;
+    }
+
+    private static void adjustTextWidths(float[] widths, CharSequence text,
+                              int curPos, int nextPos, int actualNum) {
+        try {
+            int dstIndex = nextPos - curPos - 1;
+            for (int srcIndex = actualNum - 1; srcIndex >= 0; srcIndex--) {
+                final char c = text.charAt(dstIndex + curPos);
+                if (c >= 0xD800 && c <= 0xDFFF) {
+                    widths[dstIndex--] = 0.0f;
+                }
+                widths[dstIndex--] = widths[srcIndex];
+            }
+        } catch (IndexOutOfBoundsException e) {
+            Log.e("text", "adjust text widths failed");
+        }
     }
 
     private int out(CharSequence text, int start, int end,
@@ -1244,7 +1268,7 @@ extends Layout
     }
 
     public int getParagraphDirection(int line) {
-        return mLines[mColumns * line + DIR] >> DIR_SHIFT;
+        return mLineDirections[line] == DIRS_ALL_LEFT_TO_RIGHT? DIR_LEFT_TO_RIGHT : DIR_RIGHT_TO_LEFT;
     }
 
     public boolean getLineContainsTab(int line) {

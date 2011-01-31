@@ -2210,6 +2210,12 @@ public final class Settings {
         public static final String QUIET_HOURS_DIM = "quiet_hours_dim";
 
         /**
+         * Whether to always show battery status
+         * @hide
+         */
+        public static final String LOCKSCREEN_ALWAYS_BATTERY = "lockscreen_always_battery";
+
+        /**
          * Whether to use custom notification bar
          * @hide
          */
@@ -2304,6 +2310,79 @@ public final class Settings {
          */
         public static final String OVERSCROLL_WEIGHT = "overscroll_weight";
 
+        /**
+         * Whether or not volume button music controls should be enabled to seek media tracks
+         * @hide
+         */
+        public static final String VOLBTN_MUSIC_CONTROLS = "volbtn_music_controls";
+
+        /**
+         * Whether or not camera button music controls should be enabled to play/pause media tracks
+         * @hide
+         */
+        public static final String CAMBTN_MUSIC_CONTROLS = "cambtn_music_controls";
+
+        /**
+         * Whether the phone goggles mode is enabled or not.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_ENABLED = "phone_goggles_enabled";
+
+        /**
+         * Which confirmation mode is used for phone goggles.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_CONFIRMATION_MODE =
+            "phone_goggles_confirmation_mode";
+
+        /**
+         * Whether the application use custom settings for PhoneGoggles or not.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_USE_CUSTOM = "phone_goggles_use_custom";
+
+        /**
+         * Sets when phone goggles start. This is stored in minutes from the start of the day.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_START = "phone_goggles_start";
+
+        /**
+         * Sets when phone goggles end. This is stored in minutes from the start of the day.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_END = "phone_goggles_end";
+
+        /**
+         * Whether the phone goggles mode is enabled or not for an app.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_APP_ENABLED =
+            "phone_goggles_app_enabled";
+
+        /**
+         * Level of the maths problems asked by the phone goggles.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_MATHS_LEVEL = "phone_goggles_maths_level";
+
+        /**
+         * Indicates if the work numbers must be filtered by phone goggles.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_WORK_FILTERED = "phone_goggles_work_filtered";
+
+        /**
+         * Indicates if the mobile numbers must be filtered by phone goggles.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_MOBILE_FILTERED = "phone_goggles_mobile_filtered";
+
+        /**
+         * Indicates if the other numbers must be filtered by phone goggles.
+         * @hide
+         */
+        public static final String PHONE_GOGGLES_OTHER_FILTERED = "phone_goggles_other_filtered";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
@@ -2936,6 +3015,14 @@ public final class Settings {
          */
         public static final String getBluetoothA2dpSinkPriorityKey(String address) {
             return ("bluetooth_a2dp_sink_priority_" + address.toUpperCase());
+        }
+
+        /**
+         * Get the key that retrieves a bluetooth hid device's priority.
+         * @hide
+         */
+        public static final String getBluetoothHidDevicePriorityKey(String address) {
+            return ("bluetooth_hid_device_priority_" + address.toUpperCase());
         }
 
         /**
@@ -4286,7 +4373,7 @@ public final class Settings {
                 while (intent == null && c.moveToNext()) {
                     try {
                         String intentURI = c.getString(c.getColumnIndexOrThrow(INTENT));
-                        intent = Intent.getIntent(intentURI);
+                        intent = Intent.parseUri(intentURI, 0);
                     } catch (java.net.URISyntaxException e) {
                         // The stored URL is bad...  ignore it.
                     } catch (IllegalArgumentException e) {
@@ -4396,7 +4483,7 @@ public final class Settings {
 
             Intent intent;
             try {
-                intent = Intent.getIntent(intentUri);
+                intent = Intent.parseUri(intentUri, 0);
             } catch (URISyntaxException e) {
                 return "";
             }
