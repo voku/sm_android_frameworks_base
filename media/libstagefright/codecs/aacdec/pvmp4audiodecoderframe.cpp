@@ -1039,7 +1039,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
              */
 
 #ifdef AAC_PLUS
-            if (sbrBitStream->NrElements == 0 && pMC_Info->upsamplingFactor == 1)
+            if (sbrBitStream->NrElements == 0 && pMC_Info->upsamplingFactor <= 1)
             {
                 trans4m_freq_2_time_fxp_2(
                     pChVars[ch]->fxpCoef,
