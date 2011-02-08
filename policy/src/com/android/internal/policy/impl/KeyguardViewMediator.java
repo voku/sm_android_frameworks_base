@@ -48,6 +48,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.WindowManagerImpl;
 import android.view.WindowManagerPolicy;
+import android.widget.TextView;
 
 
 /**
@@ -245,6 +246,12 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
      */
     private boolean mWaitingUntilKeyguardVisible = false;
 
+    private static String mArtist = null;
+    private static String mTrack = null;
+    private static Boolean mPlaying = null;
+    private static long mSongId = 0;
+    private static long mAlbumId = 0;
+
     public KeyguardViewMediator(Context context, PhoneWindowManager callback,
             LocalPowerManager powerManager) {
         mContext = context;
@@ -269,6 +276,7 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
         context.registerReceiver(mBroadCastReceiver, filter);
         mAlarmManager = (AlarmManager) context
                 .getSystemService(Context.ALARM_SERVICE);
+
         mCallback = callback;
 
         mUpdateMonitor = new KeyguardUpdateMonitor(context);
@@ -286,6 +294,12 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
         mUserPresentIntent.addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
 
         final ContentResolver cr = mContext.getContentResolver();
+
+        IntentFilter iF = new IntentFilter();
+        iF.addAction("com.android.music.metachanged");
+        iF.addAction("com.android.music.playstatechanged");
+        mContext.registerReceiver(mMusicReceiver, iF);
+
         mShowLockIcon = (Settings.System.getInt(cr, "show_status_bar_lock", 0) == 1);
     }
 
@@ -1160,6 +1174,35 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
             if (DEBUG) Log.d(TAG, "handleNotifyScreenOn");
             mKeyguardViewManager.onScreenTurnedOn();
         }
+    }
+    private BroadcastReceiver mMusicReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            mArtist = intent.getStringExtra("artist");
+            mTrack = intent.getStringExtra("track");
+            mPlaying = intent.getBooleanExtra("playing", false);
+            mSongId = intent.getLongExtra("songid", 0);
+            mAlbumId = intent.getLongExtra("albumid", 0);
+            intent = new Intent("internal.policy.impl.updateSongStatus");
+            context.sendBroadcast(intent);
+        }
+    };
+    public static String NowPlaying() {
+        if (mArtist != null && mPlaying) {
+            return (mArtist + " - " + mTrack);
+        } else {
+            return "";
+        }
+    }
+
+    public static long SongId() {
+        return mSongId;
+    }
+
+    public static long AlbumId() {
+        return mAlbumId;
     }
 }
 

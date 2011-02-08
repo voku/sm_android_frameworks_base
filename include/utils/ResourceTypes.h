@@ -1992,8 +1992,8 @@ public:
 
 #ifndef HAVE_ANDROID_OS
     void print(bool inclValues) const;
+    static String8 normalizeForOutput(const char* input);
 #endif
-    void dump() const;
 
 private:
     struct Header;
@@ -2015,7 +2015,7 @@ private:
         const ResTable_package* const pkg, const Header* const header);
 
     void print_value(const Package* pkg, const Res_value& value) const;
-
+    
     mutable Mutex               mLock;
 
     status_t                    mError;
