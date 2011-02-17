@@ -20,7 +20,6 @@ import com.android.internal.R;
 import com.android.internal.telephony.IccCard;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.RotarySelector;
-import com.android.internal.widget.RotarySelector.OnDialTriggerListener;
 import com.android.internal.widget.SlidingTab;
 import com.android.internal.widget.SlidingTab.OnTriggerListener;
 
@@ -86,8 +85,9 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     private SlidingTab mTabSelector;
     private SlidingTab mSelector2;
     private RotarySelector mRotarySelector;
-    private TextView mTime;
     private TextView mDate;
+    private TextView mTime;
+    private TextView mAmPm;
     private TextView mStatus1;
     private TextView mStatus2;
     private TextView mScreenLocked;
@@ -127,8 +127,11 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     private boolean mSilentMode;
     private AudioManager mAudioManager;
     private String mDateFormatString;
-    private java.text.DateFormat mTimeFormat;
     private boolean mEnableMenuKeyInLockScreen;
+
+    // time format from system settings - contains 12 or 24
+    private int mTime12_24 = (Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.TIME_12_24, 12));
 
     private boolean mTrackballUnlockScreen = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.TRACKBALL_UNLOCK_SCREEN, 0) == 1);
@@ -142,6 +145,12 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     private boolean mLockMusicControls = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_MUSIC_CONTROLS, 1) == 1);
 
+    private boolean mNowPlayingToggle = (Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.LOCKSCREEN_NOW_PLAYING, 1) == 1);
+
+    private boolean mAlbumArtToggle = (Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.LOCKSCREEN_ALBUM_ART, 1) == 1);
+
     private int mLockMusicHeadset = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_MUSIC_CONTROLS_HEADSET, 0));
 
@@ -151,9 +160,6 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     private boolean mLockAlwaysMusic = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_ALWAYS_MUSIC_CONTROLS, 0) == 1);
 
-    // Make this an option should there be demand
-    private boolean mNowPlayingScreen = true;
-
     private boolean mCustomAppToggle = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_CUSTOM_APP_TOGGLE, 0) == 1);
 
@@ -161,7 +167,7 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
             Settings.System.LOCKSCREEN_CUSTOM_APP_ACTIVITY));
 
     private int mLockscreenStyle = (Settings.System.getInt(mContext.getContentResolver(),
-            Settings.System.LOCKSCREEN_STYLE_PREF, 1));
+            Settings.System.LOCKSCREEN_STYLE_PREF, 3));
 
     private int mCustomIconStyle = Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_CUSTOM_ICON_STYLE, 1);
@@ -173,6 +179,11 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
             Settings.System.LOCKSCREEN_ROTARY_HIDE_ARROWS, 0) == 1);
 
     private boolean mUseRotaryLockscreen = (mLockscreenStyle == 2);
+
+    private boolean mUseRotaryRevLockscreen = (mLockscreenStyle == 3);
+
+    private boolean mUseLenseSquareLockscreen = (mLockscreenStyle == 4);
+    private boolean mLensePortrait = false;
 
     private double mGestureSensitivity;
     private boolean mGestureTrail;
@@ -278,10 +289,8 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         if (DBG) Log.v(TAG, "Creation orientation = " + mCreationOrientation);
         if (mCreationOrientation != Configuration.ORIENTATION_LANDSCAPE) {
             inflater.inflate(R.layout.keyguard_screen_tab_unlock, this, true);
-            mNowPlayingScreen = true;
         } else {
             inflater.inflate(R.layout.keyguard_screen_tab_unlock_land, this, true);
-            mNowPlayingScreen = false;
         }
 
         mCarrier = (TextView) findViewById(R.id.carrier);
@@ -289,6 +298,8 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         mCarrier.setSelected(true);
         mCarrier.setTextColor(0xffffffff);
 
+        mTime = (TextView) findViewById(R.id.timeDisplay);
+        mAmPm = (TextView) findViewById(R.id.am_pm);
         mDate = (TextView) findViewById(R.id.date);
         mStatus1 = (TextView) findViewById(R.id.status1);
         mStatus2 = (TextView) findViewById(R.id.status2);
@@ -410,8 +421,18 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
             mRotarySelector.setMidHandleResource(R.drawable.ic_jog_dial_unlock);
         }
         mRotarySelector.enableCustomAppDimple(mCustomAppToggle);
+        mRotarySelector.setRevamped(mUseRotaryRevLockscreen);
+        mRotarySelector.setLenseSquare(mUseRotaryRevLockscreen);
         if(mRotaryHideArrows)
             mRotarySelector.hideArrows(true);
+        mRotarySelector.setTimeFormat(mTime12_24);
+
+        //hide most items when we are in potrait lense mode
+        mLensePortrait=(mUseLenseSquareLockscreen && mCreationOrientation != Configuration.ORIENTATION_LANDSCAPE);
+        if (mLensePortrait)
+            setLenseWidgetsVisibility(View.GONE);
+        else
+            setLenseWidgetsVisibility(View.VISIBLE);
 
         mTabSelector.setLeftTabResources(
                 R.drawable.ic_jog_dial_unlock,
@@ -429,7 +450,7 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
                     R.drawable.jog_tab_target_green, R.drawable.jog_tab_bar_left_generic,
                     R.drawable.jog_tab_left_generic);
 
-            mSelector2.setRightTabResources((mCustomIconStyle == 1) ? R.drawable.ic_jog_dial_custom 
+            mSelector2.setRightTabResources((mCustomIconStyle == 1) ? R.drawable.ic_jog_dial_custom
                          : R.drawable.ic_jog_dial_messaging,
                     R.drawable.jog_tab_target_green, R.drawable.jog_tab_bar_right_generic,
                     R.drawable.jog_tab_right_generic);
@@ -545,7 +566,6 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         refreshMusicStatus();
         refreshPlayingTitle();
 
-        mTimeFormat = DateFormat.getTimeFormat(getContext());
         mDateFormatString = getContext().getString(R.string.full_wday_month_day_no_year);
         refreshTimeAndDateDisplay();
         updateStatusLines();
@@ -712,7 +732,7 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     }
 
     private void refreshBatteryStringAndIcon() {
-        if (!mShowingBatteryInfo && !mLockAlwaysBattery) {
+        if (!mShowingBatteryInfo && !mLockAlwaysBattery || mLensePortrait) {
             mCharging = null;
             return;
         }
@@ -762,19 +782,21 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     }
     private void refreshPlayingTitle() {
         String nowPlaying = KeyguardViewMediator.NowPlaying();
-        if (am.isMusicActive() && !nowPlaying.equals("") && mLockMusicControls && mNowPlayingScreen) {
-            mNowPlaying.setText(nowPlaying);
-            mNowPlaying.setVisibility(View.VISIBLE);
+        mNowPlaying.setText(nowPlaying);
+        mNowPlaying.setVisibility(View.GONE);
+        mAlbumArt.setVisibility(View.GONE);
+
+        if (am.isMusicActive() && !nowPlaying.equals("") && mLockMusicControls
+                && mCreationOrientation == Configuration.ORIENTATION_PORTRAIT) {
+            if (mNowPlayingToggle)
+                mNowPlaying.setVisibility(View.VISIBLE);
             // Set album art
-            Uri uri = getArtworkUri(getContext(), KeyguardViewMediator.SongId(), KeyguardViewMediator.AlbumId());
-            if (uri != null) {
+            Uri uri = getArtworkUri(getContext(), KeyguardViewMediator.SongId(),
+                    KeyguardViewMediator.AlbumId());
+            if (uri != null && mAlbumArtToggle) {
                 mAlbumArt.setImageURI(uri);
                 mAlbumArt.setVisibility(View.VISIBLE);
             }
-        } else {
-            mNowPlaying.setVisibility(View.GONE);
-            mAlbumArt.setVisibility(View.GONE);
-            mNowPlaying.setText(nowPlaying);
         }
     }
 
@@ -803,6 +825,7 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     }
 
     private void refreshTimeAndDateDisplay() {
+        mRotarySelector.invalidate();
         mDate.setText(DateFormat.format(mDateFormatString, new Date()));
     }
 
@@ -898,8 +921,10 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
 
                 // layout
                 mScreenLocked.setVisibility(View.VISIBLE);
-                if (mUseRotaryLockscreen) {
+                if (mUseRotaryLockscreen || mUseRotaryRevLockscreen || mUseLenseSquareLockscreen) {
                     mRotarySelector.setVisibility(View.VISIBLE);
+                    mRotarySelector.setRevamped(mUseRotaryRevLockscreen);
+                    mRotarySelector.setLenseSquare(mUseLenseSquareLockscreen);
                     mTabSelector.setVisibility(View.GONE);
                     if (mSelector2 != null) {
                         mSelector2.setVisibility(View.GONE);
@@ -928,8 +953,10 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
 
                 // layout
                 mScreenLocked.setVisibility(View.VISIBLE);
-                if (mUseRotaryLockscreen) {
+                if (mUseRotaryLockscreen || mUseRotaryRevLockscreen || mUseLenseSquareLockscreen) {
                     mRotarySelector.setVisibility(View.VISIBLE);
+                    mRotarySelector.setRevamped(mUseRotaryRevLockscreen);
+                    mRotarySelector.setLenseSquare(mUseLenseSquareLockscreen);
                     mTabSelector.setVisibility(View.GONE);
                     if (mSelector2 != null) {
                         mSelector2.setVisibility(View.GONE);
@@ -954,8 +981,10 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
 
                 // layout
                 mScreenLocked.setVisibility(View.VISIBLE);
-                if (mUseRotaryLockscreen) {
+                if (mUseRotaryLockscreen || mUseRotaryRevLockscreen || mUseLenseSquareLockscreen) {
                     mRotarySelector.setVisibility(View.VISIBLE);
+                    mRotarySelector.setRevamped(mUseRotaryRevLockscreen);
+                    mRotarySelector.setLenseSquare(mUseLenseSquareLockscreen);
                     mTabSelector.setVisibility(View.GONE);
                     if (mSelector2 != null) {
                         mSelector2.setVisibility(View.GONE);
@@ -1001,8 +1030,10 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
 
                 // layout
                 mScreenLocked.setVisibility(View.INVISIBLE);
-                if (mUseRotaryLockscreen) {
+                if (mUseRotaryLockscreen || mUseRotaryRevLockscreen || mUseLenseSquareLockscreen) {
                     mRotarySelector.setVisibility(View.VISIBLE);
+                    mRotarySelector.setRevamped(mUseRotaryRevLockscreen);
+                    mRotarySelector.setLenseSquare(mUseLenseSquareLockscreen);
                     mTabSelector.setVisibility(View.GONE);
                     if (mSelector2 != null) {
                         mSelector2.setVisibility(View.GONE);
@@ -1245,5 +1276,34 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
             //
         }
         return null;
+    }
+
+    /*
+     * enables or disables visibility of most lockscreen widgets
+     * depending on lense status
+     */
+    private void setLenseWidgetsVisibility(int visibility){
+        mDate.setVisibility(visibility);
+        mTime.setVisibility(visibility);
+        mAmPm.setVisibility(visibility);
+        mCarrier.setVisibility(visibility);
+        mNowPlaying.setVisibility(visibility);
+        mAlbumArt.setVisibility(visibility);
+        mStatus1.setVisibility(visibility);
+        mStatus2.setVisibility(visibility);
+
+        if (mTime12_24 == 24)
+            mAmPm.setVisibility(View.GONE);
+
+        mNowPlayingToggle = false;
+        mAlbumArtToggle = false;
+        if (visibility == View.VISIBLE
+                && (Settings.System.getInt(mContext.getContentResolver(),
+                        Settings.System.LOCKSCREEN_NOW_PLAYING, 1) == 1))
+            mNowPlayingToggle = true;
+        if (visibility == View.VISIBLE
+                && (Settings.System.getInt(mContext.getContentResolver(),
+                        Settings.System.LOCKSCREEN_ALBUM_ART, 1) == 1))
+            mAlbumArtToggle = true;
     }
 }
