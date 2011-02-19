@@ -1216,6 +1216,17 @@ public final class Settings {
         public static final String LOCK_PATTERN_TACTILE_FEEDBACK_ENABLED =
             "lock_pattern_tactile_feedback_enabled";
 
+        /**
+         * Whether to use statusbar music control
+         * @hide
+         */
+        public static final String STATUSBAR_MUSIC_CONTROLS = "statusbar_music_controls";
+
+        /**
+        * Whether to use statusbar music control
+        * @hide
+         */
+        public static final String STATUSBAR_ALWAYS_MUSIC_CONTROLS = "statusbar_always_music_controls";
 
         /**
          * A formatted string of the next alarm that is set, or the empty string
@@ -2228,13 +2239,13 @@ public final class Settings {
         public static final String NOTIF_BAR_CUSTOM = "notif_bar_custom";
 
         /**
-         * Whether to use custom notification bar
+         * Whether to use lockscreen music controls
          * @hide
          */
         public static final String LOCKSCREEN_MUSIC_CONTROLS = "lockscreen_music_controls";
 
         /**
-         * Whether to use custom notification bar
+         * Whether to always show lockscreen music controls
          * @hide
          */
         public static final String LOCKSCREEN_ALWAYS_MUSIC_CONTROLS = "lockscreen_always_music_controls";

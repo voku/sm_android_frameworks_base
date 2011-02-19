@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-        >
+            >
             <LinearLayout android:id="@+id/exp_power_stat_1"
                     android:layout_width="0dip"
                     android:layout_weight="1"
@@ -48,7 +48,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
-            >
+                    >
                 <ImageView android:id="@+id/exp_power_image_1"
                         android:layout_width="match_parent"
                         android:layout_height="0dip"
@@ -70,7 +70,7 @@
                 android:focusable="true"
                 android:visibility="gone"
                 android:background="@drawable/stat_power_bg"
-            >
+                >
                 <ImageView android:id="@+id/exp_power_image_2"
                         android:layout_width="match_parent"
                         android:layout_height="0dip"
@@ -92,7 +92,7 @@
                 android:focusable="true"
                 android:visibility="gone"
                 android:background="@drawable/stat_power_bg"
-            >
+                >
                 <ImageView android:id="@+id/exp_power_image_3"
                         android:layout_width="match_parent"
                         android:layout_height="0dip"
@@ -113,8 +113,8 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:visibility="gone"
-                    android:background="@drawable/stat_power_bg"
-           >
+                android:background="@drawable/stat_power_bg"
+                >
                 <ImageView android:id="@+id/exp_power_image_4"
                         android:layout_width="match_parent"
                         android:layout_height="0dip"
@@ -136,7 +136,7 @@
                 android:focusable="true"
                 android:visibility="gone"
                 android:background="@drawable/stat_power_bg"
-            >
+                >
                 <ImageView android:id="@+id/exp_power_image_5"
                         android:layout_width="match_parent"
                         android:layout_height="0dip"
@@ -158,7 +158,7 @@
                 android:focusable="true"
                 android:visibility="gone"
                 android:background="@drawable/stat_power_bg"
-            >
+                >
                 <ImageView android:id="@+id/exp_power_image_6"
                         android:layout_width="match_parent"
                         android:layout_height="0dip"
@@ -179,8 +179,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-        >
+            >
             <LinearLayout
+                android:id="@+id/carrierBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -189,6 +190,7 @@
                 android:layout_gravity="center_vertical"
                 android:paddingBottom="1dp"
                 android:orientation="vertical"
+                android:visibility="gone"
                 >
                     <TextView android:id="@+id/plmnLabel"
                         android:layout_width="wrap_content"
@@ -207,6 +209,56 @@
                         android:paddingLeft="4dp"
                         />
             </LinearLayout>
+            <!-- Begin Music Control -->
+            <LinearLayout android:id="@+id/exp_music_control"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginTop="1dp"
+                android:layout_marginLeft="5dp"
+                android:paddingBottom="1dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                >
+                <ImageButton
+                    android:id="@+id/music_control_previous"
+                    android:src="@drawable/ic_media_previous"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10px"
+                    android:background="@color/transparent"
+                    />
+                <ImageButton
+                    android:id="@+id/music_control_play"
+                    android:src="@drawable/ic_media_play"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10px"
+                    android:background="@color/transparent"
+                    android:visibility="gone"
+                    />
+                <ImageButton
+                    android:id="@+id/music_control_pause"
+                    android:src="@drawable/ic_media_pause"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10px"
+                    android:background="@color/transparent"
+                    android:visibility="gone"
+                    />
+                <ImageButton
+                    android:id="@+id/music_control_next"
+                    android:src="@drawable/ic_media_next"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10px"
+                    android:layout_toRightOf="@+id/music_control_pause"
+                    android:background="@color/transparent"
+                    />
+            </LinearLayout>
+            <!-- End Music Control -->
+            <!-- "Clear All" button -->
             <TextView android:id="@+id/clear_all_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
