@@ -2156,6 +2156,11 @@ public final class Settings {
          */
         public static final String TRACKBALL_UNLOCK_SCREEN = "trackball_unlock_screen";
 
+        /** Whether to unlock the screen with the HOLD key.  The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String HOLD_UNLOCK_SCREEN = "hold_unlock_screen";
+
         /**
          * Pulse the Trackball with Screen On.  The value is boolean (1 or 0).
          * @hide
