@@ -190,7 +190,7 @@
     <style name="TextAppearance.StatusBarTitle">
         <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:textColor">#ff909090</item>
     </style>
 
     <!-- Widget Styles -->
@@ -661,7 +661,7 @@
     </style>
 
     <style name="TextAppearance.Widget.IconMenu.Item" parent="TextAppearance.Small">
-        <item name="android:textColor">?textColorPrimaryInverse</item>
+        <item name="textColor">@color/bright_foreground_dark</item>
     </style>
 
     <style name="TextAppearance.Widget.EditText">
