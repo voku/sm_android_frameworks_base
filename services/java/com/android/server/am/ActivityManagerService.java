@@ -13856,6 +13856,12 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             adj = FOREGROUND_APP_ADJ;
             schedGroup = Process.THREAD_GROUP_DEFAULT;
             app.adjType = "mms";
+        } else if ("com.noshufou.android.su".equals(app.processName)) {
+            // Superuser app must be active all the time to ensure SU access.
+            // Always push it to the top.
+            adj = FOREGROUND_APP_ADJ;
+            schedGroup = Process.THREAD_GROUP_DEFAULT;
+            app.adjType = "superuser";
         } else if (app == TOP_APP) {
             // The last app on the list is the foreground app.
             adj = FOREGROUND_APP_ADJ;
