@@ -21,7 +21,6 @@ import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHid;
 import android.bluetooth.BluetoothUuid;
 import android.content.Context;
 import android.content.Intent;
@@ -570,7 +569,6 @@ class BluetoothEventLoop {
         boolean authorized = false;
         ParcelUuid uuid = ParcelUuid.fromString(deviceUuid);
         BluetoothA2dp a2dp = new BluetoothA2dp(mContext);
-        BluetoothHid hid = new BluetoothHid(mContext);
 
         // Bluez sends the UUID of the local service being accessed, _not_ the
         // remote service
@@ -584,15 +582,6 @@ class BluetoothEventLoop {
                 Log.i(TAG, "Allowing incoming A2DP / AVRCP connection from " + address);
             } else {
                 Log.i(TAG, "Rejecting incoming A2DP / AVRCP connection from " + address);
-            }
-        } else if( mBluetoothService.isEnabled() && BluetoothUuid.isHid(uuid)) {
-            Log.i(TAG, "Allowing incoming HID connection from " + address);
-            BluetoothDevice device = mAdapter.getRemoteDevice(address);
-            authorized = hid.getHidDevicePriority(device) > BluetoothHid.PRIORITY_OFF;
-            if (authorized) {
-                Log.i(TAG, "Allowing incoming HID connection from " + address);
-            } else {
-                Log.i(TAG, "Rejecting incoming HID connection from " + address);
             }
         } else {
             Log.i(TAG, "Rejecting incoming " + deviceUuid + " connection from " + address);

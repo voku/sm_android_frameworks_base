@@ -23,14 +23,10 @@ import android.view.Surface;
 import android.view.WindowManagerPolicy;
 
 import java.io.PrintWriter;
-import java.io.FileInputStream;
-import java.util.StringTokenizer;
-import android.view.RawInputEvent;
 
 public class InputDevice {
     static final boolean DEBUG_POINTERS = false;
     static final boolean DEBUG_HACKS = false;
-    static final boolean DEBUG_MOUSE = false;
     static final String TAG = "InputDevice";
 
     /** Amount that trackball needs to move in order to generate a key event. */
@@ -749,13 +745,12 @@ public class InputDevice {
         MotionEvent generateAbsMotion(InputDevice device, long curTime,
                 long curTimeNano, Display display, int orientation,
                 int metaState) {
-            boolean isMouse = (device.classes & RawInputEvent.CLASS_MOUSE) != 0;
             if (mSkipLastPointers) {
                 mSkipLastPointers = false;
                 mLastNumPointers = 0;
             }
 
-            if (!isMouse && (mNextNumPointers <= 0 && mLastNumPointers <= 0)) {
+            if (mNextNumPointers <= 0 && mLastNumPointers <= 0) {
                 return null;
             }
 
@@ -770,24 +765,23 @@ public class InputDevice {
             /*
              * This is not used for mouse
              */
-            int upOrDownPointer = isMouse ? 0 : updatePointerIdentifiers();
+            int upOrDownPointer = updatePointerIdentifiers();
 
             final float[] reportData = mReportData;
             final int[] rawData;
-            if (!isMouse && KeyInputQueue.BAD_TOUCH_HACK) {
+            if (KeyInputQueue.BAD_TOUCH_HACK) {
                 rawData = generateAveragedData(upOrDownPointer, lastNumPointers,
                         nextNumPointers);
             } else {
-                rawData = isMouse ? mNextData : mLastData;
+                rawData = mLastData;
             }
 
-            final int numPointers = isMouse ? 1 : mLastNumPointers;
+            final int numPointers = mLastNumPointers;
 
-            if (DEBUG_POINTERS || DEBUG_MOUSE)
+            if (DEBUG_POINTERS)
                     Slog.v("InputDevice", "Processing "
                     + numPointers + " pointers (going from " + lastNumPointers
-                    + " to " + nextNumPointers + ")" + " touch hack "
-                    + KeyInputQueue.BAD_TOUCH_HACK);
+                    + " to " + nextNumPointers + ")");
             for (int i=0; i<numPointers; i++) {
                 final int pos = i * MotionEvent.NUM_SAMPLE_DATA;
                 reportData[pos + MotionEvent.SAMPLE_X] = rawData[pos + MotionEvent.SAMPLE_X];
@@ -798,53 +792,34 @@ public class InputDevice {
 
             int action;
             int edgeFlags = 0;
-            if (!isMouse) {
-                 if (nextNumPointers != lastNumPointers) {
-                    if (nextNumPointers > lastNumPointers) {
-                        if (lastNumPointers == 0) {
-                            action = MotionEvent.ACTION_DOWN;
-                            mDownTime = curTime;
-                        } else {
-                            action = MotionEvent.ACTION_POINTER_DOWN
-                                    | (upOrDownPointer << MotionEvent.ACTION_POINTER_ID_SHIFT);
-                        }
-                    } else {
-                        if (numPointers == 1) {
-                             action = MotionEvent.ACTION_UP;
-                        } else {
-                            action = MotionEvent.ACTION_POINTER_UP
-                                | (upOrDownPointer << MotionEvent.ACTION_POINTER_INDEX_SHIFT);
-                        }
-                    }
-                    currentMove = null;
-                } else {
-                    action = MotionEvent.ACTION_MOVE;
-                }
-            } else {
-                if (mNextNumPointers != mLastNumPointers) {
-                    if (mNextNumPointers == 1) {
+            if (nextNumPointers != lastNumPointers) {
+                if (nextNumPointers > lastNumPointers) {
+                    if (lastNumPointers == 0) {
                         action = MotionEvent.ACTION_DOWN;
                         mDownTime = curTime;
-                    } else if (mNextNumPointers == 2) {
+                    } else {
+                        action = MotionEvent.ACTION_POINTER_DOWN
+                                | (upOrDownPointer << MotionEvent.ACTION_POINTER_INDEX_SHIFT);
+                    }
+                } else {
+                    if (numPointers == 1) {
                         action = MotionEvent.ACTION_UP;
                     } else {
-                        action = MotionEvent.ACTION_MOVE;
+                        action = MotionEvent.ACTION_POINTER_UP
+                                | (upOrDownPointer << MotionEvent.ACTION_POINTER_INDEX_SHIFT);
                     }
-                    mLastNumPointers = mNextNumPointers;
-                    currentMove = null;
-                } else {
-                    action = MotionEvent.ACTION_MOVE;
                 }
-                if (DEBUG_MOUSE)
-                    Slog.i(TAG, "mouse action " + action);
+                currentMove = null;
+            } else {
+                action = MotionEvent.ACTION_MOVE;
             }
 
             final int dispW = display.getWidth()-1;
             final int dispH = display.getHeight()-1;
             int w = dispW;
             int h = dispH;
-            if (!isMouse && (orientation == Surface.ROTATION_90
-                    || orientation == Surface.ROTATION_270)) {
+            if (orientation == Surface.ROTATION_90
+                    || orientation == Surface.ROTATION_270) {
                 w = dispH;
                 h = dispW;
             }
@@ -876,8 +851,6 @@ public class InputDevice {
                             ((reportData[j + MotionEvent.SAMPLE_SIZE]-absSize.minValue)
                                 / (float)absSize.range);
                 }
-                if (isMouse)
-                    continue;
 
                 switch (orientation) {
                     case Surface.ROTATION_90: {
@@ -916,7 +889,7 @@ public class InputDevice {
             }
 
             if (currentMove != null) {
-                if (DEBUG_MOUSE) Slog.i("InputDevice", "Adding batch x="
+                if (false) Slog.i("InputDevice", "Adding batch x="
                         + reportData[MotionEvent.SAMPLE_X]
                         + " y=" + reportData[MotionEvent.SAMPLE_Y]
                         + " to " + currentMove);
@@ -934,7 +907,7 @@ public class InputDevice {
                 currentMove = me;
             }
 
-            if ((!isMouse) && (nextNumPointers < lastNumPointers)) {
+            if (nextNumPointers < lastNumPointers) {
                 removeOldPointer(upOrDownPointer);
             }
 
