@@ -293,7 +293,7 @@ public class StatusBarService extends IStatusBar.Stub
     private boolean mHideOnPowerButtonChange = false;
 
     boolean mNotificationScreenLighter;
-    boolean mNotificationScreenLighterTime;
+    int mNotificationScreenLighterTime;
 
     // statusbar music controls
     private AudioManager am;
@@ -577,7 +577,7 @@ public class StatusBarService extends IStatusBar.Stub
         // screen backlight
         if (mNotificationScreenLighter) {
             PowerManager PowerMan = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-            boolean isScreenOn = pm.isScreenOn();
+            boolean isScreenOn = PowerMan.isScreenOn();
             if (!isScreenOn) {
                 powerWake = PowerMan.newWakeLock(PowerManager.FULL_WAKE_LOCK |
                         PowerManager.ACQUIRE_CAUSES_WAKEUP, "NotificationScreenLight");
