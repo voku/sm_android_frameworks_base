@@ -986,6 +986,7 @@ class NotificationManagerService extends INotificationManager.Stub {
             } else if (old != null && checkLight(old.notification, old.pkg)) {
                 updateLightsLocked();
             }
+
         }
 
         idOut[0] = id;

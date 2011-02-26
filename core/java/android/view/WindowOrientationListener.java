@@ -240,10 +240,10 @@ public abstract class WindowOrientationListener {
         // When device is near-vertical (screen approximately facing the horizon)
         private static final int DEFAULT_TIME_CONSTANT_MS = 200;
         // When device is partially tilted towards the sky or ground
-        private static final int TILTED_TIME_CONSTANT_MS = 200;
+        private static final int TILTED_TIME_CONSTANT_MS = 600;
         // When device is under external acceleration, i.e. not just gravity.  We heavily distrust
         // such readings.
-        private static final int ACCELERATING_TIME_CONSTANT_MS = 600;
+        private static final int ACCELERATING_TIME_CONSTANT_MS = 1000;
 
         // As is, the lowpass was creating an extra cycle in processing
         // the orientation.
