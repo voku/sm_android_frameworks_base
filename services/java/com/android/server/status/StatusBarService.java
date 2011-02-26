@@ -46,6 +46,8 @@ import android.os.RemoteException;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Power;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.provider.Telephony;
@@ -79,8 +81,6 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
-
-import android.provider.Settings;
 import java.lang.reflect.Field;
 
 import android.graphics.PorterDuff.Mode;
@@ -139,6 +139,9 @@ public class StatusBarService extends IStatusBar.Stub
     private static final int OP_EXPAND = 5;
     private static final int OP_TOGGLE = 6;
     private static final int OP_DISABLE = 7;
+
+    private static PowerManager PowerMan;
+    private static PowerManager.WakeLock powerWake = null;
 
     private class PendingOp {
         IBinder key;
@@ -288,6 +291,9 @@ public class StatusBarService extends IStatusBar.Stub
 
     private HashMap<String,PowerButton> mUsedPowerButtons = new HashMap<String,PowerButton>();
     private boolean mHideOnPowerButtonChange = false;
+
+    boolean mNotificationScreenLighter;
+    boolean mNotificationScreenLighterTime;
 
     // statusbar music controls
     private AudioManager am;
@@ -479,6 +485,12 @@ public class StatusBarService extends IStatusBar.Stub
                     Settings.System.STATUSBAR_ALWAYS_MUSIC_CONTROLS, 0) == 1;
         setupMusicControls();
 
+        // settings for on notif screen on
+        mNotificationScreenLighter = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.NOTIFICATION_SCREEN_LIGHTER, 1) == 1;
+        mNotificationScreenLighterTime = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.NOTIFICATION_SCREEN_LIGHTER_TIME, 4000);
+
         WindowManagerImpl.getDefault().addView(view, lp);
     }
 
@@ -562,6 +574,16 @@ public class StatusBarService extends IStatusBar.Stub
         }
         IBinder key = new Binder();
         addPendingOp(OP_ADD_ICON, key, data, n, -1);
+        // screen backlight
+        if (mNotificationScreenLighter) {
+            PowerManager PowerMan = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+            boolean isScreenOn = pm.isScreenOn();
+            if (!isScreenOn) {
+                powerWake = PowerMan.newWakeLock(PowerManager.FULL_WAKE_LOCK |
+                        PowerManager.ACQUIRE_CAUSES_WAKEUP, "NotificationScreenLight");
+                powerWake.acquire(mNotificationScreenLighterTime);
+            }
+        }
         return key;
     }
 

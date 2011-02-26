@@ -1289,6 +1289,16 @@ public final class Settings {
         public static final int SCREEN_BRIGHTNESS_MODE_AUTOMATIC = 1;
 
         /**
+         * Wake screen on new notification or not.
+         */
+        public static final String NOTIFICATION_SCREEN_LIGHTER = "notification_screen_lighter";
+
+        /**
+         * Time to wake on new notification.
+         */
+        public static final String NOTIFICATION_SCREEN_LIGHTER_TIME = "notification_screen_lighter_time";
+
+        /**
          * Indicates that custom light sensor settings has changed.
          * The value is random and changes reloads light settings.
          *
