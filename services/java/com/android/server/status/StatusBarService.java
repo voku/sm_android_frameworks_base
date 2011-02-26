@@ -474,9 +474,9 @@ public class StatusBarService extends IStatusBar.Stub
 
         // music controls
         mStatusMusicControls = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.STATUSBAR_MUSIC_CONTROLS, 1) == 1;
+                    Settings.System.STATUSBAR_MUSIC_CONTROLS, 0) == 1;
         mStatusAlwaysMusic = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.STATUSBAR_ALWAYS_MUSIC_CONTROLS, 1) == 1;
+                    Settings.System.STATUSBAR_ALWAYS_MUSIC_CONTROLS, 0) == 1;
         setupMusicControls();
 
         WindowManagerImpl.getDefault().addView(view, lp);
@@ -2510,9 +2510,9 @@ public class StatusBarService extends IStatusBar.Stub
             } else if (uri.equals(Settings.System.getUriFor(Settings.System.STATUSBAR_MUSIC_CONTROLS)) ||
                        uri.equals(Settings.System.getUriFor(Settings.System.STATUSBAR_ALWAYS_MUSIC_CONTROLS))) {
                 mStatusMusicControls = Settings.System.getInt(mContext.getContentResolver(),
-                            Settings.System.STATUSBAR_MUSIC_CONTROLS, 1) == 1;
+                            Settings.System.STATUSBAR_MUSIC_CONTROLS, 0) == 1;
                 mStatusAlwaysMusic = Settings.System.getInt(mContext.getContentResolver(),
-                            Settings.System.STATUSBAR_ALWAYS_MUSIC_CONTROLS, 1) == 1;
+                            Settings.System.STATUSBAR_ALWAYS_MUSIC_CONTROLS, 0) == 1;
                 mIsMusicActive = am.isMusicActive();
                 if(!mStatusMusicControls || (!mStatusAlwaysMusic && !mIsMusicActive)) {
                     mStatusbarMusicControls.setVisibility(View.GONE);
