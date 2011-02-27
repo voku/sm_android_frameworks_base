@@ -2261,6 +2261,12 @@ public final class Settings {
         public static final String LOCKSCREEN_ALWAYS_MUSIC_CONTROLS = "lockscreen_always_music_controls";
 
         /**
+         * Whether to use d-pad music controls
+         * @hide
+         */
+        public static final String LOCKSCREEN_DPAD_MUSIC_CONTROLS = "dpad_music_controls";
+
+        /**
          * Whether to use the custom quick unlock screen control
          * @hide
          */
