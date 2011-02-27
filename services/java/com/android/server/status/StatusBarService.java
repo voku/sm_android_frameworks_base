@@ -271,10 +271,17 @@ public class StatusBarService extends IStatusBar.Stub
     private int whiteColor = 0xffffffff;
 
     // GB theme adaptation
-
     private int notifications_title_color = 0xff000000;
     private int notifications_text_color = 0xff686868;
     private int notifications_time_color = 0xff686868;
+    private int date_color = 0xffffffff;
+    private int no_notifications_color = 0xff949494;
+    private int ongoing_notifications_color = 0xff949494;
+    private int latest_notifications_color = 0xff949494;
+    private int plmn_label_color = 0xffe0e0e0;
+    private int spn_label_color = 0xffe0e0e0;
+    private int clear_button_label_color = 0xff000000;
+    private int new_notifications_ticker_color = 0xffffffff;
 
     boolean custNotBar = false;
     boolean custExpBar = false;
@@ -1956,14 +1963,6 @@ public class StatusBarService extends IStatusBar.Stub
     }
 
     private void updateColors() {
-        private int date_color = 0xffffffff;
-        private int no_notifications_color = 0xff949494;
-        private int ongoing_notifications_color = 0xff949494;
-        private int latest_notifications_color = 0xff949494;
-        private int plmn_label_color = 0xffe0e0e0;
-        private int spn_label_color = 0xffe0e0e0;
-        private int clear_button_label_color = 0xff000000;
-        private int new_notifications_ticker_color = 0xffffffff;
         mDateView.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.DATE_COLOR, date_color));
         mNoNotificationsTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.NO_NOTIF_COLOR, no_notifications_color));
         mLatestTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.LATEST_NOTIF_COLOR, latest_notifications_color));
