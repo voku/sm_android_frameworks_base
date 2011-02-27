@@ -268,11 +268,14 @@ public class StatusBarService extends IStatusBar.Stub
     boolean mAnimatingReveal = false;
     int mViewDelta;
     int[] mAbsPos = new int[2];
-    private int blackColor = 0xff000000;
     private int whiteColor = 0xffffffff;
-    private int notificationTitleColor = blackColor;
-    private int notificationTextColor = blackColor;
-    private int notificationTimeColor = blackColor;
+
+    // GB theme adaptation
+
+    private int notifications_title_color = 0xff000000;
+    private int notifications_text_color = 0xff686868;
+    private int notifications_time_color = 0xff686868;
+
     boolean custNotBar = false;
     boolean custExpBar = false;
     int notifBarColorMask;
@@ -313,9 +316,9 @@ public class StatusBarService extends IStatusBar.Stub
     public StatusBarService(Context context) {
         mContext = context;
         mHandler = new H();
-        notificationTitleColor = Settings.System.getInt(mContext.getContentResolver(), Settings.System.NOTIF_ITEM_TITLE_COLOR, blackColor);
-        notificationTextColor = Settings.System.getInt(mContext.getContentResolver(), Settings.System.NOTIF_ITEM_TEXT_COLOR, blackColor);
-        notificationTimeColor = Settings.System.getInt(mContext.getContentResolver(), Settings.System.NOTIF_ITEM_TIME_COLOR, blackColor);
+        notifications_title_color = Settings.System.getInt(mContext.getContentResolver(), Settings.System.NOTIF_ITEM_TITLE_COLOR, notifications_title_color);
+        notifications_text_color = Settings.System.getInt(mContext.getContentResolver(), Settings.System.NOTIF_ITEM_TEXT_COLOR, notifications_text_color);
+        notifications_time_color = Settings.System.getInt(mContext.getContentResolver(), Settings.System.NOTIF_ITEM_TIME_COLOR, notifications_time_color);
         mDisplay = ((WindowManager)context.getSystemService(
                 Context.WINDOW_SERVICE)).getDefaultDisplay();
         makeStatusBarView(context);
@@ -1073,16 +1076,16 @@ public class StatusBarService extends IStatusBar.Stub
             tvID = tv.getId();
             switch (tvID) {
             case com.android.internal.R.id.title:
-                tv.setTextColor(notificationTitleColor);
+                tv.setTextColor(notifications_title_color);
                 break;
             case com.android.internal.R.id.text:
-                tv.setTextColor(notificationTextColor);
+                tv.setTextColor(notifications_text_color);
                 break;
             case com.android.internal.R.id.time:
-                tv.setTextColor(notificationTimeColor);
+                tv.setTextColor(notifications_time_color);
                 break;
             default:
-                tv.setTextColor(notificationTextColor);
+                tv.setTextColor(notifications_text_color);
             }
         } catch (Exception e) { }
     }
@@ -1953,14 +1956,22 @@ public class StatusBarService extends IStatusBar.Stub
     }
 
     private void updateColors() {
-        mDateView.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.DATE_COLOR, blackColor));
-        mNoNotificationsTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.NO_NOTIF_COLOR, whiteColor));
-        mLatestTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.LATEST_NOTIF_COLOR, whiteColor));
-        mOngoingTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.ONGOING_NOTIF_COLOR, whiteColor));
-        mSpnLabel.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.SPN_LABEL_COLOR, blackColor));
-        mPlmnLabel.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.PLMN_LABEL_COLOR, blackColor));
-        mClearButton.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.CLEAR_BUTTON_LABEL_COLOR, blackColor));
-        tickerView.updateColors(Settings.System.getInt(mContext.getContentResolver(), Settings.System.NEW_NOTIF_TICKER_COLOR, blackColor));
+        private int date_color = 0xffffffff;
+        private int no_notifications_color = 0xff949494;
+        private int ongoing_notifications_color = 0xff949494;
+        private int latest_notifications_color = 0xff949494;
+        private int plmn_label_color = 0xffe0e0e0;
+        private int spn_label_color = 0xffe0e0e0;
+        private int clear_button_label_color = 0xff000000;
+        private int new_notifications_ticker_color = 0xffffffff;
+        mDateView.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.DATE_COLOR, date_color));
+        mNoNotificationsTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.NO_NOTIF_COLOR, no_notifications_color));
+        mLatestTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.LATEST_NOTIF_COLOR, latest_notifications_color));
+        mOngoingTitle.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.ONGOING_NOTIF_COLOR, ongoing_notifications_color));
+        mSpnLabel.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.SPN_LABEL_COLOR, spn_label_color));
+        mPlmnLabel.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.PLMN_LABEL_COLOR, plmn_label_color));
+        mClearButton.setTextColor(Settings.System.getInt(mContext.getContentResolver(), Settings.System.CLEAR_BUTTON_LABEL_COLOR, clear_button_label_color));
+        tickerView.updateColors(Settings.System.getInt(mContext.getContentResolver(), Settings.System.NEW_NOTIF_TICKER_COLOR, new_notifications_ticker_color));
     }
 
     private View.OnClickListener mClearButtonListener = new View.OnClickListener() {
