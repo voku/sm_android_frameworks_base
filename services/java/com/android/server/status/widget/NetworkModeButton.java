@@ -50,13 +50,18 @@ public class NetworkModeButton extends PowerButton{
                 return PowerButton.STATE_ENABLED;
             case Phone.NT_MODE_GSM_ONLY:
                 return PowerButton.STATE_DISABLED;
+            case Phone.NT_MODE_CDMA:
+            case Phone.NT_MODE_CDMA_NO_EVDO:
+            case Phone.NT_MODE_EVDO_NO_CDMA:
+            case Phone.NT_MODE_GLOBAL:
+                // need to check wtf is going on
+                return STATE_DISABLED;
         }
         return PowerButton.STATE_INTERMEDIATE;
     }
 
-
     /**
-     * Gets the state of 2G3g // NOT working
+     * Gets the state of 2G3g
      *
      * @param context
      * @return true if enabled.
@@ -137,9 +142,6 @@ public class NetworkModeButton extends PowerButton{
         networkMode = NETWORK_MODE_UNKNOWN;
         context.sendBroadcast(intent);
     }
-
-
-
 
     @Override
     public void updateState(Context context) {

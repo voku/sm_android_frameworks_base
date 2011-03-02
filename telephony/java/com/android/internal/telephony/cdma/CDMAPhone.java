@@ -44,6 +44,7 @@ import android.util.Log;
 
 import com.android.internal.telephony.Call;
 import com.android.internal.telephony.CallStateException;
+import com.android.internal.telephony.cat.CatService;
 import com.android.internal.telephony.CommandException;
 import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.Connection;
@@ -68,7 +69,7 @@ import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OP
 import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OPERATOR_ISO_COUNTRY;
 
 import java.util.List;
-
+import java.util.ArrayList;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -101,12 +102,14 @@ public class CDMAPhone extends PhoneBase {
     RuimFileHandler mRuimFileHandler;
     RuimRecords mRuimRecords;
     RuimCard mRuimCard;
+    ArrayList <CdmaMmiCode> mPendingMmis = new ArrayList<CdmaMmiCode>();
     RuimPhoneBookInterfaceManager mRuimPhoneBookInterfaceManager;
     RuimSmsInterfaceManager mRuimSmsInterfaceManager;
     PhoneSubInfo mSubInfo;
     EriManager mEriManager;
     WakeLock mWakeLock;
 
+    CatService mCcatService;
 
     // mNvLoadedRegistrants are informed after the EVENT_NV_READY
     private RegistrantList mNvLoadedRegistrants = new RegistrantList();
@@ -158,6 +161,8 @@ public class CDMAPhone extends PhoneBase {
         mRuimSmsInterfaceManager = new RuimSmsInterfaceManager(this);
         mSubInfo = new PhoneSubInfo(this);
         mEriManager = new EriManager(this, context, EriManager.ERI_FROM_XML);
+        mCcatService = CatService.getInstance(mCM, mRuimRecords, mContext,
+                mIccFileHandler, mRuimCard);
 
         mCM.registerForAvailable(this, EVENT_RADIO_AVAILABLE, null);
         mRuimRecords.registerForRecordsLoaded(this, EVENT_RUIM_RECORDS_LOADED, null);
@@ -219,6 +224,8 @@ public class CDMAPhone extends PhoneBase {
             mSST.unregisterForNetworkAttach(this); //EVENT_REGISTERED_TO_NETWORK
             mCM.unSetOnSuppServiceNotification(this);
 
+            mPendingMmis.clear();
+
             //Force all referenced classes to unregister their former registered events
             mCT.dispose();
             mDataConnection.dispose();
@@ -231,6 +238,7 @@ public class CDMAPhone extends PhoneBase {
             mRuimSmsInterfaceManager.dispose();
             mSubInfo.dispose();
             mEriManager.dispose();
+            mCcatService.dispose();
         }
     }
 
@@ -246,6 +254,7 @@ public class CDMAPhone extends PhoneBase {
             this.mCT = null;
             this.mSST = null;
             this.mEriManager = null;
+            this.mCcatService = null;
     }
 
     protected void finalize() {
@@ -355,8 +364,7 @@ public class CDMAPhone extends PhoneBase {
 
     public List<? extends MmiCode>
     getPendingMmiCodes() {
-        Log.e(LOG_TAG, "method getPendingMmiCodes is NOT supported in CDMA!");
-        return null;
+        return mPendingMmis;
     }
 
     public void registerForSuppServiceNotification(
@@ -371,6 +379,15 @@ public class CDMAPhone extends PhoneBase {
     public boolean handleInCallMmiCommands(String dialString) {
         Log.e(LOG_TAG, "method handleInCallMmiCommands is NOT supported in CDMA!");
         return false;
+    }
+
+    boolean isInCall() {
+        CdmaCall.State foregroundCallState = getForegroundCall().getState();
+        CdmaCall.State backgroundCallState = getBackgroundCall().getState();
+        CdmaCall.State ringingCallState = getRingingCall().getState();
+
+        return (foregroundCallState.isAlive() || backgroundCallState.isAlive() || ringingCallState
+                .isAlive());
     }
 
     public void
@@ -477,7 +494,18 @@ public class CDMAPhone extends PhoneBase {
     }
 
     public boolean handlePinMmi(String dialString) {
-        Log.e(LOG_TAG, "method handlePinMmi is NOT supported in CDMA!");
+        CdmaMmiCode mmi = CdmaMmiCode.newFromDialString(dialString, this);
+
+        if (mmi == null) {
+            Log.e(LOG_TAG, "Mmi is NULL!");
+            return false;
+        } else if (mmi.isPukCommand()) {
+            mPendingMmis.add(mmi);
+            mMmiRegistrants.notifyRegistrants(new AsyncResult(null, mmi, null));
+            mmi.processCode();
+            return true;
+        }
+        Log.e(LOG_TAG, "Unrecognized mmi!");
         return false;
     }
 
@@ -487,6 +515,23 @@ public class CDMAPhone extends PhoneBase {
         return !noData && getIccCard().getState() == IccCard.State.READY &&
                 getServiceState().getState() == ServiceState.STATE_IN_SERVICE &&
                 (mDataConnection.getDataOnRoamingEnabled() || !getServiceState().getRoaming());
+    }
+
+    /**
+     * Removes the given MMI from the pending list and notifies registrants that
+     * it is complete.
+     *
+     * @param mmi MMI that is done
+     */
+    void onMMIDone(CdmaMmiCode mmi) {
+        /*
+         * Only notify complete if it's on the pending list. Otherwise, it's
+         * already been handled (eg, previously canceled).
+         */
+
+        if (mPendingMmis.remove(mmi)) {
+            mMmiCompleteRegistrants.notifyRegistrants(new AsyncResult(null, mmi, null));
+        }
     }
 
     public void setLine1Number(String alphaTag, String number, Message onComplete) {

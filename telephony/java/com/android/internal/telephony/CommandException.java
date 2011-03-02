@@ -38,6 +38,7 @@ public class CommandException extends RuntimeException {
         OP_NOT_ALLOWED_BEFORE_REG_NW,
         SMS_FAIL_RETRY,
         ILLEGAL_SIM_OR_ME,
+        FDN_CHECK_FAILURE,
     }
 
     public CommandException(Error e) {

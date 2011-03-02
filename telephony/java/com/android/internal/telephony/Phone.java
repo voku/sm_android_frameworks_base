@@ -1695,5 +1695,6 @@ public interface Phone {
      */
     void unsetOnEcbModeExitResponse(Handler h);
 
+    boolean isCspPlmnEnabled();
 
 }

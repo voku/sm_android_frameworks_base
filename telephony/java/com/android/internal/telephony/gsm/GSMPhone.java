@@ -67,7 +67,7 @@ import com.android.internal.telephony.PhoneNotifier;
 import com.android.internal.telephony.PhoneProxy;
 import com.android.internal.telephony.PhoneSubInfo;
 import com.android.internal.telephony.TelephonyProperties;
-import com.android.internal.telephony.gsm.stk.StkService;
+import com.android.internal.telephony.cat.CatService;
 import com.android.internal.telephony.test.SimulatedRadioControl;
 import com.android.internal.telephony.IccVmNotSupportedException;
 
@@ -101,7 +101,7 @@ public class GSMPhone extends PhoneBase {
     GsmSMSDispatcher mSMS;
     SIMRecords mSIMRecords;
     SimCard mSimCard;
-    StkService mStkService;
+    CatService mCatService;
     ArrayList <GsmMmiCode> mPendingMMIs = new ArrayList<GsmMmiCode>();
     SimPhoneBookInterfaceManager mSimPhoneBookIntManager;
     SimSmsInterfaceManager mSimSmsIntManager;
@@ -153,7 +153,7 @@ public class GSMPhone extends PhoneBase {
             mSimSmsIntManager = new SimSmsInterfaceManager(this);
             mSubInfo = new PhoneSubInfo(this);
         }
-        mStkService = StkService.getInstance(mCM, mSIMRecords, mContext,
+        mCatService = CatService.getInstance(mCM, mSIMRecords, mContext,
                 (SIMFileHandler)mIccFileHandler, mSimCard);
 
         mCM.registerForAvailable(this, EVENT_RADIO_AVAILABLE, null);
@@ -219,7 +219,7 @@ public class GSMPhone extends PhoneBase {
             mPendingMMIs.clear();
 
             //Force all referenced classes to unregister their former registered events
-            mStkService.dispose();
+            mCatService.dispose();
             mCT.dispose();
             mDataConnection.dispose();
             mSST.dispose();
@@ -234,7 +234,7 @@ public class GSMPhone extends PhoneBase {
 
     public void removeReferences() {
             this.mSimulatedRadioControl = null;
-            this.mStkService = null;
+            this.mCatService = null;
             this.mSimPhoneBookIntManager = null;
             this.mSimSmsIntManager = null;
             this.mSMS = null;
@@ -1477,6 +1477,10 @@ public class GSMPhone extends PhoneBase {
 
     public void setCellBroadcastSmsConfig(int[] configValuesArray, Message response){
         Log.e(LOG_TAG, "Error! This functionality is not implemented for GSM.");
+    }
+
+    public boolean isCspPlmnEnabled() {
+        return mSIMRecords.isCspPlmnEnabled();
     }
 
 }

@@ -993,7 +993,7 @@ public final class SimulatedCommands extends BaseCommands
         unimplemented(result);
     }
 
-    public void reportStkServiceIsRunning(Message result) {
+    public void reportCatServiceIsRunning(Message result) {
         resultSuccess(result, null);
     }
 

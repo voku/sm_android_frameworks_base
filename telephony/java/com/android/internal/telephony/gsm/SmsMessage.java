@@ -920,6 +920,7 @@ public class SmsMessage extends SmsMessageBase{
         // TP-Message-Type-Indicator
         // 9.2.3
         case 0:
+        case 3:
             parseSmsDeliver(p, firstByte);
             break;
         case 2:

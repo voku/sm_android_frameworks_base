@@ -25,6 +25,8 @@ package com.android.internal.telephony.gsm;
  *
  */
 public interface CallFailCause {
+    static final int UNOBTAINABLE_NUMBER = 1;
+
     static final int NORMAL_CLEARING     = 16;
     // Busy Tone
     static final int USER_BUSY           = 17;
