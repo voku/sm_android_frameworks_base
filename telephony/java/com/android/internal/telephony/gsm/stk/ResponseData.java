@@ -28,6 +28,13 @@ abstract class ResponseData {
      * the ByteArrayOutputStream object.
      */
     public abstract void format(ByteArrayOutputStream buf);
+
+    public static void writeLength(ByteArrayOutputStream buf, int length) {
+        if (length > 0x7F) {
+            buf.write(0x81);
+        }
+        buf.write(length);
+    }
 }
 
 class SelectItemResponseData extends ResponseData {
@@ -120,7 +127,8 @@ class GetInkeyInputResponseData extends ResponseData {
         }
 
         // length - one more for data coding scheme.
-        buf.write(data.length + 1);
+        //buf.write(data.length + 1);
+        writeLength(buf, data.length + 1);
 
         // data coding scheme
         if (mIsUcs2) {
