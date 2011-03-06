@@ -119,7 +119,7 @@ abstract class VpnService<E extends VpnProfile> implements Serializable {
 
     // intended for override by subclasses
     protected void recover() {
-	startConnectivityMonitor();
+        startConnectivityMonitor();
     }
 
     void recover(VpnServiceBinder context) {
@@ -128,8 +128,8 @@ abstract class VpnService<E extends VpnProfile> implements Serializable {
 
         if (VpnState.CONNECTED.equals(mState)) {
             Log.i("VpnService", "     recovered: " + mProfile.getName());
-	    recover();
-	}
+            recover();
+        }
     }
 
     VpnState getState() {
@@ -159,7 +159,7 @@ abstract class VpnService<E extends VpnProfile> implements Serializable {
             setState(VpnState.DISCONNECTING);
             mNotification.showDisconnect();
 
-	    disconnect();
+            disconnect();
         } catch (Throwable e) {
             Log.e(TAG, "onDisconnect()", e);
         } finally {
@@ -220,18 +220,18 @@ abstract class VpnService<E extends VpnProfile> implements Serializable {
     }
 
     void setVpnStateUp(boolean state) throws IOException {
-    	if (state) {
-    		SystemProperties.set(VPN_STATUS, VPN_IS_UP);
-    		onConnected();
-    		mNotification.update(System.currentTimeMillis());
-    	} else {
-    		SystemProperties.set(VPN_STATUS, VPN_IS_DOWN);
-    	}
+        if (state) {
+            SystemProperties.set(VPN_STATUS, VPN_IS_UP);
+            onConnected();
+            mNotification.update(System.currentTimeMillis());
+        } else {
+            SystemProperties.set(VPN_STATUS, VPN_IS_DOWN);
+        }
     }
 
     void vpnStateUpdate(long in, long out) {
-    	// currently don't show in and out bytes in status
-    	mNotification.update(System.currentTimeMillis());
+        // currently don't show in and out bytes in status
+        mNotification.update(System.currentTimeMillis());
     }
 
     private synchronized void onConnected() throws IOException {
@@ -303,10 +303,10 @@ abstract class VpnService<E extends VpnProfile> implements Serializable {
     private void setVpnDns() {
         String vpnDns1 = SystemProperties.get(VPN_DNS1);
         String vpnDns2 = SystemProperties.get(VPN_DNS2);
-	if (vpnDns1.length() == 0) {
-	    Log.i(TAG, "No vpn dns supplied, not updating");
-	    return;
-	}
+        if (vpnDns1.length() == 0) {
+            Log.i(TAG, "No vpn dns supplied, not updating");
+            return;
+        }
 
         SystemProperties.set(DNS1, vpnDns1);
         SystemProperties.set(DNS2, vpnDns2);

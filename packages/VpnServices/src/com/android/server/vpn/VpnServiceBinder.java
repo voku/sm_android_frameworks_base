@@ -54,7 +54,9 @@ public class VpnServiceBinder extends Service {
     private VpnService<? extends VpnProfile> mService;
 
     private static String getStateFilePath() {
-	return Environment.getDataDirectory().getPath() + STATES_FILE_RELATIVE_PATH;
+        // This call will return the correcu directory whether Encrypted FS is enabled or not
+        // Disabled: /data/misc/vpn/.states   Enabled: /data/secure/misc/vpn/.states
+	return Environment.getSecureDataDirectory().getPath() + STATES_FILE_RELATIVE_PATH;
     }
 
     private final IBinder mBinder = new IVpnService.Stub() {
@@ -160,10 +162,10 @@ public class VpnServiceBinder extends Service {
                 l2tp.setContext(this, (L2tpProfile) p);
                 return l2tp;
 
-	    case OPENVPN:
-		OpenvpnService ovpn = new OpenvpnService();
-		ovpn.setContext(this, (OpenvpnProfile)p );
-		return ovpn;
+            case OPENVPN:
+                OpenvpnService ovpn = new OpenvpnService();
+                ovpn.setContext(this, (OpenvpnProfile)p );
+                return ovpn;
 
             case PPTP:
                 PptpService pptp = new PptpService();

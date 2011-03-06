@@ -41,7 +41,7 @@ import android.util.Log;
  */
 public class VpnManager {
     // Action for broadcasting a connectivity state.
-    private static final String ACTION_VPN_CONNECTIVITY = "vpn.connectivity";
+    public static final String ACTION_VPN_CONNECTIVITY = "vpn.connectivity";
     /** Key to the profile name of a connectivity broadcast event. */
     public static final String BROADCAST_PROFILE_NAME = "profile_name";
     /** Key to the connectivity state of a connectivity broadcast event. */
@@ -85,7 +85,8 @@ public class VpnManager {
 
     // TODO(oam): Test VPN when EFS is enabled (will do later)...
     public static String getProfilePath() {
-        return Environment.getDataDirectory().getPath() + PROFILES_PATH;
+        // This call will return the correct path if Encrypted FS is enabled or not.
+        return Environment.getSecureDataDirectory().getPath() + PROFILES_PATH;
     }
 
     /**
