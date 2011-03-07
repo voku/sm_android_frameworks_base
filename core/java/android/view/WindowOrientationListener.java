@@ -207,7 +207,7 @@ public abstract class WindowOrientationListener {
 
         // Maximum absolute tilt angle at which to consider orientation changes.  Beyond this (i.e.
         // when screen is facing the sky or ground), we refuse to make any orientation changes.
-        private static final int MAX_TILT = 40;
+        private static final int MAX_TILT = 45;
 
         // Additional limits on tilt angle to transition to each new orientation.  We ignore all
         // vectors with tilt beyond MAX_TILT, but we can set stricter limits on transition to a
@@ -240,10 +240,10 @@ public abstract class WindowOrientationListener {
         // When device is near-vertical (screen approximately facing the horizon)
         private static final int DEFAULT_TIME_CONSTANT_MS = 200;
         // When device is partially tilted towards the sky or ground
-        private static final int TILTED_TIME_CONSTANT_MS = 600;
+        private static final int TILTED_TIME_CONSTANT_MS = 200;
         // When device is under external acceleration, i.e. not just gravity.  We heavily distrust
         // such readings.
-        private static final int ACCELERATING_TIME_CONSTANT_MS = 1000;
+        private static final int ACCELERATING_TIME_CONSTANT_MS = 600;
 
         // As is, the lowpass was creating an extra cycle in processing
         // the orientation.
