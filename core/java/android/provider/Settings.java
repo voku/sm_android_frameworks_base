@@ -1290,11 +1290,15 @@ public final class Settings {
 
         /**
          * Wake screen on new notification or not.
+         *
+         * @hide
          */
         public static final String NOTIFICATION_SCREEN_LIGHTER = "notification_screen_lighter";
 
         /**
          * Time to wake on new notification.
+         *
+         * @hide
          */
         public static final String NOTIFICATION_SCREEN_LIGHTER_TIME = "notification_screen_lighter_time";
 
