@@ -2087,7 +2087,7 @@ public class StatusBarService extends IStatusBar.Stub
                                 Settings.System.WIDGET_BUTTONS);
         Log.i("setupPowerWidget", "List: "+lists);
         if(lists == null) {
-            lists = "toggleWifi|toggleBluetooth|toggleGPS|toggleSound";
+            lists = "toggleWifi|toggleBluetooth|toggleGPS|toggleBrightness|toggleMobileData";
         }
         List<String> list = Arrays.asList(lists.split("\\|"));
         clearWidget();

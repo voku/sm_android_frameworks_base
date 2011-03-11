@@ -49,7 +49,7 @@ class StatusBarIcon {
     private TextView mTextView;
     private AnimatedImageView mImageView;
     private TextView mNumberView;
-    private int clockColor = 0xffffffff;
+    private int clockColor = 0xff8bc800;
     private int batteryPercentColor = 0xffffffff;
     private int notifCountColor = 0xffffffff;
     private Context mContext;
