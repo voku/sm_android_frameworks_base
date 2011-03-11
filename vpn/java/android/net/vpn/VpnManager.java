@@ -69,7 +69,7 @@ public class VpnManager {
     /** Error code to indicate a successful connection. */
     public static final int VPN_ERROR_NO_ERROR = 0;
 
-    public static final String PROFILES_PATH = "/data/misc/vpn/profiles";
+    public static final String PROFILES_PATH = "/misc/vpn/profiles";
 
     private static final String PACKAGE_PREFIX =
             VpnManager.class.getPackage().getName() + ".";
@@ -83,10 +83,8 @@ public class VpnManager {
 
     public static final String TAG = VpnManager.class.getSimpleName();
 
-    // TODO(oam): Test VPN when EFS is enabled (will do later)...
     public static String getProfilePath() {
-        // This call will return the correct path if Encrypted FS is enabled or not.
-        return Environment.getSecureDataDirectory().getPath() + PROFILES_PATH;
+	    return Environment.getDataDirectory().getPath() + PROFILES_PATH;
     }
 
     /**

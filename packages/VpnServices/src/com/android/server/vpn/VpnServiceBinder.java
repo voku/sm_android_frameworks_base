@@ -48,15 +48,13 @@ public class VpnServiceBinder extends Service {
     private static final String TAG = VpnServiceBinder.class.getSimpleName();
     private static final boolean DBG = true;
 
-    private static final String STATES_FILE_RELATIVE_PATH = "/data/misc/vpn/.states";
+    private static final String STATES_FILE_PATH = "/misc/vpn/.states";
 
     // The actual implementation is delegated to the VpnService class.
     private VpnService<? extends VpnProfile> mService;
 
     private static String getStateFilePath() {
-        // This call will return the correcu directory whether Encrypted FS is enabled or not
-        // Disabled: /data/misc/vpn/.states   Enabled: /data/secure/misc/vpn/.states
-	return Environment.getSecureDataDirectory().getPath() + STATES_FILE_RELATIVE_PATH;
+	    return Environment.getDataDirectory().getPath() + STATES_FILE_PATH;
     }
 
     private final IBinder mBinder = new IVpnService.Stub() {
