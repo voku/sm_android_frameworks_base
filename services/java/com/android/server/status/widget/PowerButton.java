@@ -108,6 +108,14 @@ public abstract class PowerButton {
             case 4: return R.id.exp_power_stat_4;
             case 5: return R.id.exp_power_stat_5;
             case 6: return R.id.exp_power_stat_6;
+            case 7: return R.id.exp_power_stat_7;
+            case 8: return R.id.exp_power_stat_8;
+            case 9: return R.id.exp_power_stat_9;
+            case 10: return R.id.exp_power_stat_10;
+            case 11: return R.id.exp_power_stat_11;
+            case 12: return R.id.exp_power_stat_12;
+            case 13: return R.id.exp_power_stat_13;
+            case 14: return R.id.exp_power_stat_14;
         }
         return 0;
     }
@@ -120,6 +128,14 @@ public abstract class PowerButton {
             case 4: return R.id.exp_power_image_4;
             case 5: return R.id.exp_power_image_5;
             case 6: return R.id.exp_power_image_6;
+            case 7: return R.id.exp_power_image_7;
+            case 8: return R.id.exp_power_image_8;
+            case 9: return R.id.exp_power_image_9;
+            case 10: return R.id.exp_power_image_10;
+            case 11: return R.id.exp_power_image_11;
+            case 12: return R.id.exp_power_image_12;
+            case 13: return R.id.exp_power_image_13;
+            case 14: return R.id.exp_power_image_14;
         }
         return 0;
     }
@@ -132,6 +148,14 @@ public abstract class PowerButton {
             case 4: return R.id.exp_power_indic_4;
             case 5: return R.id.exp_power_indic_5;
             case 6: return R.id.exp_power_indic_6;
+            case 7: return R.id.exp_power_indic_7;
+            case 8: return R.id.exp_power_indic_8;
+            case 9: return R.id.exp_power_indic_9;
+            case 10: return R.id.exp_power_indic_10;
+            case 11: return R.id.exp_power_indic_11;
+            case 12: return R.id.exp_power_indic_12;
+            case 13: return R.id.exp_power_indic_13;
+            case 14: return R.id.exp_power_indic_14;
         }
         return 0;
     }
