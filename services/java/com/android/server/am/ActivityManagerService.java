@@ -13856,12 +13856,28 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             adj = FOREGROUND_APP_ADJ;
             schedGroup = Process.THREAD_GROUP_DEFAULT;
             app.adjType = "mms";
-        } else if ("com.noshufou.android.su".equals(app.processName)) {
+        } else if ("com.noshufou.android.su".equals(app.processName)) &&
+            Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.LOCK_SUPERUSER_IN_MEMORY, 1) == 1 ) {
             // Superuser app must be active all the time to ensure SU access.
             // Always push it to the top.
             adj = FOREGROUND_APP_ADJ;
             schedGroup = Process.THREAD_GROUP_DEFAULT;
-            app.adjType = "superuser";
+            app.adjType = "su";
+        } else if ("com.android.phone".equals(app.processName) &&
+            Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.LOCK_PHONE_IN_MEMORY, 1) == 1 ) {
+            // to make phone be more like phone
+            adj = FOREGROUND_APP_ADJ;
+            schedGroup = Process.THREAD_GROUP_DEFAULT;
+            app.adjType = "phone";
+        } else if ("com.android.contacts".equals(app.processName) &&
+            Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.LOCK_CONTACTS_IN_MEMORY, 1) == 1 ) {
+            // to make phone be more like phone
+            adj = FOREGROUND_APP_ADJ;
+            schedGroup = Process.THREAD_GROUP_DEFAULT;
+            app.adjType = "contacts";
         } else if (app == TOP_APP) {
             // The last app on the list is the foreground app.
             adj = FOREGROUND_APP_ADJ;
