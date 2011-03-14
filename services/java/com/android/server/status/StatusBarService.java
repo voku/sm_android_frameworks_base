@@ -2150,7 +2150,7 @@ public class StatusBarService extends IStatusBar.Stub
     }
 
     private void clearWidget() {
-        for(int posi = 0; posi < 6; posi++) {
+        for(int posi = 0; posi < 14; posi++) {
             LinearLayout layout = (LinearLayout)mExpandedView.findViewById(PowerButton.getLayoutID(posi + 1));
             layout.setVisibility(View.GONE);
             layout.setTag("");
