@@ -13856,7 +13856,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             adj = FOREGROUND_APP_ADJ;
             schedGroup = Process.THREAD_GROUP_DEFAULT;
             app.adjType = "mms";
-        } else if ("com.noshufou.android.su".equals(app.processName)) &&
+        } else if ("com.noshufou.android.su".equals(app.processName) &&
             Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCK_SUPERUSER_IN_MEMORY, 1) == 1 ) {
             // Superuser app must be active all the time to ensure SU access.
