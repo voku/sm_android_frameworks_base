@@ -413,14 +413,7 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
     
     glEnable(GL_TEXTURE_2D);
 
-    int renderEffect = mFlinger->getRenderEffect();
-    int renderColorR = mFlinger->getRenderColorR();
-    int renderColorG = mFlinger->getRenderColorG();
-    int renderColorB = mFlinger->getRenderColorB();
-
-    bool noEffect = renderEffect == 0;
-
-    if (UNLIKELY(s.alpha < 0xFF) && noEffect) {
+     if (UNLIKELY(s.alpha < 0xFF)) {
         // We have an alpha-modulation. We need to modulate all
         // texture components by alpha because we're always using 
         // premultiplied alpha.
@@ -452,46 +445,7 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
         } else {
             glDisable(GL_BLEND);
         }
-    } else {
-        // Apply a render effect, which is simple color masks for now.
-        GLenum env, src;
-        env = GL_MODULATE;
-        src = mPremultipliedAlpha ? GL_ONE : GL_SRC_ALPHA;
-        const GGLfixed alpha = (s.alpha << 16)/255;
-        switch (renderEffect) {
-            case RENDER_EFFECT_NIGHT:
-                glColor4x(alpha, 0, 0, alpha);
-                break;
-            case RENDER_EFFECT_TERMINAL:
-                glColor4x(0, alpha, 0, alpha);
-                break;
-            case RENDER_EFFECT_BLUE:
-                glColor4x(0, 0, alpha, alpha);
-                break;
-            case RENDER_EFFECT_AMBER:
-                glColor4x(alpha, alpha*0.75, 0, alpha);
-                break;
-            case RENDER_EFFECT_SALMON:
-                glColor4x(alpha, alpha*0.5, alpha*0.5, alpha);
-                break;
-            case RENDER_EFFECT_FUSCIA:
-                glColor4x(alpha, 0, alpha*0.5, alpha);
-                break;
-            case RENDER_EFFECT_N1_CALIBRATED_N:
-                glColor4x(alpha*renderColorR/1000, alpha*renderColorG/1000, alpha*renderColorB/1000, alpha);
-                break;
-            case RENDER_EFFECT_N1_CALIBRATED_R:
-                glColor4x(alpha*(renderColorR-50)/1000, alpha*renderColorG/1000, alpha*(renderColorB-30)/1000, alpha);
-                break;
-            case RENDER_EFFECT_N1_CALIBRATED_C:
-                glColor4x(alpha*renderColorR/1000, alpha*renderColorG/1000, alpha*(renderColorB+30)/1000, alpha);
-                break;
-        }
-        glEnable(GL_BLEND);
-        glBlendFunc(src, GL_ONE_MINUS_SRC_ALPHA);
-        glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, env);
-    }
-
+ 
     Region::const_iterator it = clip.begin();
     Region::const_iterator const end = clip.end();
 

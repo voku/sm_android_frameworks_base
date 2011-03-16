@@ -2088,27 +2088,7 @@ public final class Settings {
         public static final String NOTIFICATION_LIGHT_PULSE = "notification_light_pulse";
 
         /**
-         * Whether the notification LED should repeatedly blink when a notification is
-         * pending. The value is boolean (1 or 0).
-         * @hide
-         */
-        public static final String NOTIFICATION_LIGHT_BLINK = "notification_light_blink";
 
-        /**
-         * Whether to show turn off the notification LED (and charging light
-         * off) when screen is on. The value is boolean (1 or 0).
-         * @hide
-         */
-        public static final String NOTIFICATION_LIGHT_ALWAYS_ON = "notification_light_always_on";
-
-        /**
-         * Whether to turn on the amber LED while charging (and notifications light off).
-         * The value is boolean (1 or 0).
-         * @hide
-         */
-        public static final String NOTIFICATION_LIGHT_CHARGING = "notification_light_charging";
-
-        /**
          * Show pointer location on screen?
          * 0 = no
          * 1 = yes
@@ -2192,54 +2172,6 @@ public final class Settings {
          * @hide
          */
         public static final String HOLD_UNLOCK_SCREEN = "hold_unlock_screen";
-
-        /**
-         * Pulse the Trackball with Screen On.  The value is boolean (1 or 0).
-         * @hide
-         */
-        public static final String TRACKBALL_SCREEN_ON = "trackball_screen_on";
-
-         /**
-          * Pulse notifications in Succession.  The value is boolean (1 or 0).
-          * @hide
-          */
-         public static final String TRACKBALL_NOTIFICATION_SUCCESSION = "trackball_sucession";
-
-         /**
-          * Pulse notifications in Succession.  The value is boolean (1 or 0).
-          * @hide
-          */
-         public static final String TRACKBALL_NOTIFICATION_RANDOM = "trackball_random_colors";
-
-         /**
-          * Pulse notifications in Succession.  The value is boolean (1 or 0).
-          * @hide
-          */
-         public static final String TRACKBALL_NOTIFICATION_PULSE_ORDER = "trackball_pulse_in_order";
-
-	/**
-          * Beldn Notification Colors.  The value is boolean (1 or 0).
-          * @hide
-          */
-         public static final String TRACKBALL_NOTIFICATION_BLEND_COLOR = "trackball_blend_color";
-
-        /**
-         * Trackball Notification Colors. The value is String  pkg=color|pkg=color
-         * @hide
-         */
-        public static final String NOTIFICATION_PACKAGE_COLORS = "pref_package_colors";
-
-        /**
-         * Trackball Notification List. The value is String  pkg|pkg
-         * @hide
-         */
-        public static final String NOTIFICATION_PACKAGE_LIST = "pref_package_list";
-
-        /**
-         * Trackball Notification Colors Debugging. The value is boolean (1 or 0)
-         * @hide
-         */
-        public static final String NOTIFICATION_PACKAGE_COLORS_GET_PACK = "0";
 
         /**
          * Whether to unlock the menu key.  The value is boolean (1 or 0).
@@ -2574,9 +2506,6 @@ public final class Settings {
             LOCKSCREEN_SOUNDS_ENABLED,
             SHOW_WEB_SUGGESTIONS,
             NOTIFICATION_LIGHT_PULSE,
-            NOTIFICATION_LIGHT_BLINK,
-            NOTIFICATION_LIGHT_ALWAYS_ON,
-            NOTIFICATION_LIGHT_CHARGING,
             HAPTIC_FEEDBACK_UP_ENABLED,
             HAPTIC_FEEDBACK_ALL_ENABLED,
             HAPTIC_DOWN_ARRAY,

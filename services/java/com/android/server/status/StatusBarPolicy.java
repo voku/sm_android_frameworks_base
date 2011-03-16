@@ -746,9 +746,7 @@ public class StatusBarPolicy {
         }
 
         //show battery percentage if not plugged in and status is enabled
-        if (plugged || level >= 100 ||
-                Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.BATTERY_PERCENTAGE_STATUS_ICON, 0) == 0) {
+        if (plugged) {
             mBatteryData.number = -1;
         } else {
             mBatteryData.number = level;
