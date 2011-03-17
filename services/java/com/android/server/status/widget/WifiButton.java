@@ -155,7 +155,9 @@ public class WifiButton extends PowerButton{
 
     public void toggleState(Context context) {
         int realstate = sWifiState.getActualState(context);
-        sWifiState.toggleState(context);
+        if(realstate != STATE_TURNING_ON) {
+            sWifiState.toggleState(context);
+        }
     }
 
     public boolean launchActivity(Context context) {
