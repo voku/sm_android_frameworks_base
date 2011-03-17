@@ -2271,6 +2271,18 @@ public final class Settings {
         public static final String LOCKSCREEN_DPAD_MUSIC_CONTROLS = "dpad_music_controls";
 
         /**
+         * Whether to show currently playing song title and artist
+         * @hide
+         */
+        public static final String LOCKSCREEN_NOW_PLAYING = "lockscreen_now_playing";
+
+        /**
+         * Whether to show currently playing song album art
+         * @hide
+         */
+        public static final String LOCKSCREEN_ALBUM_ART = "lockscreen_album_art";
+
+        /**
          * Whether to always show lockscreen battery info
          * @hide
          */
