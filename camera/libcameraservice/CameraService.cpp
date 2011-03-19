@@ -685,8 +685,9 @@ status_t CameraService::Client::registerPreviewBuffers()
     }
 
     // don't use a hardcoded format here
+    // fix by vflashbirdv
     ISurface::BufferHeap buffers(w, h, w, h,
-                                 HAL_PIXEL_FORMAT_YCrCb_420_SP,
+                                 HAL_PIXEL_FORMAT_YCbCr_420_P,
                                  mOrientation,
                                  0,
                                  mHardware->getPreviewHeap());
@@ -1029,8 +1030,9 @@ void CameraService::Client::handleShutter(
         }
 
         // FIXME: don't use hardcoded format constants here
+        // fix by vflashbirdv
         ISurface::BufferHeap buffers(w, h, w, h,
-            HAL_PIXEL_FORMAT_YCrCb_420_SP, mOrientation, 0,
+            HAL_PIXEL_FORMAT_YCbCr_420_P, mOrientation, 0,
             mHardware->getRawHeap());
 
         mSurface->registerBuffers(buffers);
