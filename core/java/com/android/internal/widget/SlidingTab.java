@@ -231,6 +231,10 @@ public class SlidingTab extends ViewGroup {
             text.setText(resId);
         }
 
+        void setHintText(String string) {
+            text.setText(string);
+        }
+
         void hide() {
             boolean horiz = alignment == ALIGN_LEFT || alignment == ALIGN_RIGHT;
             int dx = horiz ? (alignment == ALIGN_LEFT ? alignment_value - tab.getRight()
@@ -299,11 +303,27 @@ public class SlidingTab extends ViewGroup {
             int dy = horiz ? 0 : (alignment == ALIGN_TOP ? alignment_value - tab.getTop()
                     : alignment_value - tab.getBottom());
             if (animate) {
-                TranslateAnimation trans = new TranslateAnimation(0, dx, 0, dy);
-                trans.setDuration(ANIM_DURATION);
-                trans.setFillAfter(false);
-                text.startAnimation(trans);
-                tab.startAnimation(trans);
+                TranslateAnimation trans1 = new TranslateAnimation(0, dx, 0, dy);
+                trans1.setDuration(ANIM_DURATION);
+                trans1.setInterpolator(new LinearInterpolator());
+                trans1.setFillAfter(true);
+                TranslateAnimation trans2 = new TranslateAnimation(0, dx, 0, dy);
+                trans2.setDuration(ANIM_DURATION);
+                trans2.setInterpolator(new LinearInterpolator());
+                trans2.setFillAfter(true);
+
+                trans1.setAnimationListener(new AnimationListener() {
+                    public void onAnimationEnd(Animation animation) {
+                        reset(false);
+                    }
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+                    public void onAnimationStart(Animation animation) {
+                    }
+
+                });
+                tab.startAnimation(trans1);
+                text.startAnimation(trans2);
             } else {
                 if (horiz) {
                     text.offsetLeftAndRight(dx);
@@ -419,7 +439,7 @@ public class SlidingTab extends ViewGroup {
         /**
          * Start animating the slider. Note we need two animations since an Animator
          * keeps internal state of the invalidation region which is just the view being animated.
-         *
+         * 
          * @param anim1
          * @param anim2
          */
@@ -611,7 +631,7 @@ public class SlidingTab extends ViewGroup {
                     mTracking = false;
                     mTriggered = false;
                     mOtherSlider.show(true);
-                    mCurrentSlider.reset(false);
+                    mCurrentSlider.reset(true);
                     mCurrentSlider.hideTarget();
                     mCurrentSlider = null;
                     mOtherSlider = null;
@@ -766,6 +786,12 @@ public class SlidingTab extends ViewGroup {
         }
     }
 
+    public void setLeftHintText(String string) {
+        if (isHorizontal()) {
+            mLeftSlider.setHintText(string);
+        }
+    }
+
     /**
      * Sets the right handle icon to a given resource.
      *
@@ -793,6 +819,12 @@ public class SlidingTab extends ViewGroup {
     public void setRightHintText(int resId) {
         if (isHorizontal()) {
             mRightSlider.setHintText(resId);
+        }
+    }
+
+    public void setRightHintText(String string) {
+        if (isHorizontal()) {
+            mRightSlider.setHintText(string);
         }
     }
 

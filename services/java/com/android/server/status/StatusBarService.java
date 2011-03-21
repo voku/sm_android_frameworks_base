@@ -100,7 +100,6 @@ import com.android.server.status.widget.NetworkModeButton;
 import com.android.server.status.widget.LockScreenButton;
 import com.android.server.status.widget.AutoRotateButton;
 import com.android.server.status.widget.AirplaneButton;
-import com.android.server.status.widget.FlashlightButton;
 import com.android.server.status.widget.SleepButton;
 
 /**
@@ -2136,8 +2135,6 @@ public class StatusBarService extends IStatusBar.Stub
             btn = AutoRotateButton.getInstance();
         } else if(PowerButton.TOGGLE_AIRPLANE.equals(buttonType)) {
             btn = AirplaneButton.getInstance();
-        } else if(PowerButton.TOGGLE_FLASHLIGHT.equals(buttonType)) {
-            btn = FlashlightButton.getInstance();
         } else if(PowerButton.TOGGLE_SLEEPMODE.equals(buttonType)) {
             btn = SleepButton.getInstance();
         }
