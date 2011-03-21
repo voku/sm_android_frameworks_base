@@ -60,12 +60,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_1"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_2"
                     android:layout_width="0dip"
@@ -82,12 +76,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_2"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_3"
@@ -106,12 +94,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_3"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_4"
                     android:layout_width="0dip"
@@ -128,12 +110,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_4"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_5"
@@ -152,12 +128,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_5"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_6"
                     android:layout_width="0dip"
@@ -174,12 +144,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_6"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_7"
@@ -198,12 +162,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_7"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_8"
                     android:layout_width="0dip"
@@ -220,12 +178,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_8"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_9"
@@ -244,12 +196,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_9"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_10"
                     android:layout_width="0dip"
@@ -266,12 +212,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_10"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_11"
@@ -290,12 +230,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_11"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_12"
                     android:layout_width="0dip"
@@ -312,12 +246,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_12"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_13"
@@ -336,12 +264,6 @@
                             android:layout_weight="1"
                             android:scaleType="center"
                             />
-                    <ImageView android:id="@+id/exp_power_indic_13"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
-                            />
                 </LinearLayout>
                 <LinearLayout android:id="@+id/exp_power_stat_14"
                     android:layout_width="0dip"
@@ -358,12 +280,6 @@
                             android:layout_height="0dip"
                             android:layout_weight="1"
                             android:scaleType="center"
-                            />
-                    <ImageView android:id="@+id/exp_power_indic_14"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:scaleType="fitXY"
-                            android:visibility="gone"
                             />
                 </LinearLayout>
             </LinearLayout>

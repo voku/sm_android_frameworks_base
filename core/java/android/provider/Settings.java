@@ -2334,10 +2334,10 @@ public final class Settings {
         public static final String LOCKSCREEN_ROTARY_HIDE_ARROWS = "lockscreen_rotary_hide_arrows";
 
         /**
-         * Sets the lockscreen style
+         * Sets the lockscreen mode
          * @hide
          */
-        public static final String LOCKSCREEN_STYLE_PREF = "lockscreen_style_pref";
+        public static final String LOCKSCREEN_MODE = "lockscreen_mode";
 
         /**
          * Whether to use a custom pull-down notification screen
@@ -2362,12 +2362,6 @@ public final class Settings {
          * @hide
          */
         public static final String EXPANDED_HIDE_ONCHANGE = "expanded_hide_onchange";
-
-        /**
-         * Notification Indicator Color
-         * @hide
-         */
-        public static final String EXPANDED_VIEW_WIDGET_COLOR = "expanded_widget_color";
 
         /**
          * Widget Buttons to Use

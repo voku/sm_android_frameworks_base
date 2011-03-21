@@ -56,36 +56,13 @@ public abstract class PowerButton {
 
     public void updateView(Context context, ExpandedView views) {
         if(currentPosition > 0) {
-             Resources res = context.getResources();
              int buttonLayer = getLayoutID(currentPosition);
              int buttonIcon = getImageID(currentPosition);
-             int buttonState = getStatusInd(currentPosition);
 
              views.findViewById(buttonLayer).setVisibility(View.VISIBLE);
 
              updateImageView(views, buttonIcon, currentIcon);
 
-             /* Button State */
-             int sColorMaskBase = Settings.System.getInt(context.getContentResolver(),
-                Settings.System.EXPANDED_VIEW_WIDGET_COLOR, 0xFF00EFFF);
-             int sColorMaskOn = (sColorMaskBase & 0x00FFFFFF) | 0xA0000000;
-             int sColorMaskOff = (sColorMaskBase & 0x00FFFFFF) | 0x33000000;
-             int sColorMaskInter = (sColorMaskBase & 0x00FFFFFF) | 0x60000000;
-
-             switch(currentState) {
-                case STATE_ENABLED:
-                    updateImageView(views, buttonState,
-                        res.getDrawable(com.android.internal.R.drawable.stat_bgon_custom, sColorMaskOn, expPDMode));
-                    break;
-                case STATE_DISABLED:
-                    updateImageView(views, buttonState,
-                        res.getDrawable(com.android.internal.R.drawable.stat_bgon_custom, sColorMaskOff, expPDMode));
-                    break;
-                default:
-                    updateImageView(views, buttonState,
-                        res.getDrawable(com.android.internal.R.drawable.stat_bgon_custom, sColorMaskInter, expPDMode));
-                    break;
-             }
         }
     }
 
@@ -135,26 +112,6 @@ public abstract class PowerButton {
             case 12: return R.id.exp_power_image_12;
             case 13: return R.id.exp_power_image_13;
             case 14: return R.id.exp_power_image_14;
-        }
-        return 0;
-    }
-
-    private int getStatusInd(int posi) {
-        switch(posi) {
-            case 1: return R.id.exp_power_indic_1;
-            case 2: return R.id.exp_power_indic_2;
-            case 3: return R.id.exp_power_indic_3;
-            case 4: return R.id.exp_power_indic_4;
-            case 5: return R.id.exp_power_indic_5;
-            case 6: return R.id.exp_power_indic_6;
-            case 7: return R.id.exp_power_indic_7;
-            case 8: return R.id.exp_power_indic_8;
-            case 9: return R.id.exp_power_indic_9;
-            case 10: return R.id.exp_power_indic_10;
-            case 11: return R.id.exp_power_indic_11;
-            case 12: return R.id.exp_power_indic_12;
-            case 13: return R.id.exp_power_indic_13;
-            case 14: return R.id.exp_power_indic_14;
         }
         return 0;
     }
