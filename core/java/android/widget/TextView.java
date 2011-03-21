@@ -41,6 +41,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.ResultReceiver;
 import android.os.SystemClock;
+import android.text.ArShaper;
 import android.text.BoringLayout;
 import android.text.ClipboardManager;
 import android.text.DynamicLayout;
