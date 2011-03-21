@@ -107,14 +107,6 @@ class NotificationManagerService extends INotificationManager.Stub {
 
     private LightsService.Light mAttentionLight;
 
-    private int mDefaultNotificationColor;
-
-    private int mDefaultNotificationLedOn;
-
-    private int mDefaultNotificationLedOff;
-
-    private NotificationRecord mSoundNotification;
-
     private NotificationPlayer mSound;
 
     private boolean mSystemReady;
@@ -129,10 +121,6 @@ class NotificationManagerService extends INotificationManager.Stub {
     private boolean mScreenOn = true;
 
     private boolean mInCall = false;
-
-    private boolean mNotificationPulseEnabled;
-
-    private boolean mGreenLightOn = false;
 
     // for adb connected notifications
     private boolean mUsbConnected;
@@ -350,11 +338,6 @@ class NotificationManagerService extends INotificationManager.Stub {
                     } finally {
                         Binder.restoreCallingIdentity(identity);
                     }
-
-                    // light
-                    mLights.clear();
-                    mLedNotification = null;
-                    updateLightsLocked();
                 }
             }
         };
@@ -434,8 +417,6 @@ class NotificationManagerService extends INotificationManager.Stub {
             ContentResolver resolver = mContext.getContentResolver();
             resolver.registerContentObserver(
                     Settings.Secure.getUriFor(Settings.Secure.ADB_ENABLED), false, this);
-            resolver.registerContentObserver(Settings.System
-                    .getUriFor(Settings.System.NOTIFICATION_LIGHT_PULSE), false, this);
             resolver.registerContentObserver(Settings.System
                     .getUriFor(Settings.System.QUIET_HOURS_ENABLED), false, this);
             resolver.registerContentObserver(Settings.System
@@ -894,19 +875,10 @@ class NotificationManagerService extends INotificationManager.Stub {
                 }
             }
 
-            // light
-            // the most recent thing gets the light
-            mLights.remove(old);
             if (mLedNotification == old) {
                 mLedNotification = null;
             }
-            if (checkLight(notification, pkg)) {
-                mLights.add(r);
-                updateLightsLocked();
-            } else if (old != null && checkLight(old.notification, old.pkg)) {
-                updateLightsLocked();
-            }
-
+            
         }
 
         idOut[0] = id;
@@ -925,16 +897,6 @@ class NotificationManagerService extends INotificationManager.Stub {
             }
         }
         return false;
-    }
-
-    private boolean checkLight(Notification notification, String pkg) {
-        String[] mPackage = findPackage(pkg);
-        boolean flashLight = true;
-     if (((notification.flags & Notification.FLAG_ONGOING_EVENT) != 0)
--                || ((notification.flags & Notification.FLAG_FOREGROUND_SERVICE) != 0)) {
-            flashLight = false;
-        } else if (mPackage != null) {
-        return flashLight;
     }
 
     private void sendAccessibilityEvent(Notification notification, CharSequence packageName) {
@@ -990,11 +952,6 @@ class NotificationManagerService extends INotificationManager.Stub {
             }
         }
 
-        // light
-        mLights.remove(r);
-        if (mLedNotification == r) {
-            mLedNotification = null;
-        }
     }
 
     /**
@@ -1020,7 +977,6 @@ class NotificationManagerService extends INotificationManager.Stub {
                 mNotificationList.remove(index);
 
                 cancelNotificationLocked(r);
-                updateLightsLocked();
             }
         }
     }
@@ -1054,8 +1010,6 @@ class NotificationManagerService extends INotificationManager.Stub {
                 mNotificationList.remove(i);
                 cancelNotificationLocked(r);
             }
-            if (canceledSomething) {
-                updateLightsLocked();
             }
             return canceledSomething;
         }
@@ -1149,23 +1103,6 @@ class NotificationManagerService extends INotificationManager.Stub {
         return temp;
     }
 
-    public String[] findPackage(String pkg) {
-        String mBaseString = Settings.System.getString(mContext.getContentResolver(),
-                Settings.System.NOTIFICATION_PACKAGE_COLORS);
-        String[] mBaseArray = getArray(mBaseString);
-        if (mBaseArray == null) 
-            return null;
-        for (int i = 0; i < mBaseArray.length; i++) {
-            if (isNull(mBaseArray[i])) {
-                continue;
-            }
-            if (mBaseArray[i].contains(pkg)) {
-                return getPackageInfo(mBaseArray[i]);
-            }
-        }
-        return null;
-    }
-
     public class StartTimerClass implements Runnable {
         private long sleepTimer;
 
@@ -1180,7 +1117,6 @@ class NotificationManagerService extends INotificationManager.Stub {
             } catch (InterruptedException e) {
             }
             isTimer = false;
-            updateLights();
             // threadExecutor = null;
         }
     }

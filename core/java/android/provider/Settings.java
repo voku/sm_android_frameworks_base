@@ -2027,18 +2027,6 @@ public final class Settings {
          */
         public static final String UNLOCK_SOUND = "unlock_sound";
 
-        /**
-         * Whether to wake the screen with the trackball. The value is boolean (1 or 0).
-         * @hide
-         */
-        public static final String TRACKBALL_WAKE_SCREEN = "trackball_wake_screen";
-
-        /**
-         * Whether to unlock the screen with the trackball.  The value is boolean (1 or 0).
-         * @hide
-         */
-        public static final String TRACKBALL_UNLOCK_SCREEN = "trackball_unlock_screen";
-
         /** Whether to unlock the screen with the HOLD key.  The value is boolean (1 or 0).
          * @hide
          */
@@ -2079,6 +2067,12 @@ public final class Settings {
          * @hide
          */
         public static final String LOCKSCREEN_DPAD_MUSIC_CONTROLS = "dpad_music_controls";
+		
+		/**
+         * Whether to always show lockscreen battery info
+         * @hide
+         */
+        public static final String LOCKSCREEN_ALWAYS_BATTERY_INFO = "lockscreen_always_battery_info";
 
         /**
          * Whether to show currently playing song title and artist
