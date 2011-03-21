@@ -55,6 +55,9 @@ public class TextUtils {
     private TextUtils() { /* cannot be instantiated */ }
 
     private static String[] EMPTY_STRING_ARRAY = new String[]{};
+	
+	//Arabic shaping debug
+	static boolean debugG= false;
 
     public static void getChars(CharSequence s, int start, int end,
                                 char[] dest, int destoff) {
@@ -72,6 +75,33 @@ public class TextUtils {
             for (int i = start; i < end; i++)
                 dest[destoff++] = s.charAt(i);
         }
+    }
+
+    public static void getCharsDraw(CharSequence s, int start, int end,
+                                char[] dest, int destoff) {
+	Class c = s.getClass();
+
+		if(debugG)
+		{ System.out.println("--getCharsDraw TextUtils,GCD,class is:"+ 
+					c.getName());
+		}
+
+	
+
+        if (c == String.class)		
+            ((String) s).getChars(start, end, dest, destoff);
+        else if (c == StringBuffer.class)
+            ((StringBuffer) s).getChars(start, end, dest, destoff);
+        else if (c == StringBuilder.class)
+            ((StringBuilder) s).getChars(start, end, dest, destoff);
+        else if (s instanceof GetCharsDraw)
+            ((GetCharsDraw) s).getCharsDraw(start, end, dest, destoff);
+	else if (s instanceof SpannableStringInternal){
+
+		for (int i = start; i < end; i++)
+                dest[destoff++] = ((GetCharsDraw)s).charAtDraw(i);
+
+	}
     }
 
     public static int indexOf(CharSequence s, char ch) {
@@ -417,7 +447,12 @@ public class TextUtils {
         if (source instanceof Spanned)
             return new SpannedString(source);
 
-        return source.toString();
+	String sourceS = source.toString();
+	String text = ArShaper.shaper(sourceS,"TextUtils,String");
+
+	return text;
+
+        //return source.toString();
     }
 
     /**
@@ -484,7 +519,7 @@ public class TextUtils {
     }
 
     private static class Reverser
-    implements CharSequence, GetChars
+    implements CharSequence, GetChars, GetCharsDraw
     {
         public Reverser(CharSequence source, int start, int end) {
             mSource = source;
@@ -511,10 +546,53 @@ public class TextUtils {
             return AndroidCharacter.getMirror(mSource.charAt(mEnd - 1 - off));
         }
 
-        public void getChars(int start, int end, char[] dest, int destoff) {
+	 public char charAtDraw(int off) {
+            return AndroidCharacter.getMirror(((GetCharsDraw)mSource).charAtDraw(mEnd - 1 - off));
+        }
+
+        public void getChars(int start, int end, char[] dest, int destoff) {		
             TextUtils.getChars(mSource, start + mStart, end + mStart,
                                dest, destoff);
             AndroidCharacter.mirror(dest, 0, end - start);
+
+            int len = end - start;
+            int n = (end - start) / 2;
+            for (int i = 0; i < n; i++) {
+                char tmp = dest[destoff + i];
+
+                dest[destoff + i] = dest[destoff + len - i - 1];
+                dest[destoff + len - i - 1] = tmp;
+            }
+        }
+
+	public void getCharsDraw(int start, int end, char[] dest, int destoff) {
+
+		if(debugG)
+		{if ( mSource instanceof SpannableStringInternal)
+			 System.out.println("--getCharsDraw reverser,before getCD SSI:"+ 
+					((SpannableStringInternal)mSource).toStringDraw().substring(start,end));
+		else if ( mSource instanceof SpannableStringBuilder)
+			 System.out.println("--getCharsDraw reverser,before getCD SSB:"+ 
+					((SpannableStringBuilder)mSource).toStringDraw().substring(start,end));
+		else  System.out.println("--getCharsDraw reverser,before getCD norm:"+ 
+					mSource.toString().substring(start,end));
+		System.out.println(mSource.length());}
+
+
+            TextUtils.getCharsDraw(mSource, start + mStart, end + mStart,
+                               dest, destoff);
+
+		if(debugG)
+		{System.out.println("--getCharsDraw reverser,after getCD :"+ 
+					String.copyValueOf(dest,destoff,end-start));
+		System.out.println(dest.length);}
+
+            AndroidCharacter.mirror(dest, 0, end - start);
+
+		if(debugG)
+		{System.out.println("--getCharsDraw reverser,after mirror :"+ 
+					String.copyValueOf(dest,destoff,end-start));
+		System.out.println(dest.length);}
 
             int len = end - start;
             int n = (end - start) / 2;

@@ -19,6 +19,7 @@ package android.text.method;
 import android.graphics.Rect;
 import android.text.Editable;
 import android.text.GetChars;
+import android.text.GetCharsDraw;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.SpannedString;
@@ -106,7 +107,7 @@ implements TransformationMethod
     }
 
     private static class ReplacementCharSequence
-    implements CharSequence, GetChars {
+    implements CharSequence, GetChars, GetCharsDraw {
         private char[] mOriginal, mReplacement;
 
         public ReplacementCharSequence(CharSequence source, char[] original,
@@ -133,6 +134,19 @@ implements TransformationMethod
             return c;
         }
 
+	public char charAtDraw(int i) {
+            char c = ((GetCharsDraw)mSource).charAtDraw(i);
+
+            int n = mOriginal.length;
+            for (int j = 0; j < n; j++) {
+                if (c == mOriginal[j]) {
+                    c = mReplacement[j];
+                }
+            }
+
+            return c;
+        }
+
         public CharSequence subSequence(int start, int end) {
             char[] c = new char[end - start];
 
@@ -147,8 +161,31 @@ implements TransformationMethod
             return new String(c);
         }
 
+	public String toStringDraw() {
+            char[] c = new char[length()];
+
+            getCharsDraw(0, length(), c, 0);
+            return new String(c);
+        }
+
         public void getChars(int start, int end, char[] dest, int off) {
             TextUtils.getChars(mSource, start, end, dest, off);
+            int offend = end - start + off;
+            int n = mOriginal.length;
+
+            for (int i = off; i < offend; i++) {
+                char c = dest[i];
+
+                for (int j = 0; j < n; j++) {
+                    if (c == mOriginal[j]) {
+                        dest[i] = mReplacement[j];
+                    }
+                }
+            }
+        }
+
+	public void getCharsDraw(int start, int end, char[] dest, int off) {
+            TextUtils.getCharsDraw(mSource, start, end, dest, off);
             int offend = end - start + off;
             int n = mOriginal.length;
 

@@ -22,6 +22,7 @@ import android.graphics.Rect;
 import android.view.View;
 import android.text.Editable;
 import android.text.GetChars;
+import android.text.GetCharsDraw;
 import android.text.NoCopySpan;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -137,7 +138,7 @@ implements TransformationMethod, TextWatcher
     }
 
     private static class PasswordCharSequence
-    implements CharSequence, GetChars
+    implements CharSequence, GetChars, GetCharsDraw
     {
         public PasswordCharSequence(CharSequence source) {
             mSource = source;
@@ -145,6 +146,34 @@ implements TransformationMethod, TextWatcher
 
         public int length() {
             return mSource.length();
+        }
+
+        public char charAtDraw(int i) {
+            if (mSource instanceof Spanned) {
+                Spanned sp = (Spanned) mSource;
+
+                int st = sp.getSpanStart(TextKeyListener.ACTIVE);
+                int en = sp.getSpanEnd(TextKeyListener.ACTIVE);
+
+                if (i >= st && i < en) {
+                    return ((GetCharsDraw)mSource).charAtDraw(i);
+                }
+
+                Visible[] visible = sp.getSpans(0, sp.length(), Visible.class);
+
+                for (int a = 0; a < visible.length; a++) {
+                    if (sp.getSpanStart(visible[a].mTransformer) >= 0) {
+                        st = sp.getSpanStart(visible[a]);
+                        en = sp.getSpanEnd(visible[a]);
+
+                        if (i >= st && i < en) {
+                            return ((GetCharsDraw)mSource).charAtDraw(i);
+                        }
+                    }
+                }
+            }
+
+            return DOT;
         }
 
         public char charAt(int i) {
@@ -182,8 +211,63 @@ implements TransformationMethod, TextWatcher
             return new String(buf);
         }
 
+	public CharSequence subSequenceDraw(int start, int end) {
+            char[] buf = new char[end - start];
+
+            getCharsDraw(start, end, buf, 0);
+            return new String(buf);
+        }
+
         public String toString() {
             return subSequence(0, length()).toString();
+        }
+
+	public String toStringDraw() {
+            return subSequenceDraw(0, length()).toString();
+        }
+
+	public void getCharsDraw(int start, int end, char[] dest, int off) {
+            TextUtils.getCharsDraw(mSource, start, end, dest, off);
+
+            int st = -1, en = -1;
+            int nvisible = 0;
+            int[] starts = null, ends = null;
+
+            if (mSource instanceof Spanned) {
+                Spanned sp = (Spanned) mSource;
+
+                st = sp.getSpanStart(TextKeyListener.ACTIVE);
+                en = sp.getSpanEnd(TextKeyListener.ACTIVE);
+
+                Visible[] visible = sp.getSpans(0, sp.length(), Visible.class);
+                nvisible = visible.length;
+                starts = new int[nvisible];
+                ends = new int[nvisible];
+
+                for (int i = 0; i < nvisible; i++) {
+                    if (sp.getSpanStart(visible[i].mTransformer) >= 0) {
+                        starts[i] = sp.getSpanStart(visible[i]);
+                        ends[i] = sp.getSpanEnd(visible[i]);
+                    }
+                }
+            }
+
+            for (int i = start; i < end; i++) {
+                if (! (i >= st && i < en)) {
+                    boolean visible = false;
+
+                    for (int a = 0; a < nvisible; a++) {
+                        if (i >= starts[a] && i < ends[a]) {
+                            visible = true;
+                            break;
+                        }
+                    }
+
+                    if (!visible) {
+                        dest[i - start + off] = DOT;
+                    }
+                }
+            }
         }
 
         public void getChars(int start, int end, char[] dest, int off) {

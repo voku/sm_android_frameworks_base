@@ -2749,20 +2749,40 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     private static class CharWrapper
-            implements CharSequence, GetChars, GraphicsOperations {
-        private char[] mChars;
+            implements CharSequence, GetChars, GraphicsOperations, GetCharsDraw {
+        private char[] mChars, mCharsRaw;
         private int mStart, mLength;
 
         public CharWrapper(char[] chars, int start, int len) {
             mChars = chars;
             mStart = start;
             mLength = len;
+
+
+	   //Arabic Shaping : Raw text
+	   mCharsRaw = new char[mChars.length];
+	   StringBuffer tmp = new StringBuffer();
+	   tmp.append(mChars,0,mChars.length);
+	   tmp.getChars(0,mChars.length,mCharsRaw,0);
+
+	   ArShaper.shaper(mChars,start,len,"TextView -- CharWrapper Constructor");
+	   ////////////////////////////////////////////
         }
 
         /* package */ void set(char[] chars, int start, int len) {
             mChars = chars;
             mStart = start;
             mLength = len;
+	
+	    //Arabic Shaping : Raw text
+	    mCharsRaw = new char[mChars.length];
+	    StringBuffer tmp = new StringBuffer();
+	    tmp.append(mChars,0,mChars.length);
+	   tmp.getChars(0,mChars.length,mCharsRaw,0);
+
+	    ArShaper.shaper(mChars,start,len,"TextView -- CharWrapper Constructor");
+	    ////////////////////////////////////////////
+
         }
 
         public int length() {
@@ -2770,10 +2790,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         public char charAt(int off) {
+            return mCharsRaw[off + mStart];
+        }
+
+	public char charAtDraw(int off) {
             return mChars[off + mStart];
         }
 
         public String toString() {
+            return new String(mCharsRaw, mStart, mLength);
+        }
+
+	public String toStringDraw() {
             return new String(mChars, mStart, mLength);
         }
 
@@ -2782,10 +2810,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 throw new IndexOutOfBoundsException(start + ", " + end);
             }
 
-            return new String(mChars, start + mStart, end - start);
+            return new String(mCharsRaw, start + mStart, end - start);
         }
 
         public void getChars(int start, int end, char[] buf, int off) {
+            if (start < 0 || end < 0 || start > mLength || end > mLength) {
+                throw new IndexOutOfBoundsException(start + ", " + end);
+            }
+
+            System.arraycopy(mCharsRaw, start + mStart, buf, off, end - start);
+        }
+
+	public void getCharsDraw(int start, int end, char[] buf, int off) {
             if (start < 0 || end < 0 || start > mLength || end > mLength) {
                 throw new IndexOutOfBoundsException(start + ", " + end);
             }
@@ -2795,7 +2831,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         public void drawText(Canvas c, int start, int end,
                              float x, float y, Paint p) {
-            c.drawText(mChars, start + mStart, end - start, x, y, p,false);
+            c.drawText(mChars, start + mStart, end - start, x, y, p);
         }
 
         public float measureText(int start, int end, Paint p) {

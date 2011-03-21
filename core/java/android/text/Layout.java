@@ -305,13 +305,13 @@ public abstract class Layout {
                     if (spans[n] instanceof LeadingMarginSpan) {
                         LeadingMarginSpan margin = (LeadingMarginSpan) spans[n];
 
-                       // if (dir == DIR_RIGHT_TO_LEFT) {
-                       //     margin.drawLeadingMargin(c, paint, right, dir, ltop,
-                         //                            lbaseline, lbottom, buf,
-                          //                           start, end, isFirstParaLine, this);
-                          //      
-                         //   right -= margin.getLeadingMargin(isFirstParaLine);
-                        //} else {
+                        if (dir == DIR_RIGHT_TO_LEFT) {
+                            margin.drawLeadingMargin(c, paint, right, dir, ltop,
+                                                     lbaseline, lbottom, buf,
+                                                     start, end, isFirstParaLine, this);
+                                
+                            right -= margin.getLeadingMargin(isFirstParaLine);
+                        } else {
                             margin.drawLeadingMargin(c, paint, left, dir, ltop,
                                                      lbaseline, lbottom, buf,
                                                      start, end, isFirstParaLine, this);
@@ -320,7 +320,7 @@ public abstract class Layout {
                             if (margin instanceof LeadingMarginSpan.LeadingMarginSpan2) {
                                 int count = ((LeadingMarginSpan.LeadingMarginSpan2)margin).getLeadingMarginLineCount();
                                 useMargin = count > i;
-                          //  }
+                            }
                             left += margin.getLeadingMargin(useMargin);
                         }
                     }
@@ -364,7 +364,7 @@ public abstract class Layout {
                     Assert.assertTrue(dir == DIR_LEFT_TO_RIGHT);
                     Assert.assertNotNull(c);
                 }
-                c.drawText(buf, start, end, x, lbaseline, paint,false);
+                c.drawText(buf, start, end, x, lbaseline, paint);
             } else {
                 drawText(c, buf, start, end, dir, directions,
                     x, ltop, lbaseline, lbottom, paint, mWorkPaint,
@@ -1392,7 +1392,7 @@ public abstract class Layout {
             buf = null;
         } else {
             buf = TextUtils.obtain(end - start);
-            TextUtils.getChars(text, start, end, buf, 0);
+            TextUtils.getCharsDraw(text, start, end, buf, 0);
         }
 
         float h = 0;
@@ -1475,7 +1475,7 @@ public abstract class Layout {
 
         if (hasTabs) {
             buf = TextUtils.obtain(end - start);
-            TextUtils.getChars(text, start, end, buf, 0);
+            TextUtils.getCharsDraw(text, start, end, buf, 0);
         }
 
         float h = 0;
@@ -1622,7 +1622,7 @@ public abstract class Layout {
   
         if (hasTabs) {
             buf = TextUtils.obtain(end - start);
-            TextUtils.getChars(text, start, end, buf, 0);
+            TextUtils.getCharsDraw(text, start, end, buf, 0);
         }
 
         int len = end - start;
@@ -1839,7 +1839,7 @@ public abstract class Layout {
      */
     public abstract int getEllipsisCount(int line);
 
-    /* package */ static class Ellipsizer implements CharSequence, GetChars {
+    /* package */ static class Ellipsizer implements CharSequence, GetChars, GetCharsDraw {
         /* package */ CharSequence mText;
         /* package */ Layout mLayout;
         /* package */ int mWidth;
@@ -1847,6 +1847,15 @@ public abstract class Layout {
 
         public Ellipsizer(CharSequence s) {
             mText = s;
+        }
+
+        public char charAtDraw(int off) {
+            char[] buf = TextUtils.obtain(1);
+            getChars(off, off + 1, buf, 0);
+            char ret = buf[0];
+
+            TextUtils.recycle(buf);
+            return ret;
         }
 
         public char charAt(int off) {
@@ -1863,6 +1872,17 @@ public abstract class Layout {
             int line2 = mLayout.getLineForOffset(end);
 
             TextUtils.getChars(mText, start, end, dest, destoff);
+
+            for (int i = line1; i <= line2; i++) {
+                mLayout.ellipsize(start, end, i, dest, destoff);
+            }
+       }
+
+       public void getCharsDraw(int start, int end, char[] dest, int destoff) {
+            int line1 = mLayout.getLineForOffset(start);
+            int line2 = mLayout.getLineForOffset(end);
+
+            TextUtils.getCharsDraw(mText, start, end, dest, destoff);
 
             for (int i = line1; i <= line2; i++) {
                 mLayout.ellipsize(start, end, i, dest, destoff);

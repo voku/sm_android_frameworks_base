@@ -24,6 +24,9 @@ import android.util.DisplayMetrics;
 
 import javax.microedition.khronos.opengles.GL;
 
+
+import android.text.ArShaper;
+
 /**
  * The Canvas class holds the "draw" calls. To draw something, you need
  * 4 basic components: A Bitmap to hold the pixels, a Canvas to host
@@ -32,11 +35,13 @@ import javax.microedition.khronos.opengles.GL;
  * drawing).
  */
 public class Canvas {
+
+	boolean debugG = false;
+
+
     // assigned in constructors, freed in finalizer
     final int mNativeCanvas;
-    private static final char FIRST_RIGHT_TO_LEFT = '\u0590';
-    private static final char LAST_RIGHT_TO_LEFT = '\u07b1';
-
+    
     /*  Our native canvas can be either a raster, gl, or picture canvas.
         If we are raster, then mGL will be null, and mBitmap may or may not be
         present (our default constructor creates a raster canvas but no
@@ -1233,141 +1238,6 @@ public class Canvas {
                           indices, indexOffset, indexCount, paint.mNativePaint);
     }
 
-    /**
-    * Since the reshaping algorithm does not test for arabic prior to starting, this is made to 
-    * @hide 
-    **/
-    public static boolean bidiTest(char[] text,int start,int srcCount) {
-
-        boolean hasBidi=false;
-
-        // Check if there are BiDi characters in the string, of so, we need to work. 
-        for (int i=start;i<(srcCount+start);i++){
-            if (text[i]>=FIRST_RIGHT_TO_LEFT&&text[i]<=LAST_RIGHT_TO_LEFT){
-                hasBidi=true;
-                break;
-            }
-        }
-        return hasBidi;
-    }
-    /**
-    * Since the reshaping algorithm does not test for arabic prior to starting, this is made to 
-    * @hide 
-    **/
-    public static boolean bidiTest(String text,int start,int srcCount) {
-
-        boolean hasBidi=false;
-
-        // Check if there are BiDi characters in the string, of so, we need to work. 
-        for (int i=start;i<(srcCount+start);i++){
-            if (text.charAt(i)>=FIRST_RIGHT_TO_LEFT&&text.charAt(i)<=LAST_RIGHT_TO_LEFT){
-                hasBidi=true;
-                break;
-            }
-        }
-        return hasBidi;
-    }
-    /** @hide */
-    private static boolean isPunctuation(char c) {
-        return c<='\u002f' || c=='\u0040' || (c>'\u005a' && c<='\u0060') || (c>'\u007a' && c<='\u00BF');
-    }
-    /** @hide */
-    private static boolean isRTL(char c) {
-        return c>=FIRST_RIGHT_TO_LEFT && c<=LAST_RIGHT_TO_LEFT;
-    }
-    /**
-    * A lightweight BiDi processing to make all draw text work with RTL languages.
-    * @hide 
-    **/
-    private static char reverseParen(char c) {
-        switch (c) {
-        case '[':
-            c=']';
-            break;
-        case ']':
-            c='[';
-            break;
-        case '}':
-            c='{';
-            break;
-        case '{':
-            c='}';
-            break;
-        case '(':
-            c=')';
-            break;
-        case ')':
-            c='(';
-            break;
-        case '>':
-            c='<';
-            break;
-        case '<':
-            c='>';
-            break;
-        }
-        return c;
-    }
-    /** @hide */
-    public static char[] bidiProcess(char[] text,int start,int count) {
-        String cut=new String(text,start,count);
-        char[] tt=new char[count];
-        cut.getChars(0, count, tt, 0);
-        boolean hasRTL=false;
-        for (int ii=0; ii<count; ++ii)
-            if (isRTL(tt[ii])) {
-                hasRTL = true;
-                break;
-            }
-        if (hasRTL) {
-            char[] rev=new char[count];
-            for(int ii=0; ii<count; ++ii)
-                rev[ii] = tt[count-ii-1];
-            // now copy reverse back over tt, but reverse again (fixing) any non-RTL sequences:
-            for(int ii=0; ii<count; ) {
-                if (isRTL(rev[ii]) || isPunctuation(rev[ii])) {
-                    tt[ii] = reverseParen(rev[ii]);
-                    ++ii;
-                } else {
-                    int end=ii+1;
-                    while (end<count && !isRTL(rev[end]) && !isPunctuation(rev[end]))
-                        ++end;
-                    int jj=end;
-                    while (ii<end)
-                        tt[ii++] = rev[--jj];
-                }
-            }
-        }
-        return tt;
-    }
-
-    /** @hide **/
-    public void drawText(char[] text, int index, int count, float x, float y,
-            Paint paint,boolean bidi) {
-        if (((index | count | (index + count)) < 0) ||
-            (index + count) > text.length) {
-            throw new IndexOutOfBoundsException();
-        }
-        boolean hasBidi=bidiTest(text,index,count);
-        if (hasBidi) {
-            if (bidi) {
-                char[] bidiText=bidiProcess(text,index,count);
-                String reshapedText=ArabicReshape.reshape(new String(bidiText));
-                /* The reshaping may make the string smaller */
-                native_drawText(mNativeCanvas, reshapedText.toCharArray(), 0, count - ((count - reshapedText.length())>0 ? (count - reshapedText.length()) : 0), x, y,
-                        paint.mNativePaint);
-            } else {
-                String reshapedText=ArabicReshape.reshape(new String(text));
-                /* The reshaping may make the string smaller */
-                native_drawText(mNativeCanvas, reshapedText.toCharArray(), index, 
-                        count - ((text.length -  reshapedText.length())>0 ? (text.length -  reshapedText.length()) : 0), x, y,
-                        paint.mNativePaint);
-            }
-        } else {
-            native_drawText(mNativeCanvas, text, index, count, x, y,
-                    paint.mNativePaint);
-        }
-    }
 
     /**
      * Draw the text, with origin at (x,y), using the specified paint. The
@@ -1385,16 +1255,40 @@ public class Canvas {
             throw new IndexOutOfBoundsException();
         }
 
-        boolean hasBidi=bidiTest(text,index,count);
-        if (hasBidi) {
-            drawText(text,index,count,x,y,paint,true);
-        } else {
-            native_drawText(mNativeCanvas, text, index, count, x, y,
-                    paint.mNativePaint);
-        }
+		if(debugG)
+		{System.out.println("Before shaping in drawText,char :"+ 
+					String.copyValueOf(text,index,count));
+		System.out.println(text.length);}
+
+	
+	
+	//System.out.println("xxxxxxxxxx ---- > Before shaping in char 1: "+ text );
+	//System.out.println(text);
+	char[] uText = new char[count];
+	StringBuffer tmp = new StringBuffer();
+	tmp.append(text,index,count);
+	//System.arraycopy(uText, 0, text, index, count);
+	tmp.getChars(0,count,uText,0);
+	ArShaper.shapeText(uText,0,count,paint,"drawText,char,1");
+	//System.out.println("xxxxxxxxxx ---- > And after shaping in char 1: "+ text );
+	//System.out.println(text);
+
+		//Thread.dumpStack();
+
+		if(debugG)
+		{System.out.println("After shaping in drawText,char :"+ 
+					String.copyValueOf(uText,0,count));
+		System.out.println(uText.length);}
+	
+	native_drawText(mNativeCanvas, uText, 0, count, x, y,
+                        paint.mNativePaint);
+
+
+        //native_drawText(mNativeCanvas, text, index, count, x, y,
+          //              paint.mNativePaint);
     }
 
-    /**
+  /**
      * Draw the text, with origin at (x,y), using the specified paint. The
      * origin is interpreted based on the Align setting in the paint.
      *
@@ -1403,28 +1297,31 @@ public class Canvas {
      * @param y     The y-coordinate of the origin of the text being drawn
      * @param paint The paint used for the text (e.g. color, size, style)
      */
-    private native void native_drawText(String text, float x, float y, Paint paint);
+    public void drawText(String text, float x, float y,
+                         Paint paint) {
+	int start = 0;
+	int end = text.length();
 
-    /** @hide */
-    public void drawText(String text, float x, float y, Paint paint,boolean bidi){
-        boolean hasBidi=bidiTest(text,0,text.length());
-        if (hasBidi) {
-            if (!bidi) {
-                native_drawText(ArabicReshape.reshape(text),x,y,paint);
-            } else {
-                if (text.length() > 0) {
-                    String bidiText;
-                    bidiText=new String(bidiProcess(text.toCharArray(),0,text.length()));
-                    native_drawText(ArabicReshape.reshape(bidiText),x,y,paint);
-                }
-            }
-        } else {
-            native_drawText(text,x,y,paint);
-        }
+	//Arabic Shaping
+	text = ArShaper.shapeText(text,start,end,"drawText,String,2");
+        //
+
+        /*if ((start | end | (end - start) | (text.length() - end)) < 0) {
+            throw new IndexOutOfBoundsException();
+        }*/
+        native_drawText(mNativeCanvas, text, start, end, x, y,
+                        paint.mNativePaint);
     }
-    public void drawText(String text, float x, float y, Paint paint){
-        drawText(text,x,y,paint,true);
-    }
+  /**
+     * Draw the text, with origin at (x,y), using the specified paint. The
+     * origin is interpreted based on the Align setting in the paint.
+     *
+     * @param text  The text to be drawn
+     * @param x     The x-coordinate of the origin of the text being drawn
+     * @param y     The y-coordinate of the origin of the text being drawn
+     * @param paint The paint used for the text (e.g. color, size, style)
+     */
+    public native void drawText (String text, char x, float y, Paint paint);
 
     /**
      * Draw the text, with origin at (x,y), using the specified paint.
@@ -1439,19 +1336,15 @@ public class Canvas {
      */
     public void drawText(String text, int start, int end, float x, float y,
                          Paint paint) {
+	//Arabic Shaping
+	text = ArShaper.shapeText(text,start,end,"drawText,String,2");
+        //
+
         if ((start | end | (end - start) | (text.length() - end)) < 0) {
             throw new IndexOutOfBoundsException();
         }
-        boolean hasBidi=bidiTest(text,start,end-start);
-        if (hasBidi) {
-            String reshapedText=ArabicReshape.reshape(new String(bidiProcess(text.toCharArray(),start,end-start)));
-            /* The reshaping may make the string smaller */
-            native_drawText(mNativeCanvas, reshapedText, 0, end-start - ((end-start - reshapedText.length())>0?(end-start - reshapedText.length()):0), x, y,
-                            paint.mNativePaint);
-        } else {
-            native_drawText(mNativeCanvas, text, start, end, x, y,
-                            paint.mNativePaint);
-        }
+        native_drawText(mNativeCanvas, text, start, end, x, y,
+                        paint.mNativePaint);
     }
 
     /**
@@ -1469,49 +1362,82 @@ public class Canvas {
      */
     public void drawText(CharSequence text, int start, int end, float x,
                          float y, Paint paint) {
-        drawText(text,start,end,x,y,paint,true);
-    }
 
-    /** @hide */
-    public void drawText(CharSequence text, int start, int end, float x,
-            float y, Paint paint,boolean bidi) {
-        boolean hasBidi=bidiTest(text.toString(),start,end-start);
-        if (text instanceof String || text instanceof SpannedString ||
-                text instanceof SpannableString) {
-            if (hasBidi) {
-                if (bidi) {
-                    String bidiText=new String(bidiProcess(text.toString().toCharArray(),start,end-start));
-                    String reshapedText=ArabicReshape.reshape(bidiText);
-                    /* The reshaping may make the string smaller */
-                    native_drawText(mNativeCanvas, reshapedText, 0, (end-start) - ((end-start - reshapedText.length())>0 ? (end-start - reshapedText.length()) : 0), x, y,
-                                paint.mNativePaint);
-                } else {
-                    String reshapedText=ArabicReshape.reshape(text.toString());
-                    /* The reshaping may make the string smaller */
-                    native_drawText(mNativeCanvas, reshapedText, 0, (end-start) - ((end-start - reshapedText.length())>0 ? (end-start - reshapedText.length()) : 0), x, y,
+	
+        
+        if (text instanceof String) {
+
+		if(debugG)
+		{System.out.println("Before shaping in drawText,CharSeq String:"+ text.toString());
+		System.out.println(text.length());}
+
+		String shaped = null;
+		shaped = ArShaper.shapeText(text.toString(),start,end,"drawText,CharSeq,3,Spanned");
+
+		if(debugG)
+		{System.out.println("After shaping in drawText,CharSeq String:"+ shaped.toString());
+		System.out.println(shaped.length());}
+
+
+            native_drawText(mNativeCanvas, shaped, start, end, x, y, //
                             paint.mNativePaint);
-                }
-            } else {
-                native_drawText(mNativeCanvas, text.toString() , start, end, x, y,
+        }
+
+	else if (text instanceof SpannedString) {
+
+		if(debugG)
+		{System.out.println("Before shaping in drawText,CharSeq SpString:"+ text.toString());
+		System.out.println(text.length());}
+
+		String shaped;
+		shaped = ((SpannedString)text).toStringDraw();
+
+		if(debugG)
+		{System.out.println("After shaping in drawText,CharSeq SpString:"+ shaped.toString());
+		System.out.println(shaped.length());}
+
+			//ArShaper.shapeText(,
+			//			start,end,paint,"drawText,CharSeq,3,Spanned");
+            native_drawText(mNativeCanvas, shaped, start, end, x, y, //
                             paint.mNativePaint);
-            }
+        }
+
+	else if (text instanceof SpannableString) {
+
+		if(debugG)
+		{System.out.println("Before shaping in drawText,CharSeq SpbleString:"+ text.toString());
+		System.out.println(text.length());}
+
+		String shaped;
+		shaped = ((SpannableString)text).toStringDraw();
+
+		if(debugG)
+		{System.out.println("After shaping in drawText,CharSeq SpbleString:"+ shaped.toString());
+		System.out.println(shaped.length());}
+				//ArShaper.shapeText(((SpannableString)text).toString(),
+				//		start,end,paint,"drawText,CharSeq,3,Spanned");
+            native_drawText(mNativeCanvas, shaped, start, end, x, y, //
+                            paint.mNativePaint);
         }
         else if (text instanceof GraphicsOperations) {
+
             ((GraphicsOperations) text).drawText(this, start, end, x, y,
-                    paint);
-            }
-            else {
-                    char[] buf = TemporaryBuffer.obtain(end - start);
-                    TextUtils.getChars(text, start, end, buf, 0);
-                if (hasBidi) {
-                    String reshapedText=ArabicReshape.reshape(new String(buf));
-                    /* The reshaping may make the string smaller */
-                    drawText(reshapedText.toCharArray(), 0, (end - start) - (((end - start) - reshapedText.length())>0?((end - start) - reshapedText.length()):0), x, y, paint,false);
-                } else {
-                    drawText(buf, 0, end - start, x, y, paint,false);
-                }
-                    TemporaryBuffer.recycle(buf);
-            }
+                                                   paint);
+
+
+        }
+        else {
+		
+            char[] buf = TemporaryBuffer.obtain(end - start);
+            TextUtils.getCharsDraw(text, start, end, buf, 0);
+
+		//Arabic Shaping
+		//ArShaper.shapeText(buf,0,end - start,"drawText,CharSeq,3,last");
+		//
+
+            drawText(buf, 0, end - start, x, y, paint);
+            TemporaryBuffer.recycle(buf);
+        }
     }
 
     /**
@@ -1527,24 +1453,16 @@ public class Canvas {
      */
     public void drawPosText(char[] text, int index, int count, float[] pos,
                             Paint paint) {
-        if (index < 0 || index + count > text.length || (index+count)*2 > pos.length) {
+
+	//Arabic Shaping
+	ArShaper.shapeText(text,index,count,paint,"drawPosText,Char,4");
+        //
+
+        if (index < 0 || index + count > text.length || count*2 > pos.length) {
             throw new IndexOutOfBoundsException();
         }
-
-        boolean hasBidi=bidiTest(text,index,count);
-        if (hasBidi) {
-            float[] relativePos = new float[count*2];
-            System.arraycopy(pos , index*2 , relativePos , 0, count*2);
-            char[] bidiText;
-            bidiText=bidiProcess(text,index,count);
-            String reshapedText=ArabicReshape.reshape(new String(bidiText));
-            /* The reshaping may make the string smaller */
-            native_drawPosText(mNativeCanvas, reshapedText.toCharArray(), 0, count - ((count - reshapedText.length())>0 ? (count - reshapedText.length()) : 0), relativePos,
-                               paint.mNativePaint);
-        } else {
-            native_drawPosText(mNativeCanvas, text, index, count, pos,
-                               paint.mNativePaint);
-        }
+        native_drawPosText(mNativeCanvas, text, index, count, pos,
+                           paint.mNativePaint);
     }
 
     /**
@@ -1556,19 +1474,15 @@ public class Canvas {
      * @param paint The paint used for the text (e.g. color, size, style)
      */
     public void drawPosText(String text, float[] pos, Paint paint) {
+
+	//Arabic Shaping
+	text = ArShaper.shapeText(text,"drawPosText,String,5");
+        //
+
         if (text.length()*2 > pos.length) {
             throw new ArrayIndexOutOfBoundsException();
         }
-
-        boolean hasBidi=bidiTest(text,0,text.length());
-        if (hasBidi) {
-            String bidiText;
-            bidiText=new String(bidiProcess(text.toCharArray(),0,text.length()));
-            native_drawPosText(mNativeCanvas, ArabicReshape.reshape(bidiText), pos, paint.mNativePaint);
-        } else {
-            native_drawPosText(mNativeCanvas, text, pos,
-                               paint.mNativePaint);
-        }
+        native_drawPosText(mNativeCanvas, text, pos, paint.mNativePaint);
     }
 
     /**
@@ -1586,24 +1500,17 @@ public class Canvas {
      */
     public void drawTextOnPath(char[] text, int index, int count, Path path,
                                float hOffset, float vOffset, Paint paint) {
+
+	//Arabic Shaping
+	ArShaper.shapeText(text,index,count,paint,"drawTextOnPath,char,6");
+        //
+
         if (index < 0 || index + count > text.length) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        boolean hasBidi=bidiTest(text,index,count);
-        if (hasBidi) {
-            char[] bidiText;
-            bidiText=bidiProcess(text,index,count);
-            String reshapedText=ArabicReshape.reshape(new String(bidiText));
-            /* The reshaping may make the string smaller */
-            native_drawTextOnPath(mNativeCanvas, reshapedText.toCharArray(), 0, count - ((count - reshapedText.length())>0 ? (count - reshapedText.length()) : 0),
-                                  path.ni(), hOffset, vOffset,
-                                  paint.mNativePaint);
-        } else {
-            native_drawTextOnPath(mNativeCanvas, text, index, count,
-                                  path.ni(), hOffset, vOffset,
-                                  paint.mNativePaint);
-        }
-        // TODO: Handle index>0
+        native_drawTextOnPath(mNativeCanvas, text, index, count,
+                              path.ni(), hOffset, vOffset,
+                              paint.mNativePaint);
     }
 
     /**
@@ -1621,18 +1528,14 @@ public class Canvas {
      */
     public void drawTextOnPath(String text, Path path, float hOffset,
                                float vOffset, Paint paint) {
+
+	//Arabic Shaping
+	text = ArShaper.shapeText(text,"drawTextOnPath,String,7");
+        //
+
         if (text.length() > 0) {
-            boolean hasBidi=bidiTest(text,0,text.length());
-            if (hasBidi) {
-                String bidiText;
-                bidiText=new String(bidiProcess(text.toCharArray(),0,text.length()));
-                native_drawTextOnPath(mNativeCanvas, ArabicReshape.reshape(bidiText), path.ni(),
-                                      hOffset, vOffset, paint.mNativePaint);
-            } else {
-                native_drawTextOnPath(mNativeCanvas, text,
-                                      path.ni(), hOffset, vOffset,
-                                      paint.mNativePaint);
-            }
+            native_drawTextOnPath(mNativeCanvas, text, path.ni(),
+                                  hOffset, vOffset, paint.mNativePaint);
         }
     }
 
