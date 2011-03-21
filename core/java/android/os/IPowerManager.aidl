@@ -39,5 +39,4 @@ interface IPowerManager
     // sets the brightness of the backlights (screen, keyboard, button) 0-255
     void setBacklightBrightness(int brightness);
     void setAttentionLight(boolean on, int color);
-
-	
+}
