@@ -94,7 +94,21 @@ public class NotificationManager
     }
 
     /** @hide */
-   
+       public void updatePackageList() {
+    	try {
+    		if(mContext.getPackageName().equals("com.cyanogenmod.cmparts")) {
+    			return;
+    		}
+    		//File file = new File(appContext.getFilesDir(), "trackball_lights");
+    		FileOutputStream fos = mContext.openFileOutput("trackball_lights", Context.MODE_WORLD_READABLE);
+    		String blank = "yes";
+    		fos.write(blank.getBytes());
+    		fos.close();
+    	} catch(Exception e) {
+    		Log.d("WriteApps", "Error: " + e.toString() );
+    	}
+    }
+
     /**
      * Persistent notification on the status bar,
      *
