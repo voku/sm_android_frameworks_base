@@ -33,15 +33,6 @@
 #include "SurfaceFlinger.h"
 #include "DisplayHardware/DisplayHardware.h"
 
-#define RENDER_EFFECT_NIGHT 1
-#define RENDER_EFFECT_TERMINAL 2
-#define RENDER_EFFECT_BLUE 3
-#define RENDER_EFFECT_AMBER 4
-#define RENDER_EFFECT_SALMON 5
-#define RENDER_EFFECT_FUSCIA 6
-#define RENDER_EFFECT_N1_CALIBRATED_N 7
-#define RENDER_EFFECT_N1_CALIBRATED_R 8
-#define RENDER_EFFECT_N1_CALIBRATED_C 9
 
 namespace android {
 
@@ -435,7 +426,7 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
         glEnable(GL_BLEND);
         glBlendFunc(src, GL_ONE_MINUS_SRC_ALPHA);
         glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, env);
-    } else if (noEffect) {
+    } else {
         glTexEnvx(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         glColor4x(0x10000, 0x10000, 0x10000, 0x10000);
         if (needsBlending()) {
@@ -493,8 +484,7 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
-void LayerBase::validateTexture(GLint textureName) const
-{
+void LayerBase::validateTexture(GLint textureName) const {
     glBindTexture(GL_TEXTURE_2D, textureName);
     // TODO: reload the texture if needed
     // this is currently done in loadTexture() below
@@ -859,3 +849,4 @@ sp<OverlayRef> LayerBaseClient::Surface::createOverlay(
 // ---------------------------------------------------------------------------
 
 }; // namespace android
+}
