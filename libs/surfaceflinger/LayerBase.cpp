@@ -484,7 +484,8 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
 
-void LayerBase::validateTexture(GLint textureName) const {
+void LayerBase::validateTexture(GLint textureName) const
+{
     glBindTexture(GL_TEXTURE_2D, textureName);
     // TODO: reload the texture if needed
     // this is currently done in loadTexture() below
@@ -848,5 +849,5 @@ sp<OverlayRef> LayerBaseClient::Surface::createOverlay(
 
 // ---------------------------------------------------------------------------
 
-}; // namespace android
-}
+ // namespace android
+};
