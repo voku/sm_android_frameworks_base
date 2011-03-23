@@ -2334,6 +2334,12 @@ public final class Settings {
         public static final String LOCKSCREEN_ROTARY_HIDE_ARROWS = "lockscreen_rotary_hide_arrows";
 
         /**
+         * Whether lockscreen should vibrate
+         * @hide
+         */
+        public static final String LOCKSCREEN_VIBRATE = "lockscreen_vibrate";
+
+        /**
          * Sets the lockscreen mode
          * @hide
          */

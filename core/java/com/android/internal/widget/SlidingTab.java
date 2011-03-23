@@ -69,6 +69,8 @@ public class SlidingTab extends ViewGroup {
     private int mGrabbedState = OnTriggerListener.NO_HANDLE;
     private boolean mTriggered = false;
     private Vibrator mVibrator;
+    // controls vibration on/off
+    private boolean mLockscreenVibrate = true;
     private float mDensity; // used to scale dimensions for bitmaps.
 
     /**
@@ -841,7 +843,9 @@ public class SlidingTab extends ViewGroup {
             mVibrator = (android.os.Vibrator)
                     getContext().getSystemService(Context.VIBRATOR_SERVICE);
         }
-        mVibrator.vibrate(duration);
+        if (mLockscreenVibrate) {
+            mVibrator.vibrate(duration);
+        }
     }
 
     /**
@@ -875,6 +879,13 @@ public class SlidingTab extends ViewGroup {
                 mOnTriggerListener.onGrabbedStateChange(this, mGrabbedState);
             }
         }
+    }
+
+    /**
+     * Sets weather or not to vibrate in lockscreen
+     */
+    public void enableVibrate(boolean newState){
+        mLockscreenVibrate=newState;
     }
 
     private void log(String msg) {

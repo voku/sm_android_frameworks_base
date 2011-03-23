@@ -84,6 +84,8 @@ public class RotarySelector extends View {
     private boolean mCustomAppDimple=false;
     // controls hiding of directional arrows
     private boolean mHideArrows=false;
+    // controls vibration on/off
+    private boolean mLockscreenVibrate=true;
 
     // state of the animation used to bring the handle back to its start position when
     // the user lets go before triggering an action
@@ -571,7 +573,6 @@ public class RotarySelector extends View {
                 (int) event.getY():
                 width - ((int) event.getY());
         final int hitWindow = mDimpleWidth;
-        final int downThresh = (isHoriz() ? width : height) - mDimpleWidth;
 
         final int action = event.getAction();
         switch (action) {
@@ -629,7 +630,7 @@ public class RotarySelector extends View {
                     if (mRotaryOffsetY < 0) mRotaryOffsetY=0;
                     invalidate();
 
-                    if (mRotaryOffsetY >= mDimpleWidth * 2 && !mTriggered) {
+                    if (mRotaryOffsetY >= mDimpleWidth * 1.5 && !mTriggered) {
                         mTriggered = true;
                         dispatchTriggerEvent(OnDialTriggerListener.MID_HANDLE);
                         // set up "flow up" animation
@@ -783,7 +784,9 @@ public class RotarySelector extends View {
             mVibrator = (android.os.Vibrator)
                     getContext().getSystemService(Context.VIBRATOR_SERVICE);
         }
-        mVibrator.vibrate(duration);
+        if (mLockscreenVibrate) {
+            mVibrator.vibrate(duration);
+        }
     }
 
     /**
@@ -882,14 +885,23 @@ public class RotarySelector extends View {
         mCustomAppDimple=newState;
     }
 
+    /**
+     * Sets weather or not to display the directional arrows
+     */
+    public void hideArrows(boolean newState){
+        mHideArrows=newState;
+    }
+
+    /**
+     * Sets weather or not to vibrate in lockscreen
+     */
+    public void enableVibrate(boolean newState){
+        mLockscreenVibrate=newState;
+    }
 
     // Debugging / testing code
 
     private void log(String msg) {
         Log.d(LOG_TAG, msg);
-    }
-
-    public void hideArrows(boolean newState){
-        mHideArrows=newState;
     }
 }
