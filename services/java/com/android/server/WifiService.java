@@ -1759,16 +1759,18 @@ public class WifiService extends IWifiManager.Stub {
                  * the already-set timer.
                  */
                 int pluggedType = intent.getIntExtra("plugged", 0);
-                Slog.d(TAG, "ACTION_BATTERY_CHANGED pluggedType: " + pluggedType);
-                if (mScreenOff && shouldWifiStayAwake(stayAwakeConditions, mPluggedType) &&
-                        !shouldWifiStayAwake(stayAwakeConditions, pluggedType)) {
-                    long triggerTime = System.currentTimeMillis() + idleMillis;
-                    Slog.d(TAG, "setting ACTION_DEVICE_IDLE timer for " + idleMillis + "ms");
-                    mAlarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, mIdleIntent);
+                if (pluggedType != mPluggedType) {
+                    Slog.d(TAG, "ACTION_BATTERY_CHANGED pluggedType: " + pluggedType);
+                    if (mScreenOff && shouldWifiStayAwake(stayAwakeConditions, mPluggedType) &&
+                            !shouldWifiStayAwake(stayAwakeConditions, pluggedType)) {
+                        long triggerTime = System.currentTimeMillis() + idleMillis;
+                        Slog.d(TAG, "setting ACTION_DEVICE_IDLE timer for " + idleMillis + "ms");
+                        mAlarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, mIdleIntent);
+                        mPluggedType = pluggedType;
+                        return;
+                    }
                     mPluggedType = pluggedType;
-                    return;
                 }
-                mPluggedType = pluggedType;
             } else if (action.equals(BluetoothA2dp.ACTION_SINK_STATE_CHANGED)) {
                 BluetoothA2dp a2dp = new BluetoothA2dp(mContext);
                 Set<BluetoothDevice> sinks = a2dp.getConnectedSinks();
