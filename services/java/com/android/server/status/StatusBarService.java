@@ -71,6 +71,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 import android.widget.ScrollView;
+import android.widget.HorizontalScrollView;
 import android.widget.TextView;
 import android.widget.FrameLayout;
 
@@ -2082,6 +2083,7 @@ public class StatusBarService extends IStatusBar.Stub
 
     private void setupPowerWidget() {
         LinearLayout layout;
+        HorizontalScrollView scroller = (HorizontalScrollView)mExpandedView.findViewById(R.id.exp_power_scroller);
         String lists = Settings.System.getString(mContext.getContentResolver(),
                                 Settings.System.WIDGET_BUTTONS);
         Log.i("setupPowerWidget", "List: "+lists);
@@ -2090,6 +2092,8 @@ public class StatusBarService extends IStatusBar.Stub
         }
         List<String> list = Arrays.asList(lists.split("\\|"));
         clearWidget();
+
+        scroller.setHorizontalScrollBarEnabled(false);
 
         int posi;
         for(posi = 0; posi < list.size(); posi++) {

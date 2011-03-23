@@ -33,7 +33,7 @@
         android:background="@drawable/status_bar_header_background"
         >
         <!-- Begin Power Widget -->
-        <HorizontalScrollView android:id="@+id/exp_power_stat"
+        <HorizontalScrollView android:id="@+id/exp_power_scroller"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:fillViewport="true"
