@@ -849,4 +849,4 @@ sp<OverlayRef> LayerBaseClient::Surface::createOverlay(
 
 // ---------------------------------------------------------------------------
 
- };// namespace android
+}; // namespace android
