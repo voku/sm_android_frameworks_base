@@ -436,7 +436,7 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
         } else {
             glDisable(GL_BLEND);
         }
- 
+	}
     Region::const_iterator it = clip.begin();
     Region::const_iterator const end = clip.end();
 
