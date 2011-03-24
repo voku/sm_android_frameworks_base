@@ -1303,6 +1303,13 @@ public final class Settings {
         public static final String NOTIFICATION_SCREEN_LIGHTER_TIME = "notification_screen_lighter_time";
 
         /**
+         * Time to wake on new notification.
+         *
+         * @hide
+         */
+        public static final String EMAIL_POLICY_OVERRIDE = "email_policy_override";
+
+        /**
          * Indicates that custom light sensor settings has changed.
          * The value is random and changes reloads light settings.
          *
