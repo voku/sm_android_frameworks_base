@@ -883,6 +883,7 @@ public class RotarySelector extends View {
      */
     public void enableCustomAppDimple(boolean newState){
         mCustomAppDimple=newState;
+        if (newState) mBackground = getBitmapFor(R.drawable.jog_dial_bg_down);
     }
 
     /**
