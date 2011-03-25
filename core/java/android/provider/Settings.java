@@ -4280,6 +4280,22 @@ public final class Settings {
         public static final String THROTTLE_MAX_NTP_CACHE_AGE_SEC =
                 "throttle_max_ntp_cache_age_sec";
 
+        /**
+         * The maximum size, in bytes, of a download that the download manager will transfer over
+         * a non-wifi connection.
+         * @hide
+         */
+        public static final String DOWNLOAD_MAX_BYTES_OVER_MOBILE =
+                "download_manager_max_bytes_over_mobile";
+
+        /**
+         * The recommended maximum size, in bytes, of a download that the download manager should
+         * transfer over a non-wifi connection. Over this size, the use will be warned, but will
+         * have the option to start the download over the mobile connection anyway.
+         * @hide
+         */
+        public static final String DOWNLOAD_RECOMMENDED_MAX_BYTES_OVER_MOBILE =
+                "download_manager_recommended_max_bytes_over_mobile";
 
         /**
          * Whether to allow move of any app to external storage

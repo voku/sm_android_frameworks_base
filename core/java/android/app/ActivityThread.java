@@ -138,7 +138,7 @@ public final class ActivityThread {
 
 
     public static final ActivityThread currentActivityThread() {
-        return (ActivityThread)sThreadLocal.get();
+        return sThreadLocal.get();
     }
 
     public static final String currentPackageName()
@@ -2237,7 +2237,7 @@ public final class ActivityThread {
             = new ArrayList<Application>();
     // set of instantiated backup agents, keyed by package name
     final HashMap<String, BackupAgent> mBackupAgents = new HashMap<String, BackupAgent>();
-    static final ThreadLocal sThreadLocal = new ThreadLocal();
+    static final ThreadLocal<ActivityThread> sThreadLocal = new ThreadLocal();
     Instrumentation mInstrumentation;
     String mInstrumentationAppDir = null;
     String mInstrumentationAppPackage = null;
@@ -2270,6 +2270,8 @@ public final class ActivityThread {
 
     final GcIdler mGcIdler = new GcIdler();
     boolean mGcIdlerScheduled = false;
+
+    static Handler sMainThreadHandler;  // set once in main()
 
     public final PackageInfo getPackageInfo(String packageName, int flags) {
         synchronized (mPackages) {
@@ -2824,6 +2826,8 @@ public final class ActivityThread {
             }
         }
 
+        QueuedWork.waitToFinish();
+
         try {
             if (data.sync) {
                 if (DEBUG_BROADCAST) Slog.i(TAG,
@@ -3051,6 +3055,9 @@ public final class ActivityThread {
                     data.args.setExtrasClassLoader(s.getClassLoader());
                 }
                 int res = s.onStartCommand(data.args, data.flags, data.startId);
+
+                QueuedWork.waitToFinish();
+
                 try {
                     ActivityManagerNative.getDefault().serviceDoneExecuting(
                             data.token, 1, data.startId, res);
@@ -3079,6 +3086,9 @@ public final class ActivityThread {
                     final String who = s.getClassName();
                     ((ContextImpl) context).scheduleFinalCleanup(who, "Service");
                 }
+                
+                QueuedWork.waitToFinish();
+                
                 try {
                     ActivityManagerNative.getDefault().serviceDoneExecuting(
                             token, 0, 0, 0);
@@ -4620,6 +4630,10 @@ public final class ActivityThread {
         Process.setArgV0("<pre-initialized>");
 
         Looper.prepareMainLooper();
+
+        if (sMainThreadHandler == null) {
+            sMainThreadHandler = new Handler();
+        }
 
         ActivityThread thread = new ActivityThread();
         thread.attach(false);
