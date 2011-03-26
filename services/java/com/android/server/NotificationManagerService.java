@@ -783,7 +783,6 @@ class NotificationManagerService extends INotificationManager.Stub {
                     long identity = Binder.clearCallingIdentity();
                     try {
                         r.statusBarKey = mStatusBarService.addIcon(icon, n);
-                        mLightsService.pulseBreathingLight();
                     } finally {
                         Binder.restoreCallingIdentity(identity);
                     }
@@ -1094,7 +1093,6 @@ class NotificationManagerService extends INotificationManager.Stub {
                 Thread.sleep(sleepTimer);
             } catch (InterruptedException e) {
             }
-            isTimer = false;
             // threadExecutor = null;
         }
     }
