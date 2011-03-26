@@ -1242,4 +1242,10 @@
     
   <public type="anim" name="cycle_interpolator" id="0x010a000c" />
 
+
+  <public type="style" name="TextAppearance.StatusBar.Title" id="0x01030065" />
+  <public type="style" name="TextAppearance.StatusBar.Icon" id="0x01030066" />
+  <public type="style" name="TextAppearance.StatusBar.EventContent" id="0x01030067" />
+  <public type="style" name="TextAppearance.StatusBar.EventContent.Title" id="0x01030068" />
+
 </resources>

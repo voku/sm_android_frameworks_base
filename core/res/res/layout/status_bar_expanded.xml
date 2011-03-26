@@ -412,7 +412,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/title_bar_portrait"
                     android:paddingLeft="5dp"
-                    android:textAppearance="@style/TextAppearance.StatusBarTitle"
+                    android:textAppearance="@style/TextAppearance.StatusBar.Title"
                     android:text="@string/status_bar_no_notifications_title"
                     />
 
@@ -421,7 +421,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/title_bar_portrait"
                     android:paddingLeft="5dp"
-                    android:textAppearance="@style/TextAppearance.StatusBarTitle"
+                    android:textAppearance="@style/TextAppearance.StatusBar.Title"
                     android:text="@string/status_bar_ongoing_events_title"
                     />
                 <LinearLayout android:id="@+id/ongoingItems"
@@ -435,7 +435,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/title_bar_portrait"
                     android:paddingLeft="5dp"
-                    android:textAppearance="@style/TextAppearance.StatusBarTitle"
+                    android:textAppearance="@style/TextAppearance.StatusBar.Title"
                     android:text="@string/status_bar_latest_events_title"
                     />
                 <LinearLayout android:id="@+id/latestItems"

@@ -593,11 +593,18 @@ public final class Downloads {
          */
         public static final String PERMISSION_ACCESS = "android.permission.ACCESS_DOWNLOAD_MANAGER";
 
+
         /**
          * The permission to access the download manager's advanced functions
          */
         public static final String PERMISSION_ACCESS_ADVANCED =
                 "android.permission.ACCESS_DOWNLOAD_MANAGER_ADVANCED";
+
+        /**
+         * The permission to access the all the downloads in the manager.
+         */
+        public static final String PERMISSION_ACCESS_ALL =
+                "android.permission.ACCESS_ALL_DOWNLOADS";
 
         /**
          * The permission to directly access the download manager's cache directory
