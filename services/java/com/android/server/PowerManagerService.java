@@ -417,7 +417,6 @@ class PowerManagerService extends IPowerManager.Stub
 
                  // DIM_SCREEN
                 //mDimScreen = getInt(DIM_SCREEN) != 0;
-                updateLightSettings();
 
                 // SCREEN_BRIGHTNESS_MODE
                 setScreenBrightnessMode(getInt(SCREEN_BRIGHTNESS_MODE));
@@ -1600,11 +1599,6 @@ class PowerManagerService extends IPowerManager.Stub
         EventLog.writeEvent(EventLogTags.POWER_SCREEN_STATE, 0, reason, mTotalTouchDownTime, mTouchCycles);
         mLastTouchDown = 0;
         int err = setScreenStateLocked(false);
-        // Turn off the keyboard light aswell
-         if (err == 0) {
-            mScreenOffReason = reason;
-            sendNotificationLocked(false, reason);
-        }
         return err;
     }
 
@@ -1774,7 +1768,7 @@ class PowerManagerService extends IPowerManager.Stub
             setLightBrightness(offMask, Power.BRIGHTNESS_OFF);
         }
         if (dimMask != 0) {
-            int brightness = mScreenDim;
+            int brightness = Power.BRIGHTNESS_DIM;
             if ((newState & BATTERY_LOW_BIT) != 0 &&
                     brightness > Power.BRIGHTNESS_LOW_BATTERY) {
                 brightness = Power.BRIGHTNESS_LOW_BATTERY;
@@ -2169,11 +2163,8 @@ class PowerManagerService extends IPowerManager.Stub
             Slog.d(TAG, "lightSensorChangedLocked " + value);
         }
 
-		// do not allow light sensor value to decrease unless the environment it's very dark
-        if (value < 200) {
-            mHighestLightSensorValue = value;
-        }
-        else if (mHighestLightSensorValue < value) {
+        // do not allow light sensor value to decrease
+        if (mHighestLightSensorValue < value) {
             mHighestLightSensorValue = value;
         }
 
@@ -2384,7 +2375,6 @@ class PowerManagerService extends IPowerManager.Stub
                             int value = (int)mLightSensorValue;
                             mLightSensorValue = -1;
                             lightSensorChangedLocked(value);
-                            lightFilterReset((int)mLightSensorValue);
                         }
                     }
                     userActivity(SystemClock.uptimeMillis(), false, BUTTON_EVENT, true);

@@ -82,10 +82,6 @@ public class LightsService {
         setLight_native(mNativePointer, light, color, LIGHT_FLASH_NONE, 0, 0, 0);
     }
 
-        public void pulse() {
-            pulse(0x00ffffff, 7);
-        }
-
     void setLightFlashing(int light, int color, int mode, int onMS, int offMS) {
         setLight_native(mNativePointer, light, color, mode, onMS, offMS, 0);
     }
