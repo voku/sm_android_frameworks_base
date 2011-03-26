@@ -98,6 +98,7 @@ public class LightsService {
             setLight_native(mNativePointer, LIGHT_ID_ATTENTION, color,
                     LIGHT_FLASH_HARDWARE, on ? 3 : 0, 0, 0);
 		}
+	}
 
     public void pulseBreathingLight() {
         synchronized (this) {
