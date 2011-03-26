@@ -102,12 +102,6 @@ class NotificationManagerService extends INotificationManager.Stub {
 
     private StatusBarService mStatusBarService;
 
-    private LightsService.Light mBatteryLight;
-
-    private LightsService.Light mNotificationLight;
-
-    private LightsService.Light mAttentionLight;
-
     private NotificationRecord mSoundNotification;
 
     private NotificationPlayer mSound;
@@ -475,10 +469,6 @@ class NotificationManagerService extends INotificationManager.Stub {
         mStatusBarService = statusBar;
         statusBar.setNotificationCallbacks(mNotificationCallbacks);
 
-        mBatteryLight = lights.getLight(LightsService.LIGHT_ID_BATTERY);
-        mNotificationLight = lights.getLight(LightsService.LIGHT_ID_NOTIFICATIONS);
-        mAttentionLight = lights.getLight(LightsService.LIGHT_ID_ATTENTION);
-
         Resources resources = mContext.getResources();
 
         // Don't start allowing notifications until the setup wizard has run
@@ -793,7 +783,7 @@ class NotificationManagerService extends INotificationManager.Stub {
                     long identity = Binder.clearCallingIdentity();
                     try {
                         r.statusBarKey = mStatusBarService.addIcon(icon, n);
-                        mAttentionLight.pulse();
+                        mLightsService.pulseBreathingLight();
                     } finally {
                         Binder.restoreCallingIdentity(identity);
                     }
