@@ -80,8 +80,7 @@ public class LightsService {
 
     void setLightColor(int light, int color) {
         setLight_native(mNativePointer, light, color, LIGHT_FLASH_NONE, 0, 0, 0);
--    }
-
+    }
 
         public void pulse() {
             pulse(0x00ffffff, 7);
