@@ -2067,12 +2067,6 @@ public final class Settings {
          * @hide
          */
         public static final String LOCKSCREEN_DPAD_MUSIC_CONTROLS = "dpad_music_controls";
-		
-		/**
-         * Whether to always show lockscreen battery info
-         * @hide
-         */
-        public static final String LOCKSCREEN_ALWAYS_BATTERY_INFO = "lockscreen_always_battery_info";
 
         /**
          * Whether to show currently playing song title and artist
