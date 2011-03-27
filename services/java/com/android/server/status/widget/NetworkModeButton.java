@@ -98,7 +98,11 @@ public class NetworkModeButton extends PowerButton{
     }
 
     public boolean launchActivity(Context context) {
-        return false;
+        Intent intentWireless = new Intent();
+        intentWireless.setAction(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+        intentWireless.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentWireless);
+        return true;
     }
 
     public void toggleState(Context context, boolean switchModes) {

@@ -4,6 +4,7 @@ import com.android.internal.R;
 import com.android.server.status.widget.PowerButton;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.provider.Settings;
@@ -82,7 +83,11 @@ public class MobileDataButton extends PowerButton {
     }
 
     public boolean launchActivity(Context context) {
-        return false;
+        Intent intentWireless = new Intent();
+        intentWireless.setAction(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+        intentWireless.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentWireless);
+        return true;
     }
 
     public static MobileDataButton getInstance() {

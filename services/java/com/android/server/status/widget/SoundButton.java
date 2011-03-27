@@ -4,6 +4,7 @@ import com.android.internal.R;
 import com.android.server.status.widget.PowerButton;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.provider.Settings;
@@ -194,7 +195,11 @@ public class SoundButton extends PowerButton {
     }
 
     public boolean launchActivity(Context context) {
-        return false;
+        Intent intentSound = new Intent();
+        intentSound.setAction(android.provider.Settings.ACTION_SOUND_SETTINGS);
+        intentSound.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentSound);
+        return true;
     }
 
     @Override

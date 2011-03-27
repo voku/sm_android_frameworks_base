@@ -5,6 +5,7 @@ import com.android.server.status.widget.PowerButton;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.location.LocationManager;
 import android.provider.Settings;
 import android.util.Log;
@@ -47,7 +48,11 @@ public class GPSButton extends PowerButton {
     }
 
     public boolean launchActivity(Context context) {
-        return false;
+        Intent intentLocation = new Intent();
+        intentLocation.setAction(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        intentLocation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentLocation);
+        return true;
     }
 
     private static boolean getGpsState(Context context) {
