@@ -5,6 +5,7 @@ import com.android.server.status.widget.PowerButton;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.IPowerManager;
 import android.os.RemoteException;
@@ -63,13 +64,7 @@ Low High Max
      */
 
     public static int getMinBacklight(Context context) {
-        if (Settings.System.getInt(context.getContentResolver(),
-             Settings.System.LIGHT_SENSOR_CUSTOM, 0) != 0) {
-               return Settings.System.getInt(context.getContentResolver(),
-                        Settings.System.LIGHT_SCREEN_DIM, MINIMUM_BACKLIGHT);
-        } else {
-            return MINIMUM_BACKLIGHT;
-        }
+        return MINIMUM_BACKLIGHT;
     }
 
 
@@ -108,8 +103,6 @@ Low High Max
         }
         return false;
     }
-
-
 
     private int getNextBrightnessValue(Context context) {
         int brightness = Settings.System.getInt(context.getContentResolver(),
@@ -193,7 +186,11 @@ Low High Max
     }
 
     public boolean launchActivity(Context context) {
-        return false;
+        Intent intentBrightness = new Intent();
+        intentBrightness.setAction(android.provider.Settings.ACTION_DISPLAY_SETTINGS);
+        intentBrightness.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intentBrightness);
+        return true;
     }
 
     public static BrightnessButton getInstance() {
