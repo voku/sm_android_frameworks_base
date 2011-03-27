@@ -589,7 +589,7 @@ public class RotarySelector extends View {
                     setGrabbedState(LEFT_HANDLE_GRABBED);
                     invalidate();
                     vibrate(VIBRATE_SHORT);
-                } else if (eventX > mMidHandleX - hitWindow && eventX <= mRightHandleX - hitWindow && mCustomAppDimple) {
+                } else if (eventX < mMidHandleX + hitWindow && eventX > mMidHandleX - hitWindow && mCustomAppDimple) {
                     setGrabbedState(MID_HANDLE_GRABBED);
                     invalidate();
                     vibrate(VIBRATE_SHORT);
@@ -630,7 +630,7 @@ public class RotarySelector extends View {
                     if (mRotaryOffsetY < 0) mRotaryOffsetY=0;
                     invalidate();
 
-                    if (mRotaryOffsetY >= mDimpleWidth * 1.5 && !mTriggered) {
+                    if (mRotaryOffsetY >= mDimpleWidth && !mTriggered) {
                         mTriggered = true;
                         dispatchTriggerEvent(OnDialTriggerListener.MID_HANDLE);
                         // set up "flow up" animation
