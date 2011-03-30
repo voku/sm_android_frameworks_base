@@ -453,9 +453,8 @@ public class StatusBarPolicy {
                 new com.android.server.status.StorageNotification(context));
 
         // battery
-        mBatteryData = IconData.makeIconNumber("battery",
-                null, com.android.internal.R.drawable.stat_sys_battery_unknown, 0, 0,
-                Settings.System.BATTERY_PERCENTAGE_STATUS_COLOR);
+        mBatteryData = IconData.makeIcon("battery",
+                null, com.android.internal.R.drawable.stat_sys_battery_unknown, 0, 0);
         mBatteryIcon = service.addIcon(mBatteryData, null);
 
         ContentObserver coBattery = new ContentObserver(null) {
