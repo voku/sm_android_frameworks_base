@@ -278,9 +278,6 @@
          will not debounce light sensor readings -->
     <integer name="config_lightSensorWarmupTime">0</integer>
 
-    <!-- Allows the light sensor to be ignored when flashlight is on -->
-    <bool name="config_flashlight_affects_lightsensor">false</bool>
-
     <!-- Enables swipe versus poly-finger touch disambiguation in the KeyboardView -->
     <bool name="config_swipeDisambiguation">true</bool>
 
@@ -326,8 +323,4 @@
     <!-- 2 means give warning -->
     <integer name="config_datause_notification_type">2</integer>
 
-    <!-- Handle notifications differently if device only uses an amber/green
-    LED. This also needs a liblights module that enables them accordingly. -->
-    <bool name="config_amber_green_light">false</bool>
-
-</resources>
+ </resources>

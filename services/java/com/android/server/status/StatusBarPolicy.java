@@ -453,9 +453,8 @@ public class StatusBarPolicy {
                 new com.android.server.status.StorageNotification(context));
 
         // battery
-        mBatteryData = IconData.makeIconNumber("battery",
-                null, com.android.internal.R.drawable.stat_sys_battery_unknown, 0, 0,
-                Settings.System.BATTERY_PERCENTAGE_STATUS_COLOR);
+        mBatteryData = IconData.makeIcon("battery",
+                null, com.android.internal.R.drawable.stat_sys_battery_unknown, 0, 0);
         mBatteryIcon = service.addIcon(mBatteryData, null);
 
         ContentObserver coBattery = new ContentObserver(null) {
@@ -746,9 +745,7 @@ public class StatusBarPolicy {
         }
 
         //show battery percentage if not plugged in and status is enabled
-        if (plugged || level >= 100 ||
-                Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.BATTERY_PERCENTAGE_STATUS_ICON, 0) == 0) {
+        if (plugged) {
             mBatteryData.number = -1;
         } else {
             mBatteryData.number = level;
