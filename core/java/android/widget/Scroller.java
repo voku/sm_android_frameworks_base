@@ -217,7 +217,6 @@ public class Scroller  {
                     }
                 }
 
-
                 break;
         }
         return true;

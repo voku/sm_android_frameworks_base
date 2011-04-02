@@ -638,7 +638,6 @@ void LayerBase::loadTexture(Texture* texture,
                     t.data + bounds.top*t.stride*4);
         } else if (isSupportedYuvFormat(t.format)) {
             // just show the Y plane of YUV buffers
-
 /*
             glTexSubImage2D(GL_TEXTURE_2D, 0,
                     0, bounds.top, t.width, bounds.height(),

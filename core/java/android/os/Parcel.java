@@ -437,12 +437,6 @@ public final class Parcel {
     /**
      * Write a FileDescriptor into the parcel at the current dataPosition(),
      * growing dataCapacity() if needed.
-     *
-     * <p class="caution">The file descriptor will not be closed, which may
-     * result in file descriptor leaks when objects are returned from Binder
-     * calls.  Use {@link ParcelFileDescriptor#writeToParcel} instead, which
-     * accepts contextual flags and will close the original file descriptor
-     * if {@link Parcelable#PARCELABLE_WRITE_RETURN_VALUE} is set.</p>
      */
     public final native void writeFileDescriptor(FileDescriptor val);
 
@@ -1006,7 +1000,7 @@ public final class Parcel {
     /**
      * Flatten a generic object in to a parcel.  The given Object value may
      * currently be one of the following types:
-     *
+     * 
      * <ul>
      * <li> null
      * <li> String
@@ -1029,7 +1023,7 @@ public final class Parcel {
      * <li> Parcelable[]
      * <li> CharSequence (as supported by {@link TextUtils#writeToParcel}).
      * <li> List (as supported by {@link #writeList}).
-     * <li> {@link SparseArray} (as supported by {@link #writeSparseArray(SparseArray)}).
+     * <li> {@link SparseArray} (as supported by {@link #writeSparseArray}).
      * <li> {@link IBinder}
      * <li> Any object that implements Serializable (but see
      *      {@link #writeSerializable} for caveats).  Note that all of the
@@ -1038,13 +1032,6 @@ public final class Parcel {
      *      approach is much less efficient and should be avoided whenever
      *      possible.
      * </ul>
-     *
-     * <p class="caution">{@link Parcelable} objects are written with
-     * {@link Parcelable#writeToParcel} using contextual flags of 0.  When
-     * serializing objects containing {@link ParcelFileDescriptor}s,
-     * this may result in file descriptor leaks when they are returned from
-     * Binder calls (where {@link Parcelable#PARCELABLE_WRITE_RETURN_VALUE}
-     * should be used).</p>
      */
     public final void writeValue(Object v) {
         if (v == null) {
@@ -1133,7 +1120,7 @@ public final class Parcel {
     /**
      * Flatten the name of the class of the Parcelable and its contents
      * into the parcel.
-     *
+     * 
      * @param p The Parcelable object to be written.
      * @param parcelableFlags Contextual flags as per
      * {@link Parcelable#writeToParcel(Parcel, int) Parcelable.writeToParcel()}.

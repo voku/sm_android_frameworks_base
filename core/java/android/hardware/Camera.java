@@ -32,78 +32,22 @@ import android.os.Looper;
 import android.os.Message;
 
 /**
- * The Camera class is used to set image capture settings, start/stop preview,
- * snap pictures, and retrieve frames for encoding for video.  This class is a
- * client for the Camera service, which manages the actual camera hardware.
+ * The Camera class is used to connect/disconnect with the camera service,
+ * set capture settings, start/stop preview, snap a picture, and retrieve
+ * frames for encoding for video.
+ * <p>There is no default constructor for this class. Use {@link #open()} to
+ * get a Camera object.</p>
  *
- * <p>To access the device camera, you must declare the
+ * <p>In order to use the device camera, you must declare the
  * {@link android.Manifest.permission#CAMERA} permission in your Android
  * Manifest. Also be sure to include the
  * <a href="{@docRoot}guide/topics/manifest/uses-feature-element.html">&lt;uses-feature></a>
- * manifest element to declare camera features used by your application.
+ * manifest element in order to declare camera features used by your application.
  * For example, if you use the camera and auto-focus feature, your Manifest
  * should include the following:</p>
  * <pre> &lt;uses-permission android:name="android.permission.CAMERA" />
  * &lt;uses-feature android:name="android.hardware.camera" />
  * &lt;uses-feature android:name="android.hardware.camera.autofocus" /></pre>
- *
- * <p>To take pictures with this class, use the following steps:</p>
- *
- * <ol>
- * <li>Obtain an instance of Camera from {@link #open()}.
- *
- * <li>Get existing (default) settings with {@link #getParameters()}.
- *
- * <li>If necessary, modify the returned {@link Camera.Parameters} object and call
- * {@link #setParameters(Camera.Parameters)}.
- *
- * <li>If desired, call {@link #setDisplayOrientation(int)}.
- *
- * <li><b>Important</b>: Pass a fully initialized {@link SurfaceHolder} to
- * {@link #setPreviewDisplay(SurfaceHolder)}.  Without a surface, the camera
- * will be unable to start the preview.
- *
- * <li><b>Important</b>: Call {@link #startPreview()} to start updating the
- * preview surface.  Preview must be started before you can take a picture.
- *
- * <li>When you want, call {@link #takePicture(Camera.ShutterCallback,
- * Camera.PictureCallback, Camera.PictureCallback, Camera.PictureCallback)} to
- * capture a photo.  Wait for the callbacks to provide the actual image data.
- *
- * <li>After taking a picture, preview display will have stopped.  To take more
- * photos, call {@link #startPreview()} again first.
- *
- * <li>Call {@link #stopPreview()} to stop updating the preview surface.
- *
- * <li><b>Important:</b> Call {@link #release()} to release the camera for
- * use by other applications.  Applications should release the camera
- * immediately in {@link android.app.Activity#onPause()} (and re-{@link #open()}
- * it in {@link android.app.Activity#onResume()}).
- * </ol>
- *
- * <p>To quickly switch to video recording mode, use these steps:</p>
- *
- * <ol>
- * <li>Obtain and initialize a Camera and start preview as described above.
- *
- * <li>Call {@link #unlock()} to allow the media process to access the camera.
- *
- * <li>Pass the camera to {@link android.media.MediaRecorder#setCamera(Camera)}.
- * See {@link android.media.MediaRecorder} information about video recording.
- *
- * <li>When finished recording, call {@link #reconnect()} to re-acquire
- * and re-lock the camera.
- *
- * <li>If desired, restart preview and take more photos or videos.
- *
- * <li>Call {@link #stopPreview()} and {@link #release()} as described above.
- * </ol>
- *
- * <p>This class is not thread-safe, and is meant for use from one event thread.
- * Most long-running operations (preview, focus, photo capture, etc) happen
- * asynchronously and invoke callbacks as necessary.  Callbacks will be invoked
- * on the event thread {@link #open()} was called from.  This class's methods
- * must never be called from multiple threads at once.</p>
  *
  * <p class="caution"><strong>Caution:</strong> Different Android-powered devices
  * may have different hardware specifications, such as megapixel ratings and
@@ -140,26 +84,7 @@ public class Camera {
     private boolean mWithBuffer;
 
     /**
-     * Creates a new Camera object.
-     *
-     * <p>You must call {@link #release()} when you are done using the camera,
-     * otherwise it will remain locked and be unavailable to other applications.
-     *
-     * <p>Your application should only have one Camera object active at a time.
-     *
-     * <p>Callbacks from other methods are delivered to the event loop of the
-     * thread which called open().  If this thread has no event loop, then
-     * callbacks are delivered to the main application event loop.  If there
-     * is no main application event loop, callbacks are not delivered.
-     *
-     * <p class="caution"><b>Caution:</b> On some devices, this method may
-     * take a long time to complete.  It is best to call this method from a
-     * worker thread (possibly using {@link android.os.AsyncTask}) to avoid
-     * blocking the main application UI thread.
-     *
-     * @return a new Camera object, connected, locked and ready for use.
-     * @throws RuntimeException if connection to the camera service fails (for
-     *     example, if the camera is in use by another process).
+     * Returns a new Camera object.
      */
     public static Camera open() {
         CameraSwitch.openMainCamera();
@@ -204,83 +129,56 @@ public class Camera {
 
     /**
      * Disconnects and releases the Camera object resources.
-     *
-     * <p>You must call this as soon as you're done with the Camera object.</p>
+     * <p>It is recommended that you call this as soon as you're done with the
+     * Camera object.</p>
      */
     public final void release() {
         native_release();
     }
 
     /**
-     * Unlocks the camera to allow another process to access it.
-     * Normally, the camera is locked to the process with an active Camera
-     * object until {@link #release()} is called.  To allow rapid handoff
-     * between processes, you can call this method to release the camera
-     * temporarily for another process to use; once the other process is done
-     * you can call {@link #reconnect()} to reclaim the camera.
+     * Reconnect to the camera after passing it to MediaRecorder. To save
+     * setup/teardown time, a client of Camera can pass an initialized Camera
+     * object to a MediaRecorder to use for video recording. Once the
+     * MediaRecorder is done with the Camera, this method can be used to
+     * re-establish a connection with the camera hardware. NOTE: The Camera
+     * object must first be unlocked by the process that owns it before it
+     * can be connected to another process.
      *
-     * <p>This must be done before calling
-     * {@link android.media.MediaRecorder#setCamera(Camera)}.
-     *
-     * <p>If you are not recording video, you probably do not need this method.
-     *
-     * @throws RuntimeException if the camera cannot be unlocked.
-     */
-    public native final void unlock();
-
-    /**
-     * Re-locks the camera to prevent other processes from accessing it.
-     * Camera objects are locked by default unless {@link #unlock()} is
-     * called.  Normally {@link #reconnect()} is used instead.
-     *
-     * <p>If you are not recording video, you probably do not need this method.
-     *
-     * @throws RuntimeException if the camera cannot be re-locked (for
-     *     example, if the camera is still in use by another process).
-     */
-    public native final void lock();
-
-    /**
-     * Reconnects to the camera service after another process used it.
-     * After {@link #unlock()} is called, another process may use the
-     * camera; when the process is done, you must reconnect to the camera,
-     * which will re-acquire the lock and allow you to continue using the
-     * camera.
-     *
-     * <p>This must be done after {@link android.media.MediaRecorder} is
-     * done recording if {@link android.media.MediaRecorder#setCamera(Camera)}
-     * was used.
-     *
-     * <p>If you are not recording video, you probably do not need this method.
-     *
-     * @throws IOException if a connection cannot be re-established (for
-     *     example, if the camera is still in use by another process).
+     * @throws IOException if the method fails.
      */
     public native final void reconnect() throws IOException;
 
     /**
-     * Sets the {@link Surface} to be used for live preview.
-     * A surface is necessary for preview, and preview is necessary to take
-     * pictures.  The same surface can be re-set without harm.
+     * Lock the camera to prevent other processes from accessing it. To save
+     * setup/teardown time, a client of Camera can pass an initialized Camera
+     * object to another process. This method is used to re-lock the Camera
+     * object prevent other processes from accessing it. By default, the
+     * Camera object is locked. Locking it again from the same process will
+     * have no effect. Attempting to lock it from another process if it has
+     * not been unlocked will fail.
      *
-     * <p>The {@link SurfaceHolder} must already contain a surface when this
-     * method is called.  If you are using {@link android.view.SurfaceView},
-     * you will need to register a {@link SurfaceHolder.Callback} with
-     * {@link SurfaceHolder#addCallback(SurfaceHolder.Callback)} and wait for
-     * {@link SurfaceHolder.Callback#surfaceCreated(SurfaceHolder)} before
-     * calling setPreviewDisplay() or starting preview.
+     * @throws RuntimeException if the method fails.
+     */
+    public native final void lock();
+
+    /**
+     * Unlock the camera to allow another process to access it. To save
+     * setup/teardown time, a client of Camera can pass an initialized Camera
+     * object to another process. This method is used to unlock the Camera
+     * object before handing off the Camera object to the other process.
      *
-     * <p>This method must be called before {@link #startPreview()}.  The
-     * one exception is that if the preview surface is not set (or set to null)
-     * before startPreview() is called, then this method may be called once
-     * with a non-null parameter to set the preview surface.  (This allows
-     * camera setup and surface creation to happen in parallel, saving time.)
-     * The preview surface may not otherwise change while preview is running.
+     * @throws RuntimeException if the method fails.
+     */
+    public native final void unlock();
+
+    /**
+     * Sets the SurfaceHolder to be used for a picture preview. If the surface
+     * changed since the last call, the screen will blank. Nothing happens
+     * if the same surface is re-set.
      *
-     * @param holder containing the Surface on which to place the preview,
-     *     or null to remove the preview surface
-     * @throws IOException if the method fails (for example, if the surface
-     *     is unavailable or unsuitable).
+     * @param holder the SurfaceHolder upon which to place the picture preview
+     * @throws IOException if the method fails.
      */
     public final void setPreviewDisplay(SurfaceHolder holder) throws IOException {
         if (holder != null) {
@@ -293,47 +191,31 @@ public class Camera {
     private native final void setPreviewDisplay(Surface surface);
 
     /**
-     * Callback interface used to deliver copies of preview frames as
-     * they are displayed.
-     *
-     * @see #setPreviewCallback(Camera.PreviewCallback)
-     * @see #setOneShotPreviewCallback(Camera.PreviewCallback)
-     * @see #setPreviewCallbackWithBuffer(Camera.PreviewCallback)
-     * @see #startPreview()
+     * Used to get a copy of each preview frame.
      */
     public interface PreviewCallback
     {
         /**
-         * Called as preview frames are displayed.  This callback is invoked
-         * on the event thread {@link #open()} was called from.
+         * The callback that delivers the preview frames.
          *
-         * @param data the contents of the preview frame in the format defined
+         * @param data The contents of the preview frame in the format defined
          *  by {@link android.graphics.ImageFormat}, which can be queried
          *  with {@link android.hardware.Camera.Parameters#getPreviewFormat()}.
          *  If {@link android.hardware.Camera.Parameters#setPreviewFormat(int)}
          *             is never called, the default will be the YCbCr_420_SP
          *             (NV21) format.
-         * @param camera the Camera service object.
+         * @param camera The Camera service object.
          */
         void onPreviewFrame(byte[] data, Camera camera);
     };
 
     /**
-     * Starts capturing and drawing preview frames to the screen.
-     * Preview will not actually start until a surface is supplied with
-     * {@link #setPreviewDisplay(SurfaceHolder)}.
-     *
-     * <p>If {@link #setPreviewCallback(Camera.PreviewCallback)},
-     * {@link #setOneShotPreviewCallback(Camera.PreviewCallback)}, or
-     * {@link #setPreviewCallbackWithBuffer(Camera.PreviewCallback)} were
-     * called, {@link Camera.PreviewCallback#onPreviewFrame(byte[], Camera)}
-     * will be called when preview data becomes available.
+     * Start drawing preview frames to the surface.
      */
     public native final void startPreview();
 
     /**
-     * Stops capturing and drawing preview frames to the surface, and
-     * resets the camera for a future call to {@link #startPreview()}.
+     * Stop drawing preview frames to the surface.
      */
     public native final void stopPreview();
 
@@ -346,13 +228,11 @@ public class Camera {
     public native final boolean previewEnabled();
 
     /**
-     * Installs a callback to be invoked for every preview frame in addition
-     * to displaying them on the screen.  The callback will be repeatedly called
-     * for as long as preview is active.  This method can be called at any time,
-     * even while preview is live.  Any other preview callbacks are overridden.
+     * Can be called at any time to instruct the camera to use a callback for
+     * each preview frame in addition to displaying it.
      *
-     * @param cb a callback object that receives a copy of each preview frame,
-     *     or null to stop receiving callbacks.
+     * @param cb A callback object that receives a copy of each preview frame.
+     *           Pass null to stop receiving callbacks at any time.
      */
     public final void setPreviewCallback(PreviewCallback cb) {
         mPreviewCallback = cb;
@@ -364,13 +244,10 @@ public class Camera {
     }
 
     /**
-     * Installs a callback to be invoked for the next preview frame in addition
-     * to displaying it on the screen.  After one invocation, the callback is
-     * cleared. This method can be called any time, even when preview is live.
-     * Any other preview callbacks are overridden.
+     * Installs a callback to retrieve a single preview frame, after which the
+     * callback is cleared.
      *
-     * @param cb a callback object that receives a copy of the next preview frame,
-     *     or null to stop receiving callbacks.
+     * @param cb A callback object that receives a copy of the preview frame.
      */
     public final void setOneShotPreviewCallback(PreviewCallback cb) {
         mPreviewCallback = cb;
@@ -382,24 +259,17 @@ public class Camera {
     private native final void setHasPreviewCallback(boolean installed, boolean manualBuffer);
 
     /**
-     * Installs a callback to be invoked for every preview frame, using buffers
-     * supplied with {@link #addCallbackBuffer(byte[])}, in addition to
-     * displaying them on the screen.  The callback will be repeatedly called
-     * for as long as preview is active and buffers are available.
-     * Any other preview callbacks are overridden.
+     * Installs a callback which will get called as long as there are buffers in the
+     * preview buffer queue, which minimizes dynamic allocation of preview buffers.
      *
-     * <p>The purpose of this method is to improve preview efficiency and frame
-     * rate by allowing preview frame memory reuse.  You must call
-     * {@link #addCallbackBuffer(byte[])} at some point -- before or after
-     * calling this method -- or no callbacks will received.
+     * Apps must call addCallbackBuffer to explicitly register the buffers to use, or no callbacks
+     * will be received. addCallbackBuffer may be safely called before or after
+     * a call to setPreviewCallbackWithBuffer with a non-null callback parameter.
      *
-     * The buffer queue will be cleared if this method is called with a null
-     * callback, {@link #setPreviewCallback(Camera.PreviewCallback)} is called,
-     * or {@link #setOneShotPreviewCallback(Camera.PreviewCallback)} is called.
+     * The buffer queue will be cleared upon any calls to setOneShotPreviewCallback,
+     * setPreviewCallback, or to this method with a null callback parameter.
      *
-     * @param cb a callback object that receives a copy of the preview frame,
-     *     or null to stop receiving callbacks and clear the buffer queue.
-     * @see #addCallbackBuffer(byte[])
+     * @param cb A callback object that receives a copy of the preview frame.  A null value will clear the queue.
      */
     public final void setPreviewCallbackWithBuffer(PreviewCallback cb) {
         mPreviewCallback = cb;
@@ -411,27 +281,21 @@ public class Camera {
     /**
      * Adds a pre-allocated buffer to the preview callback buffer queue.
      * Applications can add one or more buffers to the queue. When a preview
-     * frame arrives and there is still at least one available buffer, the
-     * buffer will be used and removed from the queue. Then preview callback is
-     * invoked with the buffer. If a frame arrives and there is no buffer left,
-     * the frame is discarded. Applications should add buffers back when they
-     * finish processing the data in them.
+     * frame arrives and there is still available buffer, buffer will be filled
+     * and it is removed from the queue. Then preview callback is invoked with
+     * the buffer. If a frame arrives and there is no buffer left, the frame is
+     * discarded. Applications should add the buffers back when they finish the
+     * processing.
      *
-     * <p>The size of the buffer is determined by multiplying the preview
-     * image width, height, and bytes per pixel.  The width and height can be
-     * read from {@link Camera.Parameters#getPreviewSize()}.  Bytes per pixel
-     * can be computed from
-     * {@link android.graphics.ImageFormat#getBitsPerPixel(int)} / 8,
-     * using the image format from {@link Camera.Parameters#getPreviewFormat()}.
+     * The image format of the callback buffer can be read from {@link
+     * android.hardware.Camera.Parameters#getPreviewFormat()}. bitsPerPixel can
+     * be read from {@link android.graphics.ImageFormat#getBitsPerPixel(int)}.
+     * Preview width and height can be determined from getPreviewSize.
      *
-     * <p>This method is only necessary when
-     * {@link #setPreviewCallbackWithBuffer(PreviewCallback)} is used.  When
-     * {@link #setPreviewCallback(PreviewCallback)} or
-     * {@link #setOneShotPreviewCallback(PreviewCallback)} are used, buffers
-     * are automatically allocated.
+     * Alternatively, a buffer from a previous callback may be passed in or used
+     * to determine the size of new preview frame buffers.
      *
-     * @param callbackBuffer the buffer to add to the queue.
-     *     The size should be width * height * bits_per_pixel / 8.
+     * @param callbackBuffer The buffer to register. Size should be width * height * bitsPerPixel / 8.
      * @see #setPreviewCallbackWithBuffer(PreviewCallback)
      */
     public native final void addCallbackBuffer(byte[] callbackBuffer);
@@ -530,8 +394,7 @@ public class Camera {
     }
 
     /**
-     * Callback interface used to notify on completion of camera auto focus.
-     *
+     * Handles the callback for the camera auto focus.
      * <p>Devices that do not support auto-focus will receive a "fake"
      * callback to this interface. If your application needs auto-focus and
      * should not be installed on devices <em>without</em> auto-focus, you must
@@ -539,15 +402,13 @@ public class Camera {
      * {@code android.hardware.camera.autofocus} feature, in the
      * <a href="{@docRoot}guide/topics/manifest/uses-feature-element.html">&lt;uses-feature></a>
      * manifest element.</p>
-     *
-     * @see #autoFocus(AutoFocusCallback)
      */
     public interface AutoFocusCallback
     {
         /**
-         * Called when the camera auto focus completes.  If the camera does not
-         * support auto-focus and autoFocus is called, onAutoFocus will be
-         * called immediately with success.
+         * Callback for the camera auto focus. If the camera does not support
+         * auto-focus and autoFocus is called, onAutoFocus will be called
+         * immediately with success.
          *
          * @param success true if focus was successful, false if otherwise
          * @param camera  the Camera service object
@@ -556,28 +417,23 @@ public class Camera {
     };
 
     /**
-     * Starts camera auto-focus and registers a callback function to run when
-     * the camera is focused.  This method is only valid when preview is active
-     * (between {@link #startPreview()} and before {@link #stopPreview()}).
-     *
-     * <p>Callers should check
-     * {@link android.hardware.Camera.Parameters#getFocusMode()} to determine if
-     * this method should be called. If the camera does not support auto-focus,
-     * it is a no-op and {@link AutoFocusCallback#onAutoFocus(boolean, Camera)}
+     * Starts auto-focus function and registers a callback function to run when
+     * camera is focused. Only valid after startPreview() has been called.
+     * Applications should call {@link
+     * android.hardware.Camera.Parameters#getFocusMode()} to determine if this
+     * method should be called. If the camera does not support auto-focus, it is
+     * a no-op and {@link AutoFocusCallback#onAutoFocus(boolean, Camera)}
      * callback will be called immediately.
-     *
      * <p>If your application should not be installed
      * on devices without auto-focus, you must declare that your application
      * uses auto-focus with the
      * <a href="{@docRoot}guide/topics/manifest/uses-feature-element.html">&lt;uses-feature></a>
      * manifest element.</p>
-     *
      * <p>If the current flash mode is not
      * {@link android.hardware.Camera.Parameters#FLASH_MODE_OFF}, flash may be
-     * fired during auto-focus, depending on the driver and camera hardware.<p>
+     * fired during auto-focus depending on the driver.<p>
      *
      * @param cb the callback to run
-     * @see #cancelAutoFocus()
      */
     public final void autoFocus(AutoFocusCallback cb)
     {
@@ -587,12 +443,10 @@ public class Camera {
     private native final void native_autoFocus();
 
     /**
-     * Cancels any auto-focus function in progress.
-     * Whether or not auto-focus is currently in progress,
-     * this function will return the focus position to the default.
+     * Cancels auto-focus function. If the auto-focus is still in progress,
+     * this function will cancel it. Whether the auto-focus is in progress
+     * or not, this function will return the focus position to the default.
      * If the camera does not support auto-focus, this is a no-op.
-     *
-     * @see #autoFocus(Camera.AutoFocusCallback)
      */
     public final void cancelAutoFocus()
     {
@@ -602,32 +456,23 @@ public class Camera {
     private native final void native_cancelAutoFocus();
 
     /**
-     * Callback interface used to signal the moment of actual image capture.
-     *
-     * @see #takePicture(ShutterCallback, PictureCallback, PictureCallback, PictureCallback)
+     * An interface which contains a callback for the shutter closing after taking a picture.
      */
     public interface ShutterCallback
     {
         /**
-         * Called as near as possible to the moment when a photo is captured
-         * from the sensor.  This is a good opportunity to play a shutter sound
-         * or give other feedback of camera operation.  This may be some time
-         * after the photo was triggered, but some time before the actual data
-         * is available.
+         * Can be used to play a shutter sound as soon as the image has been captured, but before
+         * the data is available.
          */
         void onShutter();
     }
 
     /**
-     * Callback interface used to supply image data from a photo capture.
-     *
-     * @see #takePicture(ShutterCallback, PictureCallback, PictureCallback, PictureCallback)
+     * Handles the callback for when a picture is taken.
      */
     public interface PictureCallback {
         /**
-         * Called when image data is available after a picture is taken.
-         * The format of the data depends on the context of the callback
-         * and {@link Camera.Parameters} settings.
+         * Callback for when a picture is taken.
          *
          * @param data   a byte array of the picture data
          * @param camera the Camera service object
@@ -636,9 +481,23 @@ public class Camera {
     };
 
     /**
-     * Equivalent to takePicture(shutter, raw, null, jpeg).
+     * Triggers an asynchronous image capture. The camera service will initiate
+     * a series of callbacks to the application as the image capture progresses.
+     * The shutter callback occurs after the image is captured. This can be used
+     * to trigger a sound to let the user know that image has been captured. The
+     * raw callback occurs when the raw image data is available (NOTE: the data
+     * may be null if the hardware does not have enough memory to make a copy).
+     * The jpeg callback occurs when the compressed image is available. If the
+     * application does not need a particular callback, a null can be passed
+     * instead of a callback method.
      *
-     * @see #takePicture(ShutterCallback, PictureCallback, PictureCallback, PictureCallback)
+     * This method will stop the preview. Applications should not call {@link
+     * #stopPreview()} before this. After jpeg callback is received,
+     * applications can call {@link #startPreview()} to restart the preview.
+     *
+     * @param shutter   callback after the image is captured, may be null
+     * @param raw       callback with raw image data, may be null
+     * @param jpeg      callback with jpeg image data, may be null
      */
     public final void takePicture(ShutterCallback shutter, PictureCallback raw,
             PictureCallback jpeg) {
@@ -659,18 +518,14 @@ public class Camera {
      * application does not need a particular callback, a null can be passed
      * instead of a callback method.
      *
-     * <p>This method is only valid when preview is active (after
-     * {@link #startPreview()}).  Preview will be stopped after the image is
-     * taken; callers must call {@link #startPreview()} again if they want to
-     * re-start preview or take more pictures.
+     * This method will stop the preview. Applications should not call {@link
+     * #stopPreview()} before this. After jpeg callback is received,
+     * applications can call {@link #startPreview()} to restart the preview.
      *
-     * <p>After calling this method, you must not call {@link #startPreview()}
-     * or take another picture until the JPEG callback has returned.
-     *
-     * @param shutter   the callback for image capture moment, or null
-     * @param raw       the callback for raw (uncompressed) image data, or null
+     * @param shutter   callback after the image is captured, may be null
+     * @param raw       callback with raw image data, may be null
      * @param postview  callback with postview image data, may be null
-     * @param jpeg      the callback for JPEG image data, or null
+     * @param jpeg      callback with jpeg image data, may be null
      */
     public final void takePicture(ShutterCallback shutter, PictureCallback raw,
             PictureCallback postview, PictureCallback jpeg) {
@@ -682,29 +537,26 @@ public class Camera {
     }
 
     /**
-     * Zooms to the requested value smoothly. The driver will notify {@link
+     * Zooms to the requested value smoothly. Driver will notify {@link
      * OnZoomChangeListener} of the zoom value and whether zoom is stopped at
      * the time. For example, suppose the current zoom is 0 and startSmoothZoom
-     * is called with value 3. The
-     * {@link Camera.OnZoomChangeListener#onZoomChange(int, boolean, Camera)}
-     * method will be called three times with zoom values 1, 2, and 3.
-     * Applications can call {@link #stopSmoothZoom} to stop the zoom earlier.
-     * Applications should not call startSmoothZoom again or change the zoom
-     * value before zoom stops. If the supplied zoom value equals to the current
-     * zoom value, no zoom callback will be generated. This method is supported
-     * if {@link android.hardware.Camera.Parameters#isSmoothZoomSupported}
-     * returns true.
+     * is called with value 3. Method onZoomChange will be called three times
+     * with zoom value 1, 2, and 3. The applications can call {@link
+     * #stopSmoothZoom} to stop the zoom earlier. The applications should not
+     * call startSmoothZoom again or change the zoom value before zoom stops. If
+     * the passing zoom value equals to the current zoom value, no zoom callback
+     * will be generated. This method is supported if {@link
+     * android.hardware.Camera.Parameters#isSmoothZoomSupported} is true.
      *
      * @param value zoom value. The valid range is 0 to {@link
      *              android.hardware.Camera.Parameters#getMaxZoom}.
      * @throws IllegalArgumentException if the zoom value is invalid.
      * @throws RuntimeException if the method fails.
-     * @see #setZoomChangeListener(OnZoomChangeListener)
      */
     public native final void startSmoothZoom(int value);
 
     /**
-     * Stops the smooth zoom. Applications should wait for the {@link
+     * Stops the smooth zoom. The applications should wait for the {@link
      * OnZoomChangeListener} to know when the zoom is actually stopped. This
      * method is supported if {@link
      * android.hardware.Camera.Parameters#isSmoothZoomSupported} is true.
@@ -729,21 +581,20 @@ public class Camera {
     public native final void setDisplayOrientation(int degrees);
 
     /**
-     * Callback interface for zoom changes during a smooth zoom operation.
-     *
-     * @see #setZoomChangeListener(OnZoomChangeListener)
-     * @see #startSmoothZoom(int)
+     * Interface for a callback to be invoked when zoom value changes.
      */
     public interface OnZoomChangeListener
     {
         /**
-         * Called when the zoom value has changed during a smooth zoom.
+         * Called when the zoom value has changed.
          *
          * @param zoomValue the current zoom value. In smooth zoom mode, camera
          *                  calls this for every new zoom value.
          * @param stopped whether smooth zoom is stopped. If the value is true,
          *                this is the last zoom update for the application.
+         *
          * @param camera  the Camera service object
+         * @see #startSmoothZoom(int)
          */
         void onZoomChange(int zoomValue, boolean stopped, Camera camera);
     };
@@ -760,25 +611,15 @@ public class Camera {
         mZoomListener = listener;
     }
 
-    // Error codes match the enum in include/ui/Camera.h
-
-    /**
-     * Unspecified camera error.
-     * @see Camera.ErrorCallback
-     */
+    // These match the enum in include/ui/Camera.h
+    /** Unspecified camerar error.  @see #ErrorCallback */
     public static final int CAMERA_ERROR_UNKNOWN = 1;
-
-    /**
-     * Media server died. In this case, the application must release the
-     * Camera object and instantiate a new one.
-     * @see Camera.ErrorCallback
-     */
+    /** Media server died. In this case, the application must release the
+     * Camera object and instantiate a new one. @see #ErrorCallback */
     public static final int CAMERA_ERROR_SERVER_DIED = 100;
 
     /**
-     * Callback interface for camera error notification.
-     *
-     * @see #setErrorCallback(ErrorCallback)
+     * Handles the camera error callback.
      */
     public interface ErrorCallback
     {
@@ -796,7 +637,7 @@ public class Camera {
 
     /**
      * Registers a callback to be invoked when an error occurs.
-     * @param cb The callback to run
+     * @param cb the callback to run
      */
     public final void setErrorCallback(ErrorCallback cb)
     {
@@ -807,10 +648,9 @@ public class Camera {
     private native final String native_getParameters();
 
     /**
-     * Changes the settings for this Camera service.
+     * Sets the Parameters for pictures from this Camera service.
      *
      * @param params the Parameters to use for this Camera service
-     * @see #getParameters()
      */
     public void setParameters(Parameters params) {
         try {
@@ -821,11 +661,7 @@ public class Camera {
     }
 
     /**
-     * Returns the current settings for this Camera service.
-     * If modifications are made to the returned Parameters, they must be passed
-     * to {@link #setParameters(Camera.Parameters)} to take effect.
-     *
-     * @see #setParameters(Camera.Parameters)
+     * Returns the picture Parameters for this Camera service.
      */
     public Parameters getParameters() {
         Parameters p = new Parameters();
@@ -835,7 +671,7 @@ public class Camera {
     }
 
     /**
-     * Image size (width and height dimensions).
+     * Handles the picture size (dimensions).
      */
     public class Size {
         /**
@@ -874,21 +710,18 @@ public class Camera {
     };
 
     /**
-     * Camera service settings.
+     * Handles the parameters for pictures created by a Camera service.
      *
      * <p>To make camera parameters take effect, applications have to call
-     * {@link Camera#setParameters(Camera.Parameters)}. For example, after
-     * {@link Camera.Parameters#setWhiteBalance} is called, white balance is not
-     * actually changed until {@link Camera#setParameters(Camera.Parameters)}
-     * is called with the changed parameters object.
+     * Camera.setParameters. For example, after setWhiteBalance is called, white
+     * balance is not changed until Camera.setParameters() is called.
      *
      * <p>Different devices may have different camera capabilities, such as
      * picture size or flash modes. The application should query the camera
      * capabilities before setting parameters. For example, the application
-     * should call {@link Camera.Parameters#getSupportedColorEffects()} before
-     * calling {@link Camera.Parameters#setColorEffect(String)}. If the
-     * camera does not support color effects,
-     * {@link Camera.Parameters#getSupportedColorEffects()} will return null.
+     * should call getSupportedColorEffects before calling setEffect. If the
+     * camera does not support color effects, getSupportedColorEffects will
+     * return null.
      */
     public class Parameters {
         // Parameter keys to communicate with the camera driver.

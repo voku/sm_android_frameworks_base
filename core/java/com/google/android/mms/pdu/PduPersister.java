@@ -422,8 +422,7 @@ public class PduPersister {
                     // Store simple string values directly in the database instead of an
                     // external file.  This makes the text searchable and retrieval slightly
                     // faster.
-                    if (ContentType.TEXT_PLAIN.equals(type) || ContentType.APP_SMIL.equals(type)
-                            || ContentType.TEXT_HTML.equals(type)) {
+                    if ("text/plain".equals(type) || "application/smil".equals(type)) {
                         String text = c.getString(PART_COLUMN_TEXT);
                         byte [] blob = new EncodedStringValue(text != null ? text : "")
                             .getTextString();
@@ -737,9 +736,7 @@ public class PduPersister {
 
         try {
             byte[] data = part.getData();
-            if (ContentType.TEXT_PLAIN.equals(contentType)
-                    || ContentType.APP_SMIL.equals(contentType)
-                    || ContentType.TEXT_HTML.equals(contentType)) {
+            if ("text/plain".equals(contentType) || "application/smil".equals(contentType)) {
                 ContentValues cv = new ContentValues();
                 cv.put(Telephony.Mms.Part.TEXT, new EncodedStringValue(data).getString());
                 if (mContentResolver.update(uri, cv, null, null) != 1) {

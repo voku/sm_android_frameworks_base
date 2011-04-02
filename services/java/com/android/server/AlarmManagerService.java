@@ -652,7 +652,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 
                 ArrayList<Alarm> triggerList = new ArrayList<Alarm>();
                 
-                if ((result & TIME_CHANGED_MASK) != 0) {
+                if ((result & TIME_CHANGED_MASK) != 0 && SystemProperties.getInt("sys.boot_completed", 0) == 1) {
                     remove(mTimeTickSender);
                     mClockReceiver.scheduleTimeTickEvent();
                     Intent intent = new Intent(Intent.ACTION_TIME_CHANGED);
