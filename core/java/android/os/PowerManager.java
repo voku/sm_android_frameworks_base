@@ -253,7 +253,6 @@ public class PowerManager
                     mHeld = true;
                 }
             }
-            Log.d(TAG, "****** PowerManager acquire()");
         }
         
         /**
@@ -305,7 +304,6 @@ public class PowerManager
                     throw new RuntimeException("WakeLock under-locked " + mTag);
                 }
             }
-            Log.d(TAG, "****** PowerManager release()");
         }
 
         public boolean isHeld()
