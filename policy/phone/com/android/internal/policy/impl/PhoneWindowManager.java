@@ -2031,8 +2031,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     } else {
                         // only try to turn off the screen if we didn't already hang up
                         mShouldTurnOffOnKeyUp = true;
-                        mHandler.postDelayed(mPowerLongPress,
-                                ViewConfiguration.getGlobalActionKeyTimeout());
+                        if (!keyguardIsShowingTq()) {
+                            mHandler.postDelayed(mPowerLongPress,
+                                    ViewConfiguration.getGlobalActionKeyTimeout());
+                        }
                         result &= ~ACTION_PASS_TO_USER;
                     }
                 } else {
