@@ -53,6 +53,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_1"
                             android:layout_width="match_parent"
@@ -70,6 +71,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_2"
                             android:layout_width="match_parent"
@@ -87,6 +89,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_3"
                             android:layout_width="match_parent"
@@ -104,6 +107,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_4"
                             android:layout_width="match_parent"
@@ -121,6 +125,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_5"
                             android:layout_width="match_parent"
@@ -138,6 +143,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_6"
                             android:layout_width="match_parent"
@@ -155,6 +161,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_7"
                             android:layout_width="match_parent"
@@ -172,6 +179,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_8"
                             android:layout_width="match_parent"
@@ -189,6 +197,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_9"
                             android:layout_width="match_parent"
@@ -206,6 +215,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_10"
                             android:layout_width="match_parent"
@@ -223,6 +233,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_11"
                             android:layout_width="match_parent"
@@ -240,6 +251,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_12"
                             android:layout_width="match_parent"
@@ -257,6 +269,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_13"
                             android:layout_width="match_parent"
@@ -274,6 +287,7 @@
                     android:focusable="true"
                     android:visibility="gone"
                     android:background="@drawable/stat_power_bg"
+                    android:minWidth="45px"
                     >
                     <ImageView android:id="@+id/exp_power_image_14"
                             android:layout_width="match_parent"
