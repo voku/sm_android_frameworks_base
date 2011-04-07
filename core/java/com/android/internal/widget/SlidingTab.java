@@ -326,6 +326,7 @@ public class SlidingTab extends ViewGroup {
                 });
                 tab.startAnimation(trans1);
                 text.startAnimation(trans2);
+                mAnimating = true;
             } else {
                 if (horiz) {
                     text.offsetLeftAndRight(dx);
@@ -337,6 +338,7 @@ public class SlidingTab extends ViewGroup {
                 text.clearAnimation();
                 tab.clearAnimation();
                 target.clearAnimation();
+                mAnimating = false;
             }
         }
 
