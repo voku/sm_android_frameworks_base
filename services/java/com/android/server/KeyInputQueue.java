@@ -644,6 +644,14 @@ public abstract class KeyInputQueue {
                                 di.mAbs.changed = true;
                                 di.mAbs.mDown[0] = ev.value != 0;
                             
+                            // Trackball (mouse) protocol: press down or up.
+                            } else if (ev.scancode == RawInputEvent.BTN_MOUSE &&
+                                    (classes&RawInputEvent.CLASS_TRACKBALL) != 0) {
+                                di.mRel.changed = true;
+                                di.mRel.mNextNumPointers = ev.value != 0 ? 1 : 0;
+                                send = true;
+                            }
+    
                         // Process position events from multitouch protocol.
                         } else if (ev.type == RawInputEvent.EV_ABS &&
                                 (classes&RawInputEvent.CLASS_TOUCHSCREEN_MT) != 0) {
@@ -690,6 +698,18 @@ public abstract class KeyInputQueue {
                                 di.curTouchVals[MotionEvent.SAMPLE_SIZE] = ev.value;
                                 di.curTouchVals[MotionEvent.NUM_SAMPLE_DATA
                                                  + MotionEvent.SAMPLE_SIZE] = ev.value;
+                            }
+    
+                        // Process movement events from trackball (mouse) protocol.
+                        } else if (ev.type == RawInputEvent.EV_REL &&
+                                (classes&RawInputEvent.CLASS_TRACKBALL) != 0) {
+                            // Add this relative movement into our totals.
+                            if (ev.scancode == RawInputEvent.REL_X) {
+                                di.mRel.changed = true;
+                                di.mRel.mNextData[MotionEvent.SAMPLE_X] += ev.value;
+                            } else if (ev.scancode == RawInputEvent.REL_Y) {
+                                di.mRel.changed = true;
+                                di.mRel.mNextData[MotionEvent.SAMPLE_Y] += ev.value;
                             }
                         }
                         

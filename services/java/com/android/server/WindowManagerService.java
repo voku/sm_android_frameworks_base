@@ -6550,7 +6550,8 @@ public class WindowManagerService extends IWindowManager.Stub
                         int eventType;
                         if (ev.classType == RawInputEvent.CLASS_TOUCHSCREEN) {
                             eventType = eventType((MotionEvent)ev.event);
-                        } else if (ev.classType == RawInputEvent.CLASS_KEYBOARD) {
+                        } else if (ev.classType == RawInputEvent.CLASS_KEYBOARD ||
+                                   ev.classType == RawInputEvent.CLASS_TRACKBALL) {
                             eventType = LocalPowerManager.BUTTON_EVENT;
                         } else {
                             eventType = LocalPowerManager.OTHER_EVENT;
