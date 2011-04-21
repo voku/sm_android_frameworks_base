@@ -22,7 +22,6 @@
 #include <sys/types.h>
 
 #include "AudioBufferProvider.h"
-#include "AudioDSP.h"
 #include "AudioResampler.h"
 
 namespace android {
@@ -44,7 +43,7 @@ struct dither_t {
 class AudioMixer
 {
 public:
-                            AudioMixer(size_t frameCount, uint32_t sampleRate, AudioDSP& dsp);
+                            AudioMixer(size_t frameCount, uint32_t sampleRate);
 
                             ~AudioMixer();
 
@@ -123,7 +122,7 @@ private:
 
     struct state_t;
 
-    typedef void (*mix_t)(state_t* state, void* output, AudioDSP& dsp);
+    typedef void (*mix_t)(state_t* state, void* output);
 
     static const int BLOCKSIZE = 16; // 4 cache lines
 
@@ -149,7 +148,7 @@ private:
         AudioBufferProvider*                bufferProvider;
         mutable AudioBufferProvider::Buffer buffer;
 
-        void (*hook)(track_t* t, int32_t* output, size_t numOutFrames, int32_t* temp, AudioDSP& dsp);
+        void (*hook)(track_t* t, int32_t* output, size_t numOutFrames, int32_t* temp);
         void const* in;             // current location in buffer
 
         AudioResampler*     resampler;
@@ -157,7 +156,7 @@ private:
 
         bool        setResampler(uint32_t sampleRate, uint32_t devSampleRate);
         bool        doesResample() const;
-        void        adjustVolumeRamp(AudioDSP& dsp, size_t frames);
+        void        adjustVolumeRamp();
     };
 
     // pad to 32-bytes to fill cache line
@@ -178,23 +177,22 @@ private:
     int             mActiveTrack;
     uint32_t        mTrackNames;
     const uint32_t  mSampleRate;
-    AudioDSP&       mDsp;
 
     state_t         mState __attribute__((aligned(32)));
 
     void invalidateState(uint32_t mask);
 
     static int32_t lipshitz(int32_t* state, int32_t input);
-    static void track__genericResample(track_t* t, int32_t* out, size_t numFrames, int32_t* temp, AudioDSP& dsp);
-    static void track__nop(track_t* t, int32_t* out, size_t numFrames, int32_t* temp, AudioDSP& dsp);
-    static void volumeRampStereo(track_t* t, int32_t* out, size_t frameCount, int32_t* temp, AudioDSP& dsp);
-    static void track__16BitsStereo(track_t* t, int32_t* out, size_t numFrames, int32_t* temp, AudioDSP& dsp);
-    static void track__16BitsMono(track_t* t, int32_t* out, size_t numFrames, int32_t* temp, AudioDSP& dsp);
+    static void track__genericResample(track_t* t, int32_t* out, size_t numFrames, int32_t* temp);
+    static void track__nop(track_t* t, int32_t* out, size_t numFrames, int32_t* temp);
+    static void volumeRampStereo(track_t* t, int32_t* out, size_t frameCount, int32_t* temp);
+    static void track__16BitsStereo(track_t* t, int32_t* out, size_t numFrames, int32_t* temp);
+    static void track__16BitsMono(track_t* t, int32_t* out, size_t numFrames, int32_t* temp);
 
-    static void process__validate(state_t* state, void* output, AudioDSP& dsp);
-    static void process__nop(state_t* state, void* output, AudioDSP& dsp);
-    static void process__genericNoResampling(state_t* state, void* output, AudioDSP& dsp);
-    static void process__genericResampling(state_t* state, void* output, AudioDSP& dsp);
+    static void process__validate(state_t* state, void* output);
+    static void process__nop(state_t* state, void* output);
+    static void process__genericNoResampling(state_t* state, void* output);
+    static void process__genericResampling(state_t* state, void* output);
 };
 
 // ----------------------------------------------------------------------------

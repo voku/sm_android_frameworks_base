@@ -636,8 +636,6 @@ status_t AudioFlinger::setParameters(int ioHandle, const String8& keyValuePairs)
 #endif
     // ioHandle == 0 means the parameters are global to the audio hardware interface
     if (ioHandle == 0) {
-        /* Set global DSP parameters, if any. */
-        mDsp.setParameters(keyValuePairs);
         AutoMutex lock(mHardwareLock);
         mHardwareStatus = AUDIO_SET_PARAMETER;
         result = mAudioHardware->setParameters(keyValuePairs);
@@ -1338,7 +1336,7 @@ AudioFlinger::MixerThread::MixerThread(const sp<AudioFlinger>& audioFlinger, Aud
         mAudioMixer(0)
 {
     mType = PlaybackThread::MIXER;
-    mAudioMixer = new AudioMixer(mFrameCount, mSampleRate, audioFlinger->mDsp);
+    mAudioMixer = new AudioMixer(mFrameCount, mSampleRate);
 
     // FIXME - Current mixer implementation only supports stereo output
     if (mChannelCount == 1) {
@@ -1778,7 +1776,7 @@ bool AudioFlinger::MixerThread::checkForNewParameters_l()
             if (status == NO_ERROR && reconfig) {
                 delete mAudioMixer;
                 readOutputParameters();
-                mAudioMixer = new AudioMixer(mFrameCount, mSampleRate, mAudioFlinger->mDsp);
+                mAudioMixer = new AudioMixer(mFrameCount, mSampleRate);
                 for (size_t i = 0; i < mTracks.size() ; i++) {
                     int name = getTrackName_l();
                     if (name < 0) break;

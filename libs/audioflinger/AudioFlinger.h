@@ -42,7 +42,6 @@
 #include <hardware_legacy/AudioHardwareInterface.h>
 
 #include "AudioBufferProvider.h"
-#include "AudioDSP.h"
 #include "AudioMixer.h"
 
 namespace android {
@@ -815,7 +814,6 @@ private:
 #ifdef HAVE_FM_RADIO
                 bool                                mFmOn;
 #endif
-    AudioDSP mDsp;
 };
 
 // ----------------------------------------------------------------------------

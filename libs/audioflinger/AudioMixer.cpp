@@ -46,10 +46,9 @@ inline static uint32_t prng() {
 
 // ----------------------------------------------------------------------------
 
-AudioMixer::AudioMixer(size_t frameCount, uint32_t sampleRate, AudioDSP& dsp)
-    :   mActiveTrack(0), mTrackNames(0), mSampleRate(sampleRate), mDsp(dsp)
+AudioMixer::AudioMixer(size_t frameCount, uint32_t sampleRate)
+    :   mActiveTrack(0), mTrackNames(0), mSampleRate(sampleRate)
 {
-    mDsp.configure(sampleRate);
     mState.enabledTracks= 0;
     mState.needsChanged = 0;
     mState.frameCount   = frameCount;
@@ -252,34 +251,14 @@ bool AudioMixer::track_t::doesResample() const
     return resampler != 0;
 }
 
-void AudioMixer::track_t::adjustVolumeRamp(AudioDSP& dsp, size_t frames)
+void AudioMixer::track_t::adjustVolumeRamp()
 {
-    int32_t dynamicRangeCompressionFactor = dsp.estimateLevel(
-        static_cast<const int16_t*>(in), int32_t(frames), channelCount
-    );
-
-    for (int i = 0; i < 2; i ++) {
-        /* Ramp from current to new volume level if necessary */
-        int32_t desiredVolume = volume[i] * dynamicRangeCompressionFactor;
-        int32_t d = desiredVolume - prevVolume[i];
-
-        /* limit change rate to smooth the compressor. */
-        int32_t volChangeLimit = (prevVolume[i] >> 9);
-
-        volChangeLimit -= 1;
-        int32_t volInc = d / int32_t(frames);
-        if (volInc < -(volChangeLimit)) {
-            volInc = -(volChangeLimit);
+    for (int i=0 ; i<2 ; i++) {	
+        if (((volumeInc[i]>0) && (((prevVolume[i]+volumeInc[i])>>16) >= volume[i])) ||
+                ((volumeInc[i]<0) && (((prevVolume[i]+volumeInc[i])>>16) <= volume[i]))) {
+            volumeInc[i] = 0;
+            prevVolume[i] = volume[i]<<16;
         }
-
-        /* Make ramps up slower, but ramps down fast. */
-        volChangeLimit >>= 4;
-        volChangeLimit += 1;
-        if (volInc > volChangeLimit) {
-            volInc = volChangeLimit;
-        }
-
-        volumeInc[i] = volInc;
     }
 }
 
@@ -294,11 +273,11 @@ status_t AudioMixer::setBufferProvider(AudioBufferProvider* buffer)
 
 void AudioMixer::process(void* output)
 {
-    mState.hook(&mState, output, mDsp);
+    mState.hook(&mState, output);
 }
 
 
-void AudioMixer::process__validate(state_t* state, void* output, AudioDSP& dsp)
+void AudioMixer::process__validate(state_t* state, void* output)
 {
     LOGW_IF(!state->needsChanged,
         "in process__validate() but nothing's invalid");
@@ -391,7 +370,7 @@ void AudioMixer::process__validate(state_t* state, void* output, AudioDSP& dsp)
         countActiveTracks, state->enabledTracks,
         all16BitsStereoNoResample, resampling, volumeRamp);
 
-   state->hook(state, output, dsp);
+   state->hook(state, output);
 
    // Now that the volume ramp has been done, set optimal state and
    // track hooks for subsequent mixer process
@@ -499,7 +478,7 @@ int32_t mulRL(int left, uint32_t inRL, uint32_t vRL)
 }
 
 
-void AudioMixer::track__genericResample(track_t* t, int32_t* out, size_t outFrameCount, int32_t* temp, AudioDSP& dsp)
+void AudioMixer::track__genericResample(track_t* t, int32_t* out, size_t outFrameCount, int32_t* temp)
 {
     t->resampler->setSampleRate(t->sampleRate);
 
@@ -508,7 +487,7 @@ void AudioMixer::track__genericResample(track_t* t, int32_t* out, size_t outFram
         t->resampler->setVolume(UNITY_GAIN, UNITY_GAIN);
         memset(temp, 0, outFrameCount * MAX_NUM_CHANNELS * sizeof(int32_t));
         t->resampler->resample(temp, outFrameCount, t->bufferProvider);
-        volumeRampStereo(t, out, outFrameCount, temp, dsp);
+        volumeRampStereo(t, out, outFrameCount, temp);
     }
 
     // constant gain
@@ -518,13 +497,13 @@ void AudioMixer::track__genericResample(track_t* t, int32_t* out, size_t outFram
     }
 }
 
-void AudioMixer::track__nop(track_t* t, int32_t* out, size_t outFrameCount, int32_t* temp, AudioDSP& dsp)
+void AudioMixer::track__nop(track_t* t, int32_t* out, size_t outFrameCount, int32_t* temp)
 {
 }
 
-void AudioMixer::volumeRampStereo(track_t* t, int32_t* out, size_t frameCount, int32_t* temp, AudioDSP& dsp)
+void AudioMixer::volumeRampStereo(track_t* t, int32_t* out, size_t frameCount, int32_t* temp)
 {
-    t->adjustVolumeRamp(dsp, frameCount);
+    t->adjustVolumeRamp();
     int32_t vl = t->prevVolume[0];
     int32_t vr = t->prevVolume[1];
     const int32_t vlInc = t->volumeInc[0];
@@ -546,12 +525,12 @@ void AudioMixer::volumeRampStereo(track_t* t, int32_t* out, size_t frameCount, i
     t->prevVolume[1] = vr;
 }
 
-void AudioMixer::track__16BitsStereo(track_t* t, int32_t* out, size_t frameCount, int32_t* temp, AudioDSP& dsp)
+void AudioMixer::track__16BitsStereo(track_t* t, int32_t* out, size_t frameCount, int32_t* temp)
 {
     int16_t const *in = static_cast<int16_t const *>(t->in);
 
     // ramp gain
-    t->adjustVolumeRamp(dsp, frameCount);
+    t->adjustVolumeRamp();
     if UNLIKELY(t->volumeInc[0]|t->volumeInc[1]) {
         int32_t vl = t->prevVolume[0];
         int32_t vr = t->prevVolume[1];
@@ -587,12 +566,12 @@ void AudioMixer::track__16BitsStereo(track_t* t, int32_t* out, size_t frameCount
     t->in = in;
 }
 
-void AudioMixer::track__16BitsMono(track_t* t, int32_t* out, size_t frameCount, int32_t* temp, AudioDSP& dsp)
+void AudioMixer::track__16BitsMono(track_t* t, int32_t* out, size_t frameCount, int32_t* temp)
 {
     int16_t const *in = static_cast<int16_t const *>(t->in);
 
     // ramp gain
-    t->adjustVolumeRamp(dsp, frameCount);
+    t->adjustVolumeRamp();
     if UNLIKELY(t->volumeInc[0]|t->volumeInc[1]) {
         int32_t vl = t->prevVolume[0];
         int32_t vr = t->prevVolume[1];
@@ -678,7 +657,7 @@ void AudioMixer::ditherAndClamp(dither_t* state, int32_t* out, int32_t const *su
 }
 
 // no-op case
-void AudioMixer::process__nop(state_t* state, void* output, AudioDSP& dsp)
+void AudioMixer::process__nop(state_t* state, void* output)
 {
     // this assumes output 16 bits stereo, no resampling
     memset(output, 0, state->frameCount*4);
@@ -699,7 +678,7 @@ void AudioMixer::process__nop(state_t* state, void* output, AudioDSP& dsp)
 }
 
 // generic code without resampling
-void AudioMixer::process__genericNoResampling(state_t* state, void* output, AudioDSP& dsp)
+void AudioMixer::process__genericNoResampling(state_t* state, void* output)
 {
     int32_t outTemp[BLOCKSIZE * MAX_NUM_CHANNELS] __attribute__((aligned(32)));
 
@@ -736,7 +715,7 @@ void AudioMixer::process__genericNoResampling(state_t* state, void* output, Audi
             while (outFrames) {
                 size_t inFrames = (t.frameCount > outFrames)?outFrames:t.frameCount;
                 if (inFrames) {
-                    (t.hook)(&t, outTemp + (BLOCKSIZE-outFrames)*MAX_NUM_CHANNELS, inFrames, state->resampleTemp, dsp);
+                    (t.hook)(&t, outTemp + (BLOCKSIZE-outFrames)*MAX_NUM_CHANNELS, inFrames, state->resampleTemp);
                     t.frameCount -= inFrames;
                     outFrames -= inFrames;
                 }
@@ -754,7 +733,6 @@ void AudioMixer::process__genericNoResampling(state_t* state, void* output, Audi
             }
         }
 
-        dsp.process(outTemp, BLOCKSIZE);
         ditherAndClamp(&state->dither, out, outTemp, BLOCKSIZE);
         out += BLOCKSIZE;
         numFrames -= BLOCKSIZE;
@@ -772,7 +750,7 @@ void AudioMixer::process__genericNoResampling(state_t* state, void* output, Audi
 }
 
 // generic code with resampling
-void AudioMixer::process__genericResampling(state_t* state, void* output, AudioDSP& dsp)
+void AudioMixer::process__genericResampling(state_t* state, void* output)
 {
     int32_t* const outTemp = state->outputTemp;
     const size_t size = sizeof(int32_t) * MAX_NUM_CHANNELS * state->frameCount;
@@ -791,7 +769,7 @@ void AudioMixer::process__genericResampling(state_t* state, void* output, AudioD
         // acquire/release the buffers because it's done by
         // the resampler.
         if ((t.needs & NEEDS_RESAMPLE__MASK) == NEEDS_RESAMPLE_ENABLED) {
-            (t.hook)(&t, outTemp, numFrames, state->resampleTemp, dsp);
+            (t.hook)(&t, outTemp, numFrames, state->resampleTemp);
         } else {
 
             size_t outFrames = numFrames;
@@ -804,14 +782,13 @@ void AudioMixer::process__genericResampling(state_t* state, void* output, AudioD
                 // been enabled for mixing.
                 if (t.in == NULL) break;
 
-                (t.hook)(&t, outTemp + (numFrames-outFrames)*MAX_NUM_CHANNELS, t.buffer.frameCount, state->resampleTemp, dsp);
+                (t.hook)(&t, outTemp + (numFrames-outFrames)*MAX_NUM_CHANNELS, t.buffer.frameCount, state->resampleTemp);
                 outFrames -= t.buffer.frameCount;
                 t.bufferProvider->releaseBuffer(&t.buffer);
             }
         }
     }
 
-    dsp.process(outTemp, numFrames);
     ditherAndClamp(&state->dither, out, outTemp, numFrames);
 }
 
