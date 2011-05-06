@@ -786,8 +786,8 @@
     <string name="perms_show_all" msgid="2671791163933091180"><b>"Tout afficher"</b></string>
     <string name="usb_storage_activity_title" msgid="2399289999608900443">"Stockage de masse USB"</string>
     <string name="usb_storage_title" msgid="5901459041398751495">"Connecté à l\'aide d\'un câble USB"</string>
-    <string name="usb_storage_message" msgid="4796759646167247178">"Vous avez connecté votre téléphone à votre ordinateur à l\'aide d\'un câble USB. Sélectionnez le bouton ci-dessous pour copier des fichiers de votre ordinateur vers la carte SD de votre Android, ou inversement."</string>
-    <string name="usb_storage_button_mount" msgid="1052259930369508235">"Activer le périphérique de stockage USB"</string>
+    <string name="usb_storage_message" msgid="4796759646167247178">"La mémoire de stockage USB permet d\'échanger des fichiers entre votre ordinateur et votre téléphone."</string>
+    <string name="usb_storage_button_mount" msgid="1052259930369508235">"Activer la mémoire de stockage USB"</string>
     <string name="usb_storage_error_message" msgid="2534784751603345363">"Un problème est survenu lors de l\'utilisation de votre carte SD en tant que périphérique de stockage USB."</string>
     <string name="usb_storage_notification_title" msgid="8175892554757216525">"Connecté avec un câble USB"</string>
     <string name="usb_storage_notification_message" msgid="7380082404288219341">"Activez pour copier des fichiers vers/de votre ordinateur."</string>
