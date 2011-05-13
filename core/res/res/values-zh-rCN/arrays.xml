@@ -29,4 +29,11 @@
         <item>2</item>
     </integer-array>
 
+    <!-- Defines the shutdown options shown in the reboot dialog. -->
+    <array name="shutdown_reboot_options">
+        <item>正常重启</item>
+        <item>恢复模式</item>
+        <item>刷机模式</item>
+    </array>
+
 </resources>
