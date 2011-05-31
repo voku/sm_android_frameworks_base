@@ -245,6 +245,9 @@ class PowerManagerService extends IPowerManager.Stub
     private static final boolean mSpew = false;
     private static final boolean mDebugProximitySensor = (true || mSpew);
     private static final boolean mDebugLightSensor = (false || mSpew);
+    
+    private native void nativeInit();
+    private native void nativeSetPowerState(boolean screenOn, boolean screenBright);
 
     /*
     static PrintStream mLog;
@@ -473,6 +476,11 @@ class PowerManagerService extends IPowerManager.Stub
                     // Ignore
                 }
             }
+        }
+        
+        nativeInit();
+        synchronized (mLocks) {
+            updateNativePowerStateLocked();
         }
     }
 
@@ -1597,7 +1605,15 @@ class PowerManagerService extends IPowerManager.Stub
                     }
                 }
             }
+            
+            updateNativePowerStateLocked();
         }
+    }
+    
+    private void updateNativePowerStateLocked() {
+        nativeSetPowerState(
+                (mPowerState & SCREEN_ON_BIT) != 0,
+                (mPowerState & SCREEN_BRIGHT) == SCREEN_BRIGHT);
     }
 
     private int screenOffFinishedAnimatingLocked(int reason) {
