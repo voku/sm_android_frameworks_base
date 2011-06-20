@@ -60,8 +60,8 @@ public class SlidingTab extends ViewGroup {
     private static final long VIBRATE_SHORT = 30;
     private static final long VIBRATE_LONG = 40;
     private static final int TRACKING_MARGIN = 50;
-    private static final int ANIM_DURATION = 250; // Time for most animations (in ms)
-    private static final int ANIM_TARGET_TIME = 500; // Time to show targets (in ms)
+    private static final int ANIM_DURATION = 150; // Time for most animations (in ms)
+    private static final int ANIM_TARGET_TIME = 400; // Time to show targets (in ms)
     private boolean mHoldLeftOnTransition = true;
     private boolean mHoldRightOnTransition = true;
 

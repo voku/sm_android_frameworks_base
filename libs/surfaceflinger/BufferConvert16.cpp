@@ -80,14 +80,19 @@ uint8_t* BufferConvert16::GetRGBBuffer(uint8_t *yuvBuf)
 {
     uint8_t *TmpYuvBuf[3];
 
-    TmpYuvBuf[0]    =   yuvBuf;
-    TmpYuvBuf[1]    =   yuvBuf + (mSize);
-    TmpYuvBuf[2]    =   TmpYuvBuf[1] + (mSize / 4);
+    if (yuvBuf) {
+        TmpYuvBuf[0]    =   yuvBuf;
+        TmpYuvBuf[1]    =   yuvBuf + (mSize);
+        TmpYuvBuf[2]    =   TmpYuvBuf[1] + (mSize / 4);
 
-    if (++mRGBBufferIndex == 3) mRGBBufferIndex = 0;    
-    cc16(TmpYuvBuf);
+        if (++mRGBBufferIndex == 3) mRGBBufferIndex = 0;    
+        cc16(TmpYuvBuf);
    
-    return mRGBBuffer + (mRGBBufferIndex * mSize * 2);
+        return mRGBBuffer + (mRGBBufferIndex * mSize * 2);
+    } else {
+        // frame buffer is null (fix by vflashbirdv)
+        return 0;
+    }
 }
 
 
@@ -211,4 +216,3 @@ int32_t BufferConvert16::cc16(uint8_t **src) const
     return 1;
 };
 };
-
