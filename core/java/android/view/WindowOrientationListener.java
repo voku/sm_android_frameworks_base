@@ -155,7 +155,7 @@ public abstract class WindowOrientationListener {
         public void update() {
             ContentResolver resolver = mContext.getContentResolver();
             mAccelerometerMode = Settings.System.getInt(resolver,
-                    Settings.System.ACCELEROMETER_ROTATION_MODE, 13);
+                    Settings.System.ACCELEROMETER_ROTATION_MODE, 5);
             if (localLOGV) Log.i(TAG, "mAccelerometerMode=" + mAccelerometerMode);
         }
     }
@@ -324,12 +324,9 @@ public abstract class WindowOrientationListener {
                 return;
             }
 
-	    boolean allowed = true;
+	    boolean allowed = rotation == ROTATION_0;
             if (!allowed) {
                switch (rotation) {
-                  case ROTATION_0:
-                     allowed = (mAccelerometerMode & 8) != 0;
-                     break;
                   case ROTATION_90:
                      allowed = (mAccelerometerMode & 1) != 0;
                      break;

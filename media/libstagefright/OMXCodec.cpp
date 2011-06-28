@@ -1211,7 +1211,7 @@ status_t OMXCodec::allocateBuffersOnPort(OMX_U32 portIndex) {
         return err;
     }
 
-    size_t totalSize = def.nBufferCountActual * def.nBufferSize;
+    size_t totalSize = def.nBufferCountActual * ((def.nBufferSize + 31) & (~31));
 #ifdef USE_ECLAIR_MEMORYDEALER
     mDealer[portIndex] = new MemoryDealer(totalSize);
 #else
@@ -2424,6 +2424,16 @@ status_t OMXCodec::stop() {
     }
 
     mSource->stop();
+
+    int i = 0;
+    while(getStrongCount() != 1) {
+        usleep(100);
+        i++;
+        if( i > 5) {
+            LOGE("Someone else, besides client, is holding the refernce. We might have trouble.");
+            break;
+        }
+    }
 
     CODEC_LOGV("stopped");
 
