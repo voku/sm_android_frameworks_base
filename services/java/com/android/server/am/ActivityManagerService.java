@@ -6932,8 +6932,6 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum,
             int flags) {
         synchronized (this) {
-            //enforceCallingPermission(android.Manifest.permission.GET_TASKS,
-            //        "getRecentTasks()");
 
             IPackageManager pm = ActivityThread.getPackageManager();
             

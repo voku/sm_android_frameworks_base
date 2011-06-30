@@ -279,10 +279,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             
             // Update the kernel timezone information
             // Kernel tracks time offsets as 'minutes west of GMT'
-            int gmtOffset = zone.getRawOffset();
-            if (zone.inDaylightTime(new Date(System.currentTimeMillis()))) {
-                gmtOffset += zone.getDSTSavings();
-            }
+	    int gmtOffset = zone.getOffset(System.currentTimeMillis());
             setKernelTimezone(mDescriptor, -(gmtOffset / 60000));
         }
 
@@ -779,10 +776,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 // based off of the current Zone gmt offset + userspace tracked
                 // daylight savings information.
                 TimeZone zone = TimeZone.getTimeZone(SystemProperties.get(TIMEZONE_PROPERTY));
-                int gmtOffset = zone.getRawOffset();
-                if (zone.inDaylightTime(new Date(System.currentTimeMillis()))) {
-                    gmtOffset += zone.getDSTSavings();
-                }
+                int gmtOffset = zone.getOffset(System.currentTimeMillis());
                 setKernelTimezone(mDescriptor, -(gmtOffset / 60000));
             	scheduleDateChangedEvent();
             }

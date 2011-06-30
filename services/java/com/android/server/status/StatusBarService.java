@@ -362,15 +362,13 @@ public class StatusBarService extends IStatusBar.Stub
         }
         mStatusBarView = sb;
         mDateView = (DateView)sb.findViewById(R.id.date);
-       
         if (custNotBar) {
             mStatusBarView.setBackgroundDrawable(res.getDrawable(com.android.internal.R.drawable.statusbar_background_sq,
-                                                                 notifBarColorMask, notifPDMode));
+            		notifBarColorMask, notifPDMode));
             mDateView.setBackgroundDrawable(res.getDrawable(com.android.internal.R.drawable.statusbar_background_sq,
-                                                            notifBarColorMask, notifPDMode));
+            		notifBarColorMask, notifPDMode));
             mDateView.setPadding(6, 0, 6, 0);
         }
-        
         mStatusIcons = (LinearLayout)sb.findViewById(R.id.statusIcons);
         mNotificationIcons = (IconMerger)sb.findViewById(R.id.notificationIcons);
         mNotificationIcons.service = this;
@@ -399,10 +397,9 @@ public class StatusBarService extends IStatusBar.Stub
         mRewindIcon = (ImageButton) expanded.findViewById(R.id.music_control_previous);
         mForwardIcon = (ImageButton) expanded.findViewById(R.id.music_control_next);
         mStatusbarMusicControls = (LinearLayout) expanded.findViewById(R.id.exp_music_control);
-
         if (custExpBar) {
             mExpandedView.findViewById(R.id.exp_view_lin_layout).
-                setBackgroundDrawable(expBarHeadDrawable);
+            		setBackgroundDrawable(expBarHeadDrawable);
             mNoNotificationsTitle.setBackgroundDrawable(expBarNotifTitleDrawable);
             mOngoingTitle.setBackgroundDrawable(expBarNotifTitleDrawable);
             mLatestTitle.setBackgroundDrawable(expBarNotifTitleDrawable);

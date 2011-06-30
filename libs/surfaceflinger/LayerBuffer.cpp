@@ -96,6 +96,9 @@ bool LayerBuffer::needsBlending() const {
 }
 
 void LayerBuffer::setNeedsBlending(bool blending) {
+    if (mNeedsBlending != blending) {
+        mFlinger->invalidateLayerVisibility(this);
+    }
     mNeedsBlending = blending;
 }
 

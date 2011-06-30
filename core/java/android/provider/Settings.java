@@ -2365,6 +2365,10 @@ public final class Settings {
             LOCKSCREEN_SOUNDS_ENABLED,
             SHOW_WEB_SUGGESTIONS,
             NOTIFICATION_LIGHT_PULSE,
+	    NOTIF_BAR_COLOR,
+	    NOTIF_BAR_CUSTOM,
+	    NOTIF_EXPANDED_BAR_COLOR,
+	    NOTIF_EXPANDED_BAR_CUSTOM,
             HAPTIC_FEEDBACK_UP_ENABLED,
             HAPTIC_FEEDBACK_ALL_ENABLED,
             HAPTIC_DOWN_ARRAY,
@@ -2886,6 +2890,12 @@ public final class Settings {
          * @hide
          */
         public static final String ADB_NOTIFY = "adb_notify";
+
+	/**
+         * Whether Compcache is eanbled.
+	 * @hide
+         */
+        public static final String COMPCACHE_ENABLED = "compcache_enabled";
 
         /**
          * Setting to allow mock locations and location provider status to be injected into the

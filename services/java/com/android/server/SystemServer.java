@@ -71,6 +71,19 @@ class ServerThread extends Thread {
         }
     }
 
+    private class CompcacheSettingsObserver extends ContentObserver {
+        public CompcacheSettingsObserver() {
+            super(null);
+        }
+        @Override
+        public void onChange(boolean selfChange) {
+            boolean enableCompcache = (Settings.Secure.getInt(mContentResolver,
+                Settings.Secure.COMPCACHE_ENABLED, 0) > 0);
+            // setting this secure property will start or stop compcache
+           SystemProperties.set("persist.service.compcache.enable", enableCompcache ? "1" : "0");
+        }
+    }
+
     @Override
     public void run() {
         EventLog.writeEvent(EventLogTags.BOOT_PROGRESS_SYSTEM_RUN,
@@ -442,6 +455,9 @@ class ServerThread extends Thread {
         // register observer to listen for settings changes
         mContentResolver.registerContentObserver(Settings.Secure.getUriFor(Settings.Secure.ADB_ENABLED),
                 false, new AdbSettingsObserver());
+
+	mContentResolver.registerContentObserver(Settings.Secure.getUriFor(Settings.Secure.COMPCACHE_ENABLED),
+                false, new CompcacheSettingsObserver());
 
         // Before things start rolling, be sure we have decided whether
         // we are in safe mode.

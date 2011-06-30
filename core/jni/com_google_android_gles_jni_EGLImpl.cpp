@@ -292,7 +292,7 @@ static void jni_eglCreatePixmapSurface(JNIEnv *_env, jobject _this, jobject out_
         return;
     }
 
-    ref->safeRef();
+    SkSafeRef(ref);
     ref->lockPixels();
 
     egl_native_pixmap_t pixmap;
@@ -312,7 +312,7 @@ static void jni_eglCreatePixmapSurface(JNIEnv *_env, jobject _this, jobject out_
         _env->SetIntField(out_sur, gSurface_NativePixelRefFieldID, (int)ref);
     } else {
         ref->unlockPixels();
-        ref->safeUnref();
+	SkSafeUnref(ref);
     }
 }
 
@@ -431,7 +431,7 @@ static jboolean jni_eglDestroySurface(JNIEnv *_env, jobject _this, jobject displ
                 gSurface_NativePixelRefFieldID));
         if (ref) {
             ref->unlockPixels();
-            ref->safeUnref();
+	    SkSafeUnref(ref);
         }
     }
     return eglDestroySurface(dpy, sur);

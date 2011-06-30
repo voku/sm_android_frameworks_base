@@ -26,6 +26,7 @@ import android.graphics.Movie;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable.ConstantState;
+import android.graphics.PorterDuff.Mode;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemProperties;
@@ -41,8 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.Locale;
-
-import android.graphics.PorterDuff.Mode;
 
 /**
  * Class for accessing an application's resources.  This sits on top of the

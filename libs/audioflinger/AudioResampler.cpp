@@ -26,11 +26,11 @@
 #include "AudioResamplerSinc.h"
 #include "AudioResamplerCubic.h"
 
+#include <machine/cpu-features.h>
+
 namespace android {
 
-#ifdef __ARM_ARCH_5E__  // optimized asm option
-    #define ASM_ARM_RESAMP1 // enable asm optimisation for ResamplerOrder1
-#endif // __ARM_ARCH_5E__
+#define ASM_ARM_RESAMP1 // enable asm optimisation for ResamplerOrder1
 // ----------------------------------------------------------------------------
 
 class AudioResamplerOrder1 : public AudioResampler {

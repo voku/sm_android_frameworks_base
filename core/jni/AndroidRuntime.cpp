@@ -613,7 +613,7 @@ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv)
     strcpy(heapsizeOptsBuf, "-Xmx");
     property_get("persist.sys.vm.heapsize", propBuf, "");
     if (strcmp(propBuf, "") == 0) {
-        property_get("dalvik.vm.heapsize", propBuf, "16m");
+        property_get("dalvik.vm.heapsize", propBuf, "32m");
     }
     strcpy(heapsizeOptsBuf+4, propBuf);
     LOGI("Heap size: %s", heapsizeOptsBuf);
