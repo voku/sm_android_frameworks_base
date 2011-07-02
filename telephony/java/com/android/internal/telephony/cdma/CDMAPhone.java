@@ -838,7 +838,7 @@ public class CDMAPhone extends PhoneBase {
         if (cdmaMin == null || (cdmaMin.length() < 6)) {
             if (DBG) Log.d(LOG_TAG, "needsOtaServiceProvisioning: illegal cdmaMin='"
                                     + cdmaMin + "' assume provisioning needed.");
-            needsProvisioning = true;
+            	needsProvisioning = true;
         } else {
             needsProvisioning = (cdmaMin.equals(UNACTIVATED_MIN_VALUE)
                     || cdmaMin.substring(0,6).equals(UNACTIVATED_MIN2_VALUE))

@@ -54,6 +54,7 @@ LOCAL_SRC_FILES:= $(commonSources)
 
 LOCAL_MODULE:= libutils
 
+# -fpermissive for GCC 4.6+
 LOCAL_CFLAGS += -DLIBUTILS_NATIVE=1 $(TOOL_CFLAGS) -fpermissive
 LOCAL_C_INCLUDES += external/zlib
 

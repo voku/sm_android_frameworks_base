@@ -1897,7 +1897,6 @@ class PowerManagerService extends IPowerManager.Stub
     private class LightAnimator implements Runnable {
         public void run() {
             synchronized (mLocks) {
-                long now = SystemClock.uptimeMillis();
                 boolean more = mScreenBrightness.stepLocked();
                 if (mKeyboardBrightness.stepLocked()) {
                     more = true;
@@ -1906,7 +1905,7 @@ class PowerManagerService extends IPowerManager.Stub
                     more = true;
                 }
                 if (more) {
-                    mHandler.postAtTime(mLightAnimator, now+(1000/60));
+                    mHandler.postDelayed(mLightAnimator, 1000/60);
                 }
             }
         }

@@ -19,9 +19,11 @@ package android.widget;
 import android.annotation.Widget;
 import android.content.Context;
 import android.os.Handler;
+import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
+import android.text.TextWatcher;
 import android.text.method.NumberKeyListener;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -54,6 +56,16 @@ public class NumberPicker extends LinearLayout {
          * @param newVal The new value.
          */
         void onChanged(NumberPicker picker, int oldVal, int newVal);
+    }
+
+    /**
+     * The callback interface used to indicate the number value has been changed.
+     */
+    public interface OnTextChangedListener {
+        /**
+         * @param text   The text of the TextEdit.
+         */
+        public abstract void onTextChanged(String text);
     }
 
     /**
@@ -97,6 +109,9 @@ public class NumberPicker extends LinearLayout {
 
     private final EditText mText;
     private final InputFilter mNumberInputFilter;
+    private boolean isFocused = false;
+    private boolean buttonPressed = false;
+    private String mPrevText = "";
 
     private String[] mDisplayedValues;
 
@@ -120,6 +135,7 @@ public class NumberPicker extends LinearLayout {
      */
     private int mPrevious;
     private OnChangedListener mListener;
+    private OnTextChangedListener mTextListener = null;
     private Formatter mFormatter;
     private long mSpeed = 300;
 
@@ -149,6 +165,8 @@ public class NumberPicker extends LinearLayout {
 
         OnClickListener clickListener = new OnClickListener() {
             public void onClick(View v) {
+		buttonPressed = true;
+
                 validateInput(mText);
                 if (!mText.hasFocus()) mText.requestFocus();
 
@@ -158,6 +176,8 @@ public class NumberPicker extends LinearLayout {
                 } else if (R.id.decrement == v.getId()) {
                     changeCurrent(mCurrent - 1);
                 }
+	
+		buttonPressed = false;
             }
         };
 
@@ -169,6 +189,9 @@ public class NumberPicker extends LinearLayout {
                  */
                 if (!hasFocus) {
                     validateInput(v);
+		    isFocused = false;
+                } else {
+                    isFocused = true;
                 }
             }
         };
@@ -179,6 +202,8 @@ public class NumberPicker extends LinearLayout {
              * to inform us when the long click has ended.
              */
             public boolean onLongClick(View v) {
+		buttonPressed = true;
+
                 /* The text view may still have focus so clear it's focus which will
                  * trigger the on focus changed and any typed values to be pulled.
                  */
@@ -191,6 +216,9 @@ public class NumberPicker extends LinearLayout {
                     mDecrement = true;
                     mHandler.post(mRunnable);
                 }
+		
+		buttonPressed = false;
+
                 return true;
             }
         };
@@ -211,10 +239,36 @@ public class NumberPicker extends LinearLayout {
         mText.setOnFocusChangeListener(focusListener);
         mText.setFilters(new InputFilter[] {inputFilter});
         mText.setRawInputType(InputType.TYPE_CLASS_NUMBER);
+	mText.setSelectAllOnFocus(true);
+        mText.addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void afterTextChanged(Editable s) {}
+
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String curText = mText.getText().toString();
+
+                // Do nothing if there is no TextListener defined or if there is
+                // no change in the text or if we don't have focus or if the
+                // change is caused by a button
+                if (mTextListener == null || mPrevText.compareTo(curText) == 0 || isFocused == false || buttonPressed == true) {
+                    return;
+                }
+
+                // Save current text
+                mPrevText = curText;
+
+                // Notify the listener
+                mTextListener.onTextChanged(curText);
+            }
+        });
 
         if (!isEnabled()) {
             setEnabled(false);
         }
+    }
+
+    public void requestTextFocus() {
+        mText.requestFocus();
     }
 
     /**
@@ -237,6 +291,14 @@ public class NumberPicker extends LinearLayout {
      */
     public void setOnChangeListener(OnChangedListener listener) {
         mListener = listener;
+    }
+
+    /**
+     * Set the callback that indicates the number has been changed by the user.
+     * @param listener the callback, should not be null.
+     */
+    public void setOnTextChangeListener(OnTextChangedListener listener) {
+        mTextListener = listener;
     }
 
     /**
@@ -290,6 +352,9 @@ public class NumberPicker extends LinearLayout {
         }
         mCurrent = current;
         updateView();
+
+	// Get the current value
+        mPrevText = mText.getText().toString();
     }
 
     /**

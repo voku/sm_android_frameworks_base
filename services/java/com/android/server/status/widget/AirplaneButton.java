@@ -48,6 +48,7 @@ public class AirplaneButton extends PowerButton {
             Settings.System.AIRPLANE_MODE_ON, state ? 0 : 1);
         // notify change
         Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+	// Reverse state when sending the intent, since we grabbed it before the toggle.
         intent.putExtra("state", !state);
         context.sendBroadcast(intent);
     }
