@@ -21,7 +21,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="byteShort" msgid="8340973892742019101">"B"</string>
-    <string name="kilobyteShort" msgid="5973789783504771878">"kB"</string>
+    <string name="kilobyteShort" msgid="5973789783504771878">"KB"</string>
     <string name="megabyteShort" msgid="6355851576770428922">"MB"</string>
     <string name="gigabyteShort" msgid="3259882455212193214">"GB"</string>
     <string name="terabyteShort" msgid="231613018159186962">"TB"</string>
@@ -124,7 +124,7 @@
     <string name="contentServiceSync" msgid="8353523060269335667">"Synkronisering"</string>
     <string name="contentServiceSyncNotificationTitle" msgid="397743349191901458">"Synkronisering"</string>
     <string name="contentServiceTooManyDeletesNotificationDesc" msgid="8100981435080696431">"For mange slettinger av <xliff:g id="CONTENT_TYPE">%s</xliff:g>."</string>
-    <string name="low_memory" msgid="6632412458436461203">"Telefonens lagringsminne er fullt! Slett noen filer for å frigjøre plass."</string>
+    <string name="low_memory" msgid="6632412458436461203">"Telefonens lagringsminne er fullt! Slett noen filer/programmer for å frigjøre plass."</string>
     <string name="me" msgid="6545696007631404292">"Meg"</string>
     <string name="power_dialog" msgid="1319919075463988638">"Telefoninnstillinger"</string>
     <string name="silent_mode" msgid="7167703389802618663">"Stillemodus"</string>
