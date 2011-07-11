@@ -48,7 +48,6 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
     
     private final DatePicker mDatePicker;
     private final OnDateSetListener mCallBack;
-    private final Calendar mCalendar;
     private final java.text.DateFormat mTitleDateFormat;
     private final String[] mWeekDays;
 
@@ -112,7 +111,6 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
         
         mTitleDateFormat = java.text.DateFormat.
                                 getDateInstance(java.text.DateFormat.FULL);
-        mCalendar = Calendar.getInstance();
         updateTitle(mInitialYear, mInitialMonth, mInitialDay);
         
         setButton(context.getText(R.string.date_time_set), this);
@@ -161,10 +159,9 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
     }
 
     private void updateTitle(int year, int month, int day) {
-        mCalendar.set(Calendar.YEAR, year);
-        mCalendar.set(Calendar.MONTH, month);
-        mCalendar.set(Calendar.DAY_OF_MONTH, day);
-        setTitle(mTitleDateFormat.format(mCalendar.getTime()));
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(year,month,day);
+        setTitle(mTitleDateFormat.format(calendar.getTime()));
     }
     
     @Override
