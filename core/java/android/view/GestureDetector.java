@@ -193,8 +193,10 @@ public class GestureDetector {
         }
     }
 
+    // TODO: ViewConfiguration
+    private int mBiggerTouchSlopSquare = 20 * 20;
+
     private int mTouchSlopSquare;
-    private int mLargeTouchSlopSquare;
     private int mDoubleTapSlopSquare;
     private int mMinimumFlingVelocity;
     private int mMaximumFlingVelocity;
@@ -382,11 +384,10 @@ public class GestureDetector {
         mIgnoreMultitouch = ignoreMultitouch;
 
         // Fallback to support pre-donuts releases
-	int touchSlop, largeTouchSlop, doubleTapSlop;
+	int touchSlop, doubleTapSlop;
         if (context == null) {
             //noinspection deprecation
             touchSlop = ViewConfiguration.getTouchSlop();
-	    largeTouchSlop = touchSlop + 2;
             doubleTapSlop = ViewConfiguration.getDoubleTapSlop();
             //noinspection deprecation
             mMinimumFlingVelocity = ViewConfiguration.getMinimumFlingVelocity();
@@ -394,13 +395,11 @@ public class GestureDetector {
         } else {
             final ViewConfiguration configuration = ViewConfiguration.get(context);
             touchSlop = configuration.getScaledTouchSlop();
-	    largeTouchSlop = configuration.getScaledLargeTouchSlop();
             doubleTapSlop = configuration.getScaledDoubleTapSlop();
             mMinimumFlingVelocity = configuration.getScaledMinimumFlingVelocity();
             mMaximumFlingVelocity = configuration.getScaledMaximumFlingVelocity();
         }
         mTouchSlopSquare = touchSlop * touchSlop;
-	mLargeTouchSlopSquare = largeTouchSlop * largeTouchSlop;
         mDoubleTapSlopSquare = doubleTapSlop * doubleTapSlop;
     }
 
@@ -535,7 +534,7 @@ public class GestureDetector {
                     mHandler.removeMessages(SHOW_PRESS);
                     mHandler.removeMessages(LONG_PRESS);
                 }
-		if (distance > mLargeTouchSlopSquare) {
+		if (distance > mBiggerTouchSlopSquare) {
                     mAlwaysInBiggerTapRegion = false;
                 }
             } else if ((Math.abs(scrollX) >= 1) || (Math.abs(scrollY) >= 1)) {
