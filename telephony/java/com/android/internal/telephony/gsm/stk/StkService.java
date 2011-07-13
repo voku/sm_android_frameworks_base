@@ -22,6 +22,7 @@ import android.os.AsyncResult;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.os.SystemProperties;
 
 import com.android.internal.telephony.IccUtils;
 import com.android.internal.telephony.CommandsInterface;
@@ -272,6 +273,9 @@ public class StkService extends Handler implements AppInterface {
             sendTerminalResponse(cmdParams.cmdDet, ResultCode.OK, false,
                     0, null);
             break;
+        case PROVIDE_LOCAL_INFORMATION:
+            sendTerminalResponse(cmdParams.cmdDet, ResultCode.OK, false, 0, null);
+            break;
         case LAUNCH_BROWSER:
         case SELECT_ITEM:
         case GET_INPUT:
@@ -315,6 +319,11 @@ public class StkService extends Handler implements AppInterface {
         }
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
+        Input cmdInput = null;
+        if (mCurrntCmd != null) {
+            cmdInput = mCurrntCmd.geInput();
+        }
+
         // command details
         int tag = ComprehensionTlvTag.COMMAND_DETAILS.value();
         if (cmdDet.compRequired) {
@@ -327,7 +336,13 @@ public class StkService extends Handler implements AppInterface {
         buf.write(cmdDet.commandQualifier);
 
         // device identities
-        tag = 0x80 | ComprehensionTlvTag.DEVICE_IDENTITIES.value();
+        // According to TS102.223/TS31.111 section 6.8 Structure of
+        // TERMINAL RESPONSE, "For all SIMPLE-TLV objects with Min=N,
+        // the ME should set the CR(comprehension required) flag to
+        // comprehension not required.(CR=0)"
+        // Since DEVICE_IDENTITIES and DURATION TLVs have Min=N,
+        // the CR flag is not set.
+        tag = ComprehensionTlvTag.DEVICE_IDENTITIES.value();
         buf.write(tag);
         buf.write(0x02); // length
         buf.write(DEV_ID_TERMINAL); // source device id
@@ -348,6 +363,8 @@ public class StkService extends Handler implements AppInterface {
         // Fill optional data for each corresponding command
         if (resp != null) {
             resp.format(buf);
+        } else {
+            encodeOptionalTags(cmdDet, resultCode, cmdInput, buf);
         }
 
         byte[] rawData = buf.toByteArray();
@@ -359,6 +376,51 @@ public class StkService extends Handler implements AppInterface {
         mCmdIf.sendTerminalResponse(hexString, null);
     }
 
+    private void encodeOptionalTags(CommandDetails cmdDet,
+        ResultCode resultCode, Input cmdInput, ByteArrayOutputStream buf) {
+        switch (AppInterface.CommandType.fromInt(cmdDet.typeOfCommand)) {
+        case GET_INKEY:
+            // ETSI TS 102 384,27.22.4.2.8.4.2.
+            // If it is a response for GET_INKEY command and the response timeout
+            // occured, then add DURATION TLV for variable timeout case.
+            if ((resultCode.value() == ResultCode.NO_RESPONSE_FROM_USER.value()) &&
+                (cmdInput != null) && (cmdInput.duration != null)) {
+                getInKeyResponse(buf, cmdInput);
+            }
+            break;
+        case PROVIDE_LOCAL_INFORMATION:
+            if ((cmdDet.commandQualifier == CommandParamsFactory.LANGUAGE_SETTING) &&
+                (resultCode.value() == ResultCode.OK.value())) {
+                getPliResponse(buf);
+            }
+            break;
+        default:
+            StkLog.d(this, "encodeOptionalTags() Unsupported Cmd:" + cmdDet.typeOfCommand);
+            break;
+        }
+    }
+
+    private void getInKeyResponse(ByteArrayOutputStream buf, Input cmdInput) {
+        int tag = ComprehensionTlvTag.DURATION.value();
+
+        buf.write(tag);
+        buf.write(0x02); // length
+        buf.write(cmdInput.duration.timeUnit.SECOND.value()); // Time (Unit,Seconds)
+        buf.write(cmdInput.duration.timeInterval); // Time Duration
+    }
+
+    private void getPliResponse(ByteArrayOutputStream buf) {
+        // Locale Language Setting
+        String lang = SystemProperties.get("persist.sys.language");
+
+        if (lang != null) {
+            // tag
+            int tag = ComprehensionTlvTag.LANGUAGE.value();
+            buf.write(tag);
+            ResponseData.writeLength(buf, lang.length());
+            buf.write(lang.getBytes(), 0, lang.length());
+        }
+    }
 
     private void sendMenuSelection(int menuId, boolean helpRequired) {
 
