@@ -252,7 +252,7 @@ public class Rfc822Tokenizer implements MultiAutoCompleteTextView.Tokenizer {
                     if (c == '"') {
                         i++;
                         break;
-                    } else if (c == '\\') {
+                    } else if (c == '\\' && i + 1 < len) {
                         i += 2;
                     } else {
                         i++;
@@ -271,7 +271,7 @@ public class Rfc822Tokenizer implements MultiAutoCompleteTextView.Tokenizer {
                     } else if (c == '(') {
                         level++;
                         i++;
-                    } else if (c == '\\') {
+                    } else if (c == '\\' && i + 1 < len) {
                         i += 2;
                     } else {
                         i++;

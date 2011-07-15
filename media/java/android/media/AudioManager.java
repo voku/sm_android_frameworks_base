@@ -172,14 +172,14 @@ public class AudioManager {
         4,  // STREAM_VOICE_CALL
         7,  // STREAM_SYSTEM
         5,  // STREAM_RING
-        11, // STREAM_MUSIC
+        11,  // STREAM_MUSIC
         6,  // STREAM_ALARM
         5,  // STREAM_NOTIFICATION
-        7,  // STREAM_BLUETOOTH_SCO
+        11,  // STREAM_BLUETOOTH_SCO
         7,  // STREAM_SYSTEM_ENFORCED
-        11, // STREAM_DTMF
+        11,  // STREAM_DTMF
         11,  // STREAM_TTS
-        11 // STREAM_FM
+        11  // STREAM_FM
     };
 
     /**
@@ -1474,7 +1474,7 @@ public class AudioManager {
         IAudioService service = getService();
         try {
             status = service.abandonAudioFocus(mAudioFocusDispatcher,
-                    getIdForAudioFocusListener(l));
+		    getIdForAudioFocusListener(l), mICallBack);
         } catch (RemoteException e) {
             Log.e(TAG, "Can't call abandonAudioFocus() from AudioService due to "+e);
         }

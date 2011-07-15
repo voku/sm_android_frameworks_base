@@ -1657,7 +1657,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                 if (cr.binding != null && cr.binding.service != null
                         && cr.binding.service.app != null
                         && cr.binding.service.app.lruSeq != mLruSeq) {
-                    updateLruProcessInternalLocked(cr.binding.service.app, oomAdj,
+                    updateLruProcessInternalLocked(cr.binding.service.app, false,
                             updateActivityTime, i+1);
                 }
             }
@@ -1665,7 +1665,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         if (app.conProviders.size() > 0) {
             for (ContentProviderRecord cpr : app.conProviders.keySet()) {
                 if (cpr.app != null && cpr.app.lruSeq != mLruSeq) {
-                    updateLruProcessInternalLocked(cpr.app, oomAdj,
+                    updateLruProcessInternalLocked(cpr.app, false,
                             updateActivityTime, i+1);
                 }
             }
@@ -11117,7 +11117,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         if (N > 0) {
             for (int i=N-1; i>=0; i--) {
                 ServiceRecord.StartItem si = r.deliveredStarts.get(i);
-                if (si.intent == null) {
+                if (si.intent == null && N > 1) {
                     // We'll generate this again if needed.
                 } else if (!allowCancel || (si.deliveryCount < ServiceRecord.MAX_DELIVERY_COUNT
                         && si.doneExecutingCount < ServiceRecord.MAX_DONE_EXECUTING_COUNT)) {
@@ -12169,6 +12169,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             }
 
             ProcessRecord proc = mBackupTarget.app;
+	    mBackupTarget.app = null;
             mBackupTarget = null;
             mBackupAppName = null;
 

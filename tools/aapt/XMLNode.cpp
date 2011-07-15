@@ -341,13 +341,15 @@ void printXMLBlock(ResXMLTree* block)
                     printf("=?0x%x", (int)value.data);
                 } else if (value.dataType == Res_value::TYPE_STRING) {
                     printf("=\"%s\"",
-                           String8(block->getAttributeStringValue(i, &len)).string());
+			   ResTable::normalizeForOutput(String8(block->getAttributeStringValue(i,
+                                        &len)).string()).string());
                 } else {
                     printf("=(type 0x%x)0x%x", (int)value.dataType, (int)value.data);
                 }
                 const char16_t* val = block->getAttributeStringValue(i, &len);
                 if (val != NULL) {
-                    printf(" (Raw: \"%s\")", String8(val).string());
+		    printf(" (Raw: \"%s\")", ResTable::normalizeForOutput(String8(val).string()).
+                            string());
                 }
                 printf("\n");
             }
@@ -392,7 +394,8 @@ void printXMLBlock(ResXMLTree* block)
             namespaces.pop();
         } else if (code == ResXMLTree::TEXT) {
             size_t len;
-            printf("%sC: \"%s\"\n", prefix.string(), String8(block->getText(&len)).string());
+	    printf("%sC: \"%s\"\n", prefix.string(), ResTable::normalizeForOutput(
+                        String8(block->getText(&len)).string()).string());
         }
     }
 

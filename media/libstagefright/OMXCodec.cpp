@@ -426,6 +426,7 @@ status_t OMXCodec::configureCodec(const sp<MetaData> &meta) {
     uint32_t type;
     const void *data;
     size_t size;
+
     if (meta->findData(kKeyESDS, &type, &data, &size)) {
         ESDS esds((const char *)data, size);
         CHECK_EQ(esds.InitCheck(), OK);
@@ -954,7 +955,31 @@ status_t OMXCodec::setVideoOutputFormat(
         OMX_VIDEO_PARAM_PORTFORMATTYPE format;
         InitOMXParams(&format);
         format.nPortIndex = kPortIndexOutput;
+
+        // For 3rd party applications we want to iterate through all the
+        // supported color formats by the OMX component. If OMX codec is
+        // being run in a sepparate process, then pick the second iterated
+        // color format.
+#if 1
+        if (!strncmp(mComponentName, "OMX.qcom.7x30",13)) {
+            OMX_U32 index;
+      
+            for(index = 0 ;; index++){
+              format.nIndex = index;
+        if(mOMX->getParameter(
+          mNode, OMX_IndexParamVideoPortFormat,
+          &format, sizeof(format)) != OK) {
+    if(format.nIndex) format.nIndex--;
+    break;
+        }
+            }
+            if(mOMXLivesLocally)
+              format.nIndex = 0;
+        } else
+          format.nIndex = 0;
+#else
         format.nIndex = 0;
+#endif
 
         status_t err = mOMX->getParameter(
                 mNode, OMX_IndexParamVideoPortFormat,
@@ -1466,7 +1491,18 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
 
         case OMX_EventPortSettingsChanged:
         {
-            onPortSettingsChanged(data1);
+	    if(mState == EXECUTING)
+                CODEC_LOGV("OMX_EventPortSettingsChanged(port=%ld, data2=0x%08lx)",
+                       data1, data2);
+
+                if (data2 == 0 || data2 == OMX_IndexParamPortDefinition) {
+                    onPortSettingsChanged(data1);
+                } else if (data1 == kPortIndexOutput
+                        && data2 == OMX_IndexConfigCommonOutputCrop) {
+                    // todo: handle crop rect
+                }
+            else
+              LOGE("Ignore PortSettingsChanged event \n");
             break;
         }
 

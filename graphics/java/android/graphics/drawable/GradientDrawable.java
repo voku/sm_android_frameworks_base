@@ -830,7 +830,7 @@ public class GradientDrawable extends Drawable {
     
     @Override
     public ConstantState getConstantState() {
-        mGradientState.mChangingConfigurations = super.getChangingConfigurations();
+        mGradientState.mChangingConfigurations = getChangingConfigurations();
         return mGradientState;
     }
 

@@ -1345,8 +1345,6 @@ public class Resources {
             clearDrawableCache(mColorDrawableCache, configChanges);
 
             mColorStateListCache.clear();
-
-
             flushLayoutCache();
         }
         synchronized (mSync) {

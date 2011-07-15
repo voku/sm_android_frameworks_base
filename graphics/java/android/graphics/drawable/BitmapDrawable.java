@@ -425,7 +425,7 @@ public class BitmapDrawable extends Drawable {
 
     @Override
     public final ConstantState getConstantState() {
-        mBitmapState.mChangingConfigurations = super.getChangingConfigurations();
+	mBitmapState.mChangingConfigurations = getChangingConfigurations();
         return mBitmapState;
     }
 
@@ -472,10 +472,8 @@ public class BitmapDrawable extends Drawable {
         mBitmapState = state;
         if (res != null) {
             mTargetDensity = res.getDisplayMetrics().densityDpi;
-        } else if (state != null) {
-            mTargetDensity = state.mTargetDensity;
         } else {
-            mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
+	    mTargetDensity = state.mTargetDensity;
         }
         setBitmap(state.mBitmap);
     }
