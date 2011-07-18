@@ -30,6 +30,8 @@ abstract class ResponseData {
     public abstract void format(ByteArrayOutputStream buf);
 
     public static void writeLength(ByteArrayOutputStream buf, int length) {
+        // As per ETSI 102.220 Sec7.1.2, if the total length is greater
+        // than 0x7F, it should be coded in two bytes and the first byte
         if (length > 0x7F) {
             buf.write(0x81);
         }

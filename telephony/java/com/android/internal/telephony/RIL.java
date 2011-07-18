@@ -223,7 +223,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
     RILSender mSender;
     Thread mReceiverThread;
     RILReceiver mReceiver;
-    private Context mContext;
+    protected Context mContext;
     WakeLock mWakeLock;
     int mWakeLockTimeout;
     int mRequestMessagesPending;

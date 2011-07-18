@@ -34,6 +34,7 @@ import android.content.res.Resources;
 import android.content.res.ColorStateList;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.media.AudioManager;
 import android.text.format.DateFormat;

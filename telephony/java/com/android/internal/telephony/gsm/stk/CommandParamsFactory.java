@@ -52,6 +52,7 @@ class CommandParamsFactory extends Handler {
     static final int REFRESH_NAA_INIT                       = 0x03;
     static final int REFRESH_UICC_RESET                     = 0x04;
 
+    // Command Qualifier values for PLI command
     static final int LANGUAGE_SETTING                       = 0x04;
 
     static synchronized CommandParamsFactory getInstance(RilMessageDecoder caller,
@@ -114,6 +115,8 @@ class CommandParamsFactory extends Handler {
         AppInterface.CommandType cmdType = AppInterface.CommandType
                 .fromInt(cmdDet.typeOfCommand);
         if (cmdType == null) {
+            // This PROACTIVE COMMAND is presently not handled. Hence set
+            // result code as BEYOND_TERMINAL_CAPABILITY in TR.
             mCmdParams = new CommandParams(cmdDet);
             sendCmdParams(ResultCode.BEYOND_TERMINAL_CAPABILITY);
             return;
@@ -160,6 +163,7 @@ class CommandParamsFactory extends Handler {
                 break;
              case PROVIDE_LOCAL_INFORMATION:
                 cmdPending = processProvideLocalInfo(cmdDet, ctlvs);
+		break;
             default:
                 // unsupported proactive commands
                 mCmdParams = new CommandParams(cmdDet);
@@ -284,12 +288,14 @@ class CommandParamsFactory extends Handler {
         if (ctlv != null) {
             textMsg.responseNeeded = false;
         }
+
         // parse icon identifier
         ctlv = searchForTag(ComprehensionTlvTag.ICON_ID, ctlvs);
         if (ctlv != null) {
             iconId = ValueParser.retrieveIconId(ctlv);
             textMsg.iconSelfExplanatory = iconId.selfExplanatory;
         }
+
         // parse tone duration
         ctlv = searchForTag(ComprehensionTlvTag.DURATION, ctlvs);
         if (ctlv != null) {

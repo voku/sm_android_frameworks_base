@@ -275,7 +275,7 @@ public class StkService extends Handler implements AppInterface {
             break;
         case PROVIDE_LOCAL_INFORMATION:
             sendTerminalResponse(cmdParams.cmdDet, ResultCode.OK, false, 0, null);
-            return;
+            break;
         case LAUNCH_BROWSER:
         case SELECT_ITEM:
         case GET_INPUT:
@@ -336,7 +336,12 @@ public class StkService extends Handler implements AppInterface {
         buf.write(cmdDet.commandQualifier);
 
         // device identities
-        //tag = 0x80 | ComprehensionTlvTag.DEVICE_IDENTITIES.value();
+        // According to TS102.223/TS31.111 section 6.8 Structure of
+        // TERMINAL RESPONSE, "For all SIMPLE-TLV objects with Min=N,
+        // the ME should set the CR(comprehension required) flag to
+        // comprehension not required.(CR=0)"
+        // Since DEVICE_IDENTITIES and DURATION TLVs have Min=N,
+        // the CR flag is not set.
         tag = ComprehensionTlvTag.DEVICE_IDENTITIES.value();
         buf.write(tag);
         buf.write(0x02); // length
