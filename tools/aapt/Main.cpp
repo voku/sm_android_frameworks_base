@@ -82,6 +82,9 @@ void usage(void)
         " %s a[dd] [-v] file.{zip,jar,apk} file1 [file2 ...]\n"
         "   Add specified files to Zip-compatible archive.\n\n", gProgName);
     fprintf(stderr,
+        " %s c[runch] [-v] -S resource-sources ... -C output-folder ...\n"
+        "   Do PNG preprocessing and store the results in output folder.\n\n", gProgName);
+    fprintf(stderr,
         " %s v[ersion]\n"
         "   Print program version.\n\n", gProgName);
     fprintf(stderr,
@@ -140,6 +143,8 @@ void usage(void)
         "       inserts android:versionName in to manifest.\n"
         "   --custom-package\n"
         "       generates R.java into a different package.\n"
+        "   --extra-packages\n"
+        "       generate R.java for libraries. Separate libraries with ';'.\n"
         "   --auto-add-overlay\n"
         "       Automatically add resources that are only in overlays.\n"
         "   --rename-manifest-package\n"
@@ -177,6 +182,7 @@ int handleCommand(Bundle* bundle)
     case kCommandAdd:       return doAdd(bundle);
     case kCommandRemove:    return doRemove(bundle);
     case kCommandPackage:   return doPackage(bundle);
+    case kCommandCrunch:    return doCrunch(bundle);
     default:
         fprintf(stderr, "%s: requested command not yet supported\n", gProgName);
         return 1;
@@ -214,6 +220,8 @@ int main(int argc, char* const argv[])
         bundle.setCommand(kCommandRemove);
     else if (argv[1][0] == 'p')
         bundle.setCommand(kCommandPackage);
+    else if (argv[1][0] == 'c')
+        bundle.setCommand(kCommandCrunch);
     else {
         fprintf(stderr, "ERROR: Unknown command '%s'\n", argv[1]);
         wantUsage = true;
@@ -381,6 +389,17 @@ int main(int argc, char* const argv[])
                 convertPath(argv[0]);
                 bundle.addResourceSourceDir(argv[0]);
                 break;
+            case 'C':
+                argc--;
+                argv++;
+                if (!argc) {
+                    fprintf(stderr, "ERROR: No argument supplied for '-C' option\n");
+                    wantUsage = true;
+                    goto bail;
+                }
+                convertPath(argv[0]);
+                bundle.setCrunchedOutputDir(argv[0]);
+                break;
             case '0':
                 argc--;
                 argv++;
@@ -461,6 +480,15 @@ int main(int argc, char* const argv[])
                         goto bail;
                     }
                     bundle.setCustomPackage(argv[0]);
+                } else if (strcmp(cp, "-extra-packages") == 0) {
+                    argc--;
+                    argv++;
+                    if (!argc) {
+                        fprintf(stderr, "ERROR: No argument supplied for '--extra-packages' option\n");
+                        wantUsage = true;
+                        goto bail;
+                    }
+                    bundle.setExtraPackages(argv[0]);
                 } else if (strcmp(cp, "-utf16") == 0) {
                     bundle.setWantUTF16(true);
                 } else if (strcmp(cp, "-rename-manifest-package") == 0) {
@@ -492,7 +520,9 @@ int main(int argc, char* const argv[])
                         goto bail;
                     }
                     bundle.setProduct(argv[0]);
-                } else {
+                } else if (strcmp(cp, "-no-crunch") == 0) {
+                    bundle.setUseCrunchCache(true);
+                }else {
                     fprintf(stderr, "ERROR: Unknown option '-%s'\n", cp);
                     wantUsage = true;
                     goto bail;

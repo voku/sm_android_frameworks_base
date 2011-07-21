@@ -25,6 +25,7 @@ typedef enum Command {
     kCommandAdd,
     kCommandRemove,
     kCommandPackage,
+    kCommandCrunch,
 } Command;
 
 /*
@@ -40,13 +41,15 @@ public:
           mWantUTF16(false), mValues(false),
           mCompressionMethod(0), mOutputAPKFile(NULL),
           mManifestPackageNameOverride(NULL), mInstrumentationPackageNameOverride(NULL),
-          mAutoAddOverlay(false), mAssetSourceDir(NULL), mProguardFile(NULL),
+          mAutoAddOverlay(false),
+          mAssetSourceDir(NULL),
+          mCrunchedOutputDir(NULL), mProguardFile(NULL),
           mAndroidManifestFile(NULL), mPublicOutputFile(NULL),
           mRClassDir(NULL), mResourceIntermediatesDir(NULL), mManifestMinSdkVersion(NULL),
           mMinSdkVersion(NULL), mTargetSdkVersion(NULL), mMaxSdkVersion(NULL),
-          mVersionCode(NULL), mVersionName(NULL), mCustomPackage(NULL),
+          mVersionCode(NULL), mVersionName(NULL), mCustomPackage(NULL), mExtraPackages(NULL),
           mMaxResVersion(NULL), mProduct(NULL),
-          mArgc(0), mArgv(NULL)
+          mUseCrunchCache(false), mArgc(0), mArgv(NULL)
         {}
     ~Bundle(void) {}
 
@@ -100,6 +103,8 @@ public:
      */
     const char* getAssetSourceDir() const { return mAssetSourceDir; }
     void setAssetSourceDir(const char* dir) { mAssetSourceDir = dir; }
+    const char* getCrunchedOutputDir() const { return mCrunchedOutputDir; }
+    void setCrunchedOutputDir(const char* dir) { mCrunchedOutputDir = dir; }
     const char* getProguardFile() const { return mProguardFile; }
     void setProguardFile(const char* file) { mProguardFile = file; }
     const android::Vector<const char*>& getResourceSourceDirs() const { return mResourceSourceDirs; }
@@ -135,10 +140,14 @@ public:
     void setVersionName(const char* val) { mVersionName = val; }
     const char* getCustomPackage() const { return mCustomPackage; }
     void setCustomPackage(const char* val) { mCustomPackage = val; }
+    const char* getExtraPackages() const { return mExtraPackages; }
+    void setExtraPackages(const char* val) { mExtraPackages = val; }
     const char* getMaxResVersion() const { return mMaxResVersion; }
     void setMaxResVersion(const char * val) { mMaxResVersion = val; }
     const char* getProduct() const { return mProduct; }
     void setProduct(const char * val) { mProduct = val; }
+    void setUseCrunchCache(bool val) { mUseCrunchCache = val; }
+    bool getUseCrunchCache() { return mUseCrunchCache; }
 
     /*
      * Set and get the file specification.
@@ -217,6 +226,7 @@ private:
     const char* mInstrumentationPackageNameOverride;
     bool        mAutoAddOverlay;
     const char* mAssetSourceDir;
+    const char* mCrunchedOutputDir;
     const char* mProguardFile;
     const char* mAndroidManifestFile;
     const char* mPublicOutputFile;
@@ -235,8 +245,10 @@ private:
     const char* mVersionCode;
     const char* mVersionName;
     const char* mCustomPackage;
+    const char* mExtraPackages;
     const char* mMaxResVersion;
     const char* mProduct;
+    bool        mUseCrunchCache;
 
     /* file specification */
     int         mArgc;
