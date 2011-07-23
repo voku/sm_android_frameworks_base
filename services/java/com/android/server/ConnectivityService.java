@@ -33,6 +33,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.INetworkManagementService;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
@@ -94,6 +95,8 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 
     private boolean mTestMode;
     private static ConnectivityService sServiceInstance;
+
+    private INetworkManagementService mNetd;
 
     private Handler mHandler;
 
@@ -1095,6 +1098,9 @@ public class ConnectivityService extends IConnectivityManager.Stub {
     }
 
     void systemReady() {
+        IBinder b = ServiceManager.getService(Context.NETWORKMANAGEMENT_SERVICE);
+        mNetd = INetworkManagementService.Stub.asInterface(b);
+
         synchronized(this) {
             mSystemReady = true;
             if (mInitialBroadcast != null) {
@@ -1278,9 +1284,13 @@ public class ConnectivityService extends IConnectivityManager.Stub {
         for (int x = mPriorityList.length-1; x>= 0; x--) {
             int netType = mPriorityList[x];
             NetworkStateTracker nt = mNetTrackers[netType];
-            if (nt != null && nt.getNetworkInfo().isConnected() &&
-                    !nt.isTeardownRequested()) {
+            if (nt != null && nt.getNetworkInfo().isConnected() && !nt.isTeardownRequested()) {
                 String[] dnsList = nt.getNameServers();
+                try {
+                    mNetd.setDnsServersForInterface(Integer.toString(netType), dnsList);
+                } catch (Exception e) {
+                    Slog.e(TAG, "exception setting dns servers: " + e);
+                }
                 if (mNetAttributes[netType].isDefault()) {
                     int j = 1;
                     for (String dns : dnsList) {
@@ -1292,6 +1302,10 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                             SystemProperties.set("net.dns" + j++, dns);
                         }
                     }
+                    try {
+                        mNetd.setDefaultInterfaceForDns(Integer.toString(netType));
+                    } catch (Exception e) {
+                        Slog.e(TAG, "exception setting default dns interface: " + e);}
                     for (int k=j ; k<mNumDnsEntries; k++) {
                         if (DBG) Slog.d(TAG, "erasing net.dns" + k);
                         SystemProperties.set("net.dns" + k, "");

@@ -3068,7 +3068,7 @@ class PackageManagerService extends IPackageManager.Stub {
             // that conflict with existing packages.  Only do this if the
             // package isn't already installed, since we don't want to break
             // things that are installed.
-            if ((scanMode&SCAN_NEW_INSTALL) != 0) {
+            if ((scanMode & SCAN_NEW_INSTALL) != 0) {
                 int N = pkg.providers.size();
                 int i;
                 for (i=0; i<N; i++) {
@@ -3111,7 +3111,7 @@ class PackageManagerService extends IPackageManager.Stub {
         }
         
         long scanFileTime = scanFile.lastModified();
-        final boolean forceDex = (scanMode&SCAN_FORCE_DEX) != 0;
+        final boolean forceDex = (scanMode & SCAN_FORCE_DEX) != 0;
         final boolean scanFileNewer = forceDex || scanFileTime != pkgSetting.getTimeStamp();
         pkg.applicationInfo.processName = fixProcessName(
                 pkg.applicationInfo.packageName,
@@ -3244,8 +3244,9 @@ class PackageManagerService extends IPackageManager.Stub {
             }
             pkg.mScanPath = path;
 
-            if ((scanMode&SCAN_NO_DEX) == 0) {
-                if (performDexOptLI(pkg, forceDex) == DEX_OPT_FAILED) {
+            if ((scanMode & SCAN_NO_DEX) == 0) {
+                int DexStatus = performDexOptLI(pkg, forceDex);
+                if (DexStatus == DEX_OPT_FAILED) {
                     mLastScanError = PackageManager.INSTALL_FAILED_DEXOPT;
                     return null;
                 }
