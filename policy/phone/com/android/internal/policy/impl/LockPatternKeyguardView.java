@@ -644,7 +644,7 @@ public class LockPatternKeyguardView extends KeyguardViewBase {
             // Show LockScreen first for any screen other than Pattern unlock.
             final boolean usingLockPattern = mLockPatternUtils.getKeyguardStoredPasswordQuality()
                     == DevicePolicyManager.PASSWORD_QUALITY_SOMETHING;
-            if (isSecure() && usingLockPattern) {
+            if (isSecure() && usingLockPattern || (simState == IccCard.State.PIN_REQUIRED)) {
                 return Mode.UnlockScreen;
             } else {
                 return Mode.LockScreen;
