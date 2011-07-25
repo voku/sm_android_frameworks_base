@@ -392,11 +392,12 @@ status_t SurfaceFlinger::readyToRun()
             GL_RGB, GL_UNSIGNED_SHORT_5_6_5, textureData);
 
     glViewport(0, 0, w, h);
+    glScissor(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrthof(0, w, h, 0, 0, 1);
 
-   LayerDim::initDimmer(this, w, h);
+    LayerDim::initDimmer(this, w, h);
 
     mReadyToRunBarrier.open();
 

@@ -1493,6 +1493,10 @@ public class StatusBarPolicy {
 
         switch (iconMode) {
             case EriInfo.ROAMING_ICON_MODE_NORMAL:
+                if (iconIndex >= iconList.length) {
+                    Slog.e(TAG, "unknown iconIndex " + iconIndex + ", skipping ERI icon update");
+                    return;
+                }
                 mCdmaRoamingIndicatorIconData.iconId = iconList[iconIndex];
                 mService.updateIcon(mCdmaRoamingIndicatorIcon, mCdmaRoamingIndicatorIconData, null);
                 mService.setIconVisibility(mCdmaRoamingIndicatorIcon, true);
