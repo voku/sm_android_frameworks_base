@@ -813,6 +813,7 @@ public class WifiStateTracker extends NetworkStateTracker {
                 // When supplicant dies, kill the DHCP thread
                 if (mDhcpTarget != null) {
                     mDhcpTarget.getLooper().quit();
+                    mDhcpTarget = null;
                 }
                 mContext.removeStickyBroadcast(new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION));
                 if (ActivityManagerNative.isSystemReady()) {
