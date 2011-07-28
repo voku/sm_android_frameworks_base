@@ -20,7 +20,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.CountDownTimer;
 import android.os.SystemClock;
-import android.os.BatteryManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -318,8 +317,8 @@ class PatternUnlockScreen extends LinearLayoutWithDefaultTouchRecepient
         } else if (mShowingBatteryInfo && mNextAlarm == null) {
             // battery only
             if (mPluggedIn) {
-              if (mUpdateMonitor.isDeviceCharged()) {
-                  mStatus1.setText(getContext().getString(R.string.lockscreen_charged));
+              if (mBatteryLevel >= 100) {
+                mStatus1.setText(getContext().getString(R.string.lockscreen_charged));
               } else {
                   mStatus1.setText(getContext().getString(R.string.lockscreen_plugged_in, mBatteryLevel));
               }

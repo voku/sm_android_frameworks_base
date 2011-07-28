@@ -37,7 +37,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.media.AudioManager;
-import android.os.BatteryManager;
 import android.text.format.DateFormat;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -721,7 +720,7 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         }
 
         if (mPluggedIn) {
-            if (mUpdateMonitor.isDeviceCharged()) {
+            if (mBatteryLevel >= 100) {
                 mBatteryString = getContext().getString(R.string.lockscreen_charged);
             } else {
                 mBatteryString = getContext().getString(R.string.lockscreen_plugged_in, mBatteryLevel);
