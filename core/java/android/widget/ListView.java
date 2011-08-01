@@ -2344,7 +2344,7 @@ public class ListView extends AbsListView {
         if (mItemsCanFocus && (focusResult == null)
                 && selectedView != null && selectedView.hasFocus()) {
             final View focused = selectedView.findFocus();
-            if (distanceToView(focused) > 0) {
+            if (!isViewAncestorOf(focused, this) || distanceToView(focused) > 0) {
                 focused.clearFocus();
             }
         }
