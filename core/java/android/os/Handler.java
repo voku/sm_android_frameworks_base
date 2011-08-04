@@ -549,7 +549,7 @@ public class Handler {
 
     @Override
     public String toString() {
-        return "Handler{"
+        return "Handler (" + getClass().getName() + ") {"
         + Integer.toHexString(System.identityHashCode(this))
         + "}";
     }
