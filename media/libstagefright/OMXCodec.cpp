@@ -554,7 +554,7 @@ status_t OMXCodec::configureCodec(const sp<MetaData> &meta) {
     }
 
     if (!strcasecmp(mMIME, MEDIA_MIMETYPE_IMAGE_JPEG)
-        && !strcmp(mComponentName, "OMX.TI.JPEG.decode")) {
+        && !strcmp(mComponentName, "OMX.TI.JPEG.decoder")) {
         OMX_COLOR_FORMATTYPE format =
             OMX_COLOR_Format32bitARGB8888;
             // OMX_COLOR_FormatYUV420PackedPlanar;
