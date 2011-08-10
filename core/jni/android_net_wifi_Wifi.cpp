@@ -345,7 +345,9 @@ static jint android_net_wifi_getLinkSpeedCommand(JNIEnv* env, jobject clazz)
     }
     // reply comes back in the form "LinkSpeed XX" where XX is the
     // number we're interested in.
-    sscanf(reply, "%*s %u", &linkspeed);
+    if (sscanf(reply, "%*s = %u", &linkspeed) != 1) {
+        return (jint)-1;
+    }
     return (jint)linkspeed;
 }
 

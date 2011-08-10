@@ -47,6 +47,8 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.VolumePanel;
+import android.view.WindowManager;
+import android.view.Display;
 import android.os.SystemProperties;
 
 import com.android.internal.telephony.ITelephony;
@@ -60,6 +62,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+
+import static android.provider.Settings.System.SWAP_VOLUME_KEYS_ORIENTATION;
 
 /**
  * The implementation of the volume manager service.
@@ -153,7 +157,7 @@ public class AudioService extends IAudioService.Stub {
 
    /** @hide Maximum volume index values for audio streams */
     private int[] MAX_STREAM_VOLUME = new int[] {
-        5,  // STREAM_VOICE_CALL
+        15,  // STREAM_VOICE_CALL
         7,  // STREAM_SYSTEM
         7,  // STREAM_RING
         15, // STREAM_MUSIC
@@ -182,6 +186,9 @@ public class AudioService extends IAudioService.Stub {
         AudioSystem.STREAM_MUSIC,  // STREAM_TTS
         AudioSystem.STREAM_MUSIC  // STREAM_FM
     };
+
+    static Display mDisplay = null;
+    static int mSwapOrientation = -1;
 
     private AudioSystem.ErrorCallback mAudioSystemCallback = new AudioSystem.ErrorCallback() {
         public void onError(int error) {
@@ -317,6 +324,11 @@ public class AudioService extends IAudioService.Stub {
         TelephonyManager tmgr = (TelephonyManager)
                 context.getSystemService(Context.TELEPHONY_SERVICE);
         tmgr.listen(mPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+
+        mDisplay = ((WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        mSwapOrientation = Settings.System.getInt(mContext.getContentResolver(),
+            SWAP_VOLUME_KEYS_ORIENTATION,
+            mContext.getResources().getInteger(com.android.internal.R.integer.swap_volume_keys_orientation));
     }
 
     private void createAudioSystemThread() {
@@ -426,6 +438,12 @@ public class AudioService extends IAudioService.Stub {
         ensureValidDirection(direction);
         ensureValidStreamType(streamType);
 
+        if (mDisplay != null) {
+            int currentOrientation = mDisplay.getRotation();
+            if (currentOrientation == mSwapOrientation) {
+                direction = -direction;
+            }
+        }
 
         VolumeStreamState streamState = mStreamStates[STREAM_VOLUME_ALIAS[streamType]];
         final int oldIndex = (streamState.muteCount() != 0) ? streamState.mLastAudibleIndex : streamState.mIndex;
@@ -907,6 +925,10 @@ public class AudioService extends IAudioService.Stub {
             }
         }
 
+        mSwapOrientation = Settings.System.getInt(mContext.getContentResolver(),
+            SWAP_VOLUME_KEYS_ORIENTATION,
+            mContext.getResources().getInteger(com.android.internal.R.integer.swap_volume_keys_orientation));
+
         // apply new ringer mode
         setRingerModeInt(getRingerMode(), false);
     }
@@ -1132,7 +1154,7 @@ public class AudioService extends IAudioService.Stub {
      */
     private boolean checkForRingerModeChange(int oldIndex, int direction) {
         boolean mVolumeControlSilent = Settings.System.getInt(mContentResolver,
-                Settings.System.VOLUME_CONTROL_SILENT, 0) != 0;
+                Settings.System.VOLUME_CONTROL_SILENT, 1) == 1;
         boolean vibrateInSilent = System.getInt(mContentResolver,
                 System.VIBRATE_IN_SILENT, 1) == 1;
         boolean adjustVolumeIndex = true;
@@ -1902,31 +1924,46 @@ public class AudioService extends IAudioService.Stub {
                 int state = intent.getIntExtra("state", 0);
                 int microphone = intent.getIntExtra("microphone", 0);
 
-                if (microphone != 0) {
-                    boolean isConnected = mConnectedDevices.containsKey(AudioSystem.DEVICE_OUT_WIRED_HEADSET);
-                    if (state == 0 && isConnected) {
-                        AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADSET,
-                                AudioSystem.DEVICE_STATE_UNAVAILABLE,
-                                "");
-                        mConnectedDevices.remove(AudioSystem.DEVICE_OUT_WIRED_HEADSET);
-                    } else if (state == 1 && !isConnected)  {
-                        AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADSET,
-                                AudioSystem.DEVICE_STATE_AVAILABLE,
-                                "");
-                        mConnectedDevices.put( new Integer(AudioSystem.DEVICE_OUT_WIRED_HEADSET), "");
+
+                String name = intent.getStringExtra("name");
+                
+                if (name != null && !name.equalsIgnoreCase("1")) {
+                    if (microphone != 0) {
+                        boolean isConnected = mConnectedDevices.containsKey(AudioSystem.DEVICE_OUT_WIRED_HEADSET);
+                        if (state == 0 && isConnected) {
+                            AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADSET,
+                                    AudioSystem.DEVICE_STATE_UNAVAILABLE,
+                                    "");
+                            mConnectedDevices.remove(AudioSystem.DEVICE_OUT_WIRED_HEADSET);
+                        } else if (state == 1 && !isConnected)  {
+                            AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADSET,
+                                    AudioSystem.DEVICE_STATE_AVAILABLE,
+                                    "");
+                            mConnectedDevices.put( new Integer(AudioSystem.DEVICE_OUT_WIRED_HEADSET), "");
+                        }
+                    } else {
+                        boolean isConnected = mConnectedDevices.containsKey(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE);
+                        if (state == 0 && isConnected) {
+                            AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE,
+                                    AudioSystem.DEVICE_STATE_UNAVAILABLE,
+                                    "");
+                            mConnectedDevices.remove(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE);
+                        } else if (state == 1 && !isConnected)  {
+                            AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE,
+                                    AudioSystem.DEVICE_STATE_AVAILABLE,
+                                    "");
+                            mConnectedDevices.put( new Integer(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE), "");
+                        }
                     }
                 } else {
-                    boolean isConnected = mConnectedDevices.containsKey(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE);
-                    if (state == 0 && isConnected) {
-                        AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE,
+                    if (state == 0) {
+                        AudioSystem.setDeviceConnectionState(0x20000,
                                 AudioSystem.DEVICE_STATE_UNAVAILABLE,
                                 "");
-                        mConnectedDevices.remove(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE);
-                    } else if (state == 1 && !isConnected)  {
-                        AudioSystem.setDeviceConnectionState(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE,
+                    } else if (state == 1)  {
+                        AudioSystem.setDeviceConnectionState(0x20000,
                                 AudioSystem.DEVICE_STATE_AVAILABLE,
                                 "");
-                        mConnectedDevices.put( new Integer(AudioSystem.DEVICE_OUT_WIRED_HEADPHONE), "");
                     }
                 }
             } else if (action.equals(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)) {

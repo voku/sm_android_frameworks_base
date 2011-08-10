@@ -78,17 +78,6 @@ public class MobileDataStateTracker extends NetworkStateTracker {
         } else {
             mEnabled = false;
         }
-
-        String[] ifNames = SystemProperties.get(
-            "mobiledata.interfaces",
-            "pdp0,eth0,gprs,ppp0"
-        ).split(",");
-
-        mDnsPropNames = new String[2 * ifNames.length];
-        for (int i = 0; i < ifNames.length; ++i) {
-            mDnsPropNames[2*i+0] = "net." + ifNames[i] + ".dns1";
-            mDnsPropNames[2*i+1] = "net." + ifNames[i] + ".dns2";
-        }
     }
 
     /**

@@ -332,4 +332,8 @@
     <!-- 2 means give warning -->
     <integer name="config_datause_notification_type">2</integer>
 
+    <!-- The orientation in which case volume keys should be swapped.
+         See ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 in android.view.Surface
+         for more details about values -->
+    <integer name="swap_volume_keys_orientation">-1</integer>
  </resources>

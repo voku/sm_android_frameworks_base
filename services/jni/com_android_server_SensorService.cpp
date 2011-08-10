@@ -113,9 +113,11 @@ android_open(JNIEnv *env, jclass clazz)
 static jint
 android_close(JNIEnv *env, jclass clazz)
 {
+/*
     if (sSensorDevice->close_data_source)
         return sSensorDevice->close_data_source(sSensorDevice);
     else
+*/
         return 0;
 }
 

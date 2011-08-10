@@ -169,7 +169,7 @@ public class AudioManager {
 
     /**  @hide Default volume index values for audio streams */
     public static final int[] DEFAULT_STREAM_VOLUME = new int[] {
-        4,  // STREAM_VOICE_CALL
+        11,  // STREAM_VOICE_CALL
         7,  // STREAM_SYSTEM
         5,  // STREAM_RING
         11,  // STREAM_MUSIC

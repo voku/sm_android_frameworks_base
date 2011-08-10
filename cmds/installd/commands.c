@@ -14,6 +14,7 @@
 ** limitations under the License.
 */
 
+#include <limits.h>
 #include "installd.h"
 
 int install(const char *pkgname, uid_t uid, gid_t gid)
@@ -112,6 +113,9 @@ static int disk_free()
 {
     struct statfs sfs;
     if (statfs(PKG_DIR_PREFIX, &sfs) == 0) {
+	if( ((unsigned long)(sfs.f_bavail * sfs.f_bsize)) > ((unsigned long)INT_MAX) ){
+		return INT_MAX;
+	}
         return sfs.f_bavail * sfs.f_bsize;
     } else {
         return -1;

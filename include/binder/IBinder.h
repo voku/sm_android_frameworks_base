@@ -52,11 +52,11 @@ public:
         DUMP_TRANSACTION        = B_PACK_CHARS('_','D','M','P'),
         INTERFACE_TRANSACTION   = B_PACK_CHARS('_', 'N', 'T', 'F'),
 
-        // Corresponds to TF_ONE_WAY -- an asynchronous call.
+        // Corresponds to tfOneWay -- an asynchronous call.
         FLAG_ONEWAY             = 0x00000001
     };
 
-                          IBinder();
+    inline                  IBinder() { }
 
     /**
      * Check if this IBinder implements the interface named by
@@ -69,7 +69,7 @@ public:
      * Return the canonical name of the interface provided by this IBinder
      * object.
      */
-    virtual const String16& getInterfaceDescriptor() const = 0;
+    virtual String16        getInterfaceDescriptor() const = 0;
 
     virtual bool            isBinderAlive() const = 0;
     virtual status_t        pingBinder() = 0;
@@ -147,7 +147,7 @@ public:
     virtual BpBinder*       remoteBinder();
 
 protected:
-    virtual          ~IBinder();
+    inline virtual          ~IBinder() { }
 
 private:
 };

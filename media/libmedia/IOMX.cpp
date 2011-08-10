@@ -110,6 +110,17 @@ public:
     virtual status_t allocateNode(
             const char *name, const sp<IOMXObserver> &observer, node_id *node) {
         Parcel data, reply;
+
+	if (getInterfaceDescriptor() != remote()->getInterfaceDescriptor())
+	{
+		//LOGE("BpOMX::allocateNode(): Mismatch remote interface for \"%s\"", name);
+		//LOGE("BpOMX::allocateNode():  local desc = %s", String8(getInterfaceDescriptor()).string());
+		//LOGE("BpOMX::allocateNode():  remote desc = %s", String8(remote()->getInterfaceDescriptor()).string());
+		//LOGE("BpOMX::allocateNode():  Aborted...");
+
+		return BAD_VALUE;
+	}
+
         data.writeInterfaceToken(IOMX::getInterfaceDescriptor());
         data.writeCString(name);
         data.writeStrongBinder(observer->asBinder());

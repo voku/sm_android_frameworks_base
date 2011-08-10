@@ -609,7 +609,7 @@ public final class Telephony {
              * @param intent the intent to read from
              * @return an array of SmsMessages for the PDUs
              */
-            public static final SmsMessage[] getMessagesFromIntent(
+            public static SmsMessage[] getMessagesFromIntent(
                     Intent intent) {
                 Object[] messages = (Object[]) intent.getSerializableExtra("pdus");
                 byte[][] pduObjs = new byte[messages.length][];

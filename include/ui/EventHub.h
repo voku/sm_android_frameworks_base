@@ -61,7 +61,9 @@ public:
         CLASS_TOUCHSCREEN   = 0x00000004,
         CLASS_TRACKBALL     = 0x00000008,
         CLASS_TOUCHSCREEN_MT= 0x00000010,
-        CLASS_DPAD          = 0x00000020
+        CLASS_DPAD          = 0x00000020,
+        CLASS_MOUSE         = 0x00000040,
+        CLASS_HEADSET       = 0x10000000
     };
     uint32_t getDeviceClasses(int32_t deviceId) const;
     
