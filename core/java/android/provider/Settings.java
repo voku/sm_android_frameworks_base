@@ -980,7 +980,7 @@ public final class Settings {
         public static void getConfiguration(ContentResolver cr, Configuration outConfig) {
             outConfig.fontScale = Settings.System.getFloat(
                 cr, FONT_SCALE, outConfig.fontScale);
-            if (outConfig.fontScale <= 0) {
+            if (outConfig.fontScale < 0) {
                 outConfig.fontScale = 1;
             }
         }
@@ -1009,9 +1009,6 @@ public final class Settings {
         public static void setShowGTalkServiceStatus(ContentResolver cr, boolean flag) {
             putInt(cr, SHOW_GTALK_SERVICE_STATUS, flag ? 1 : 0);
         }
-
-        /** @hide */
-        public static final String SWAP_VOLUME_KEYS_ORIENTATION = "swap_volume_keys_orientation";
 
         /**
          * The content:// style URL for this table
@@ -1059,7 +1056,7 @@ public final class Settings {
          * END_BUTTON_BEHAVIOR default value.
          * @hide
          */
-        public static final int END_BUTTON_BEHAVIOR_DEFAULT = END_BUTTON_BEHAVIOR_HOME | END_BUTTON_BEHAVIOR_SLEEP;
+        public static final int END_BUTTON_BEHAVIOR_DEFAULT = END_BUTTON_BEHAVIOR_SLEEP;
 
         /**
          * Whether Airplane Mode is on.

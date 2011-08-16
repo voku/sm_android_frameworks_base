@@ -27,6 +27,17 @@ namespace android {
 
 // ---------------------------------------------------------------------------
 
+IBinder::IBinder()
+    : RefBase()
+{
+}
+
+IBinder::~IBinder()
+{
+}
+
+// ---------------------------------------------------------------------------
+
 sp<IInterface>  IBinder::queryLocalInterface(const String16& descriptor)
 {
     return NULL;
@@ -73,10 +84,13 @@ status_t BBinder::pingBinder()
     return NO_ERROR;
 }
 
-String16 BBinder::getInterfaceDescriptor() const
+const String16& BBinder::getInterfaceDescriptor() const
 {
+    // This is a local static rather than a global static,
+    // to avoid static initializer ordering issues.
+    static String16 sEmptyDescriptor;
     LOGW("reached BBinder::getInterfaceDescriptor (this=%p)", this);
-    return String16();
+    return sEmptyDescriptor;
 }
 
 status_t BBinder::transact(

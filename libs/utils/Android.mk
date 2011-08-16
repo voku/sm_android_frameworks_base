@@ -39,24 +39,10 @@ commonSources:= \
 	Threads.cpp \
 	Timers.cpp \
 	VectorImpl.cpp \
-        ZipFileCRO.cpp \
+    ZipFileCRO.cpp \
 	ZipFileRO.cpp \
 	ZipUtils.cpp \
-        misc.cpp \
-  ../binder/Binder.cpp \
-  ../binder/BpBinder.cpp \
-  ../binder/IInterface.cpp \
-  ../binder/IMemory.cpp \
-  ../binder/IPCThreadState.cpp \
-  ../binder/IPermissionController.cpp \
-  ../binder/IServiceManager.cpp \
-  ../binder/MemoryBase.cpp \
-  ../binder/MemoryHeapBase.cpp \
-  ../binder/MemoryHeapPmem.cpp \
-  ../binder/Parcel.cpp \
-  ../binder/Permission.cpp \
-  ../binder/ProcessState.cpp \
-  ../binder/Static.cpp
+	misc.cpp
 
 
 # For the host

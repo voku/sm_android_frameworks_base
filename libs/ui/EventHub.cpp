@@ -733,10 +733,7 @@ int EventHub::open_device(const char *deviceName)
         if (ioctl(fd, EVIOCGBIT(EV_REL, sizeof(rel_bitmask)), rel_bitmask) >= 0)
         {
             if (test_bit(REL_X, rel_bitmask) && test_bit(REL_Y, rel_bitmask)) {
-                if (test_bit(BTN_LEFT, key_bitmask) && test_bit(BTN_RIGHT, key_bitmask))
-                    device->classes |= CLASS_MOUSE;
-                else
-                    device->classes |= CLASS_TRACKBALL;
+                device->classes |= CLASS_TRACKBALL;
             }
         }
     }
@@ -773,19 +770,15 @@ int EventHub::open_device(const char *deviceName)
     uint8_t sw_bitmask[(SW_MAX+7)/8];
     memset(sw_bitmask, 0, sizeof(sw_bitmask));
     if (ioctl(fd, EVIOCGBIT(EV_SW, sizeof(sw_bitmask)), sw_bitmask) >= 0) {
-        for (int i=0; i<SW_MAX; i++) {
+        for (int i=0; i<EV_SW; i++) {
             //LOGI("Device 0x%x sw %d: has=%d", device->id, i, test_bit(i, sw_bitmask));
             if (test_bit(i, sw_bitmask)) {
                 if (mSwitches[i] == 0) {
-		    //LOGV("Device 0x%x has sw %d", device->id, i);
                     mSwitches[i] = device->id;
                 }
             }
         }
     }
-
-    if (mSwitches[SW_HEADPHONE_INSERT])
-	device->classes |= CLASS_HEADSET;
 #endif
 
     if ((device->classes&CLASS_KEYBOARD) != 0) {

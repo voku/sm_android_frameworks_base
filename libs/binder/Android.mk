@@ -14,7 +14,20 @@
 
 # we have the common sources, plus some device-specific stuff
 sources := \
+    Binder.cpp \
+    BpBinder.cpp \
+    IInterface.cpp \
+    IMemory.cpp \
+    IPCThreadState.cpp \
+    IPermissionController.cpp \
+    IServiceManager.cpp \
+    MemoryBase.cpp \
+    MemoryHeapBase.cpp \
+    MemoryHeapPmem.cpp \
+    Parcel.cpp \
     Permission.cpp \
+    ProcessState.cpp \
+    Static.cpp
 
 ifeq ($(BOARD_USES_ECLAIR_LIBCAMERA),true)
   LOCAL_CFLAGS += -DUSE_ECLAIR_MEMORYDEALER
