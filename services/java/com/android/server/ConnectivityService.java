@@ -1283,18 +1283,18 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                 String[] dnsList = nt.getNameServers();
                 if (mNetAttributes[netType].isDefault()) {
                     int j = 1;
+                    for (int k=j ; k<mNumDnsEntries; k++) {
+                        if (DBG) Slog.d(TAG, "erasing net.dns" + k);
+                        SystemProperties.set("net.dns" + k, "");
+                    }
                     for (String dns : dnsList) {
-                        if (dns != null && !TextUtils.equals(dns, "0.0.0.0")) {
+                        if (dns != null) {
                             if (DBG) {
                                 Slog.d(TAG, "adding dns " + dns + " for " +
                                         nt.getNetworkInfo().getTypeName());
                             }
                             SystemProperties.set("net.dns" + j++, dns);
                         }
-                    }
-                    for (int k=j ; k<mNumDnsEntries; k++) {
-                        if (DBG) Slog.d(TAG, "erasing net.dns" + k);
-                        SystemProperties.set("net.dns" + k, "");
                     }
                     mNumDnsEntries = j;
                 } else {

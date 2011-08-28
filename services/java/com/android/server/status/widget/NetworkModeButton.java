@@ -43,7 +43,7 @@ public class NetworkModeButton extends PowerButton{
                 currentInternalState == PowerButton.STATE_TURNING_OFF)
             return PowerButton.STATE_INTERMEDIATE;
 
-        switch(networkMode) {
+        switch (networkMode) {
             case Phone.NT_MODE_WCDMA_PREF:
             case Phone.NT_MODE_WCDMA_ONLY:
             case Phone.NT_MODE_GSM_UMTS:
@@ -107,7 +107,7 @@ public class NetworkModeButton extends PowerButton{
 
     public void toggleState(Context context, boolean switchModes) {
         Intent intent = new Intent(MODIFY_NETWORK_MODE);
-        switch (networkMode ) {
+        switch (networkMode) {
         case Phone.NT_MODE_WCDMA_PREF:
         case Phone.NT_MODE_GSM_UMTS:
             intent.putExtra(NETWORK_MODE, Phone.NT_MODE_GSM_ONLY);
