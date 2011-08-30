@@ -265,9 +265,7 @@ status_t StagefrightMediaScanner::processFile(
         goto endfile;
     }
 
-    if (mRetriever->setDataSource(path) == OK
-            && mRetriever->setMode(
-                METADATA_MODE_METADATA_RETRIEVAL_ONLY) == OK) {
+    if (mRetriever->setDataSource(path) == OK) {
         const char *value;
         if ((value = mRetriever->extractMetadata(
                         METADATA_KEY_MIMETYPE)) != NULL) {

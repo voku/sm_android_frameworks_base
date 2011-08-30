@@ -48,6 +48,8 @@ public abstract class NetworkStateTracker extends Handler {
     private boolean mDefaultRouteSet;
     private boolean mTeardownRequested;
 
+    private int mCachedGatewayAddr = 0;
+
     private static boolean DBG = true;
     private static final String TAG = "NetworkStateTracker";
 
@@ -153,14 +155,41 @@ public abstract class NetworkStateTracker extends Handler {
     }
 
     public void addDefaultRoute() {
-        if ((mInterfaceName != null) && (mDefaultGatewayAddr != 0) &&
-                mDefaultRouteSet == false) {
+	if (mInterfaceName != null) {
             if (DBG) {
                 Log.d(TAG, "addDefaultRoute for " + mNetworkInfo.getTypeName() +
-                        " (" + mInterfaceName + "), GatewayAddr=" + mDefaultGatewayAddr);
+                        " (" + mInterfaceName + "), GatewayAddr=" + mDefaultGatewayAddr +
+                        ", CachedGatewayAddr=" + mCachedGatewayAddr);
             }
-            NetworkUtils.setDefaultRoute(mInterfaceName, mDefaultGatewayAddr);
-            mDefaultRouteSet = true;
+
+            if (mDefaultGatewayAddr != 0) {
+                NetworkUtils.addHostRoute(mInterfaceName, mDefaultGatewayAddr);
+                NetworkUtils.setDefaultRoute(mInterfaceName, mDefaultGatewayAddr);
+            } else if (mCachedGatewayAddr != 0) {
+                /*
+                 * We don't have a default gateway set, so check if we have one cached due to
+                 * a previous suspension.  If we do, then restore that one
+                 */
+                if (DBG) {
+                    Log.d(TAG, "addDefaultRoute: no default gateway, attempting to use cached gateway");
+                }
+                int r1 = NetworkUtils.addHostRoute(mInterfaceName, mCachedGatewayAddr);
+                int r2 = NetworkUtils.setDefaultRoute(mInterfaceName, mCachedGatewayAddr);
+                if (r1 < 0 || r2 < 0) {
+                    // something went wrong... restart the network
+                    if (DBG) {
+                        Log.d(TAG, "addDefaultRoute: something went terribly wrong... restart the network");
+                    }
+                    teardown();
+                    reconnect();
+                }
+            }
+
+            /*
+             * Clear our cached value regardless of which of the above two situations
+             * were hit.
+             */
+            mCachedGatewayAddr = 0;
         }
     }
 
@@ -170,6 +199,21 @@ public abstract class NetworkStateTracker extends Handler {
                 Log.d(TAG, "removeDefaultRoute for " + mNetworkInfo.getTypeName() + " (" +
                         mInterfaceName + ")");
             }
+
+            /*
+             * Some devices don't use the android system to set their default gateway, in
+             * which case the gateway is removed and never restored during data suspension.
+             * In order to solve this, we check if the current gateway is 0 and if it is, we
+             * call natively to cache the gateway before suspension.
+             */
+            if ((mNetworkInfo.getDetailedState() == NetworkInfo.DetailedState.SUSPENDED) &&
+                    (mDefaultGatewayAddr == 0)) {
+                if (DBG) {
+                    Log.d(TAG, "removeDefaultRoute on suspended connection, saving current gateway for when we come out of suspension");
+                }
+                mCachedGatewayAddr = NetworkUtils.getDefaultRoute(mInterfaceName);
+            }
+
             NetworkUtils.removeDefaultRoute(mInterfaceName);
             mDefaultRouteSet = false;
         }
@@ -409,4 +453,7 @@ public abstract class NetworkStateTracker extends Handler {
     public void interpretScanResultsAvailable() {
     }
 
+    public String getInterfaceName() {
+        return mInterfaceName;
+    }
 }
