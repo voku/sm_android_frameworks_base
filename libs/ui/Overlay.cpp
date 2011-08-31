@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +102,7 @@ void* Overlay::getBufferAddress(overlay_buffer_t buffer)
 }
 
 void Overlay::destroy() {  
+    if (mStatus != NO_ERROR) return;
 
     // Must delete the objects in reverse creation order, thus the
     //  data side must be closed first and then the destroy send to
@@ -110,15 +110,9 @@ void Overlay::destroy() {
     if (mOverlayData) {
         overlay_data_close(mOverlayData);
         mOverlayData = NULL;
-    } else {
-        LOGD("Overlay::destroy mOverlayData is NULL");
     }
 
-    if (mOverlayRef != 0) {
-        mOverlayRef->mOverlayChannel->destroy();
-    } else {
-        LOGD("Overlay::destroy mOverlayRef is NULL");
-    }
+    mOverlayRef->mOverlayChannel->destroy();
 }
 
 status_t Overlay::getStatus() const {

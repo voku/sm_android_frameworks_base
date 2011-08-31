@@ -33,7 +33,9 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.ContentObserver;
+import android.graphics.drawable.StateListDrawable;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff.Mode;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.location.LocationManager;
@@ -83,9 +85,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.lang.reflect.Field;
-
-import android.graphics.PorterDuff.Mode;
-import android.graphics.drawable.StateListDrawable;
 
 import com.android.server.status.widget.PowerButton;
 import com.android.server.status.widget.GPSButton;
@@ -294,13 +293,13 @@ public class StatusBarService extends IStatusBar.Stub
     Drawable expBarHeadDrawable;
     Drawable expBarNotifTitleDrawable;
     
-    
     // for disabling the status bar
     ArrayList<DisableRecord> mDisableRecords = new ArrayList<DisableRecord>();
     int mDisabled = 0;
 
-    private HashMap<String,PowerButton> mUsedPowerButtons = new HashMap<String,PowerButton>();
     private boolean mHideOnPowerButtonChange = false;
+
+    private HashMap<String,PowerButton> mUsedPowerButtons = new HashMap<String,PowerButton>();
 
     boolean mNotificationScreenLighter;
     int mNotificationScreenLighterTime;
@@ -2069,12 +2068,12 @@ public class StatusBarService extends IStatusBar.Stub
         public void onClick(View v) {
             LinearLayout layout = (LinearLayout)v;
             String type = (String)layout.getTag();
+            if(mHideOnPowerButtonChange) {
+                 deactivate();
+            }
             PowerButton btn = mUsedPowerButtons.get(type);
             btn.toggleState(mContext);
             updateWidget();
-            if(mHideOnPowerButtonChange) {
-                deactivate();
-            }
         }
     };
 

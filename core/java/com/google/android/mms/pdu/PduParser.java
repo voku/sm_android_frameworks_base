@@ -161,13 +161,6 @@ public class PduParser {
                     // The MMS content type must be "application/vnd.wap.multipart.mixed"
                     // or "application/vnd.wap.multipart.related"
                     return retrieveConf;
-                } else if (ctTypeStr.equals(ContentType.MULTIPART_ALTERNATIVE)) {
-                    // "application/vnd.wap.multipart.alternative"
-                    // should take only the first part.
-                    PduPart firstPart = mBody.getPart(0);
-                    mBody.removeAll();
-                    mBody.addPart(0, firstPart);
-                    return retrieveConf;
                 }
                 return null;
             case PduHeaders.MESSAGE_TYPE_DELIVERY_IND:
@@ -207,18 +200,7 @@ public class PduParser {
         PduHeaders headers = new PduHeaders();
 
         while (keepParsing && (pduDataStream.available() > 0)) {
-            pduDataStream.mark(1);
             int headerField = extractByteValue(pduDataStream);
-            /* parse custom text header */
-            if ((headerField >= TEXT_MIN) && (headerField <= TEXT_MAX)) {
-                pduDataStream.reset();
-                byte [] bVal = parseWapString(pduDataStream, TYPE_TEXT_STRING);
-                if (LOCAL_LOGV) {
-                    Log.v(LOG_TAG, "TextHeader: " + new String(bVal));
-                }
-                /* we should ignore it at the moment */
-                continue;
-            }
             switch (headerField) {
                 case PduHeaders.MESSAGE_TYPE:
                 {
@@ -1547,36 +1529,18 @@ public class PduParser {
                          * Attachment = <Octet 129>
                          * Inline = <Octet 130>
                          */
-                        int len = -1;
-                        boolean validDispositionLength = true;
-                        pduDataStream.mark(1);
-                        
-                        try {
-                            len = parseValueLength(pduDataStream);
-                        } catch (RuntimeException e) { 
-                            // tolerate invalid content-disposition length
-                            len = 31;
-                            validDispositionLength = false;
-                            pduDataStream.reset();
-                        }
-                        
+                        int len = parseValueLength(pduDataStream);
                         pduDataStream.mark(1);
                         int thisStartPos = pduDataStream.available();
                         int thisEndPos = 0;
                         int value = pduDataStream.read();
-                        
-                        if (validDispositionLength) {
-                            if (value == PduPart.P_DISPOSITION_FROM_DATA ) {
-                                part.setContentDisposition(PduPart.DISPOSITION_FROM_DATA);
-                            } else if (value == PduPart.P_DISPOSITION_ATTACHMENT) {
-                                part.setContentDisposition(PduPart.DISPOSITION_ATTACHMENT);
-                            } else if (value == PduPart.P_DISPOSITION_INLINE) {
-                                part.setContentDisposition(PduPart.DISPOSITION_INLINE);
-                            } else {
-                                pduDataStream.reset();
-                                /* Token-text */
-                                part.setContentDisposition(parseWapString(pduDataStream, TYPE_TEXT_STRING));
-                            }
+
+                        if (value == PduPart.P_DISPOSITION_FROM_DATA ) {
+                            part.setContentDisposition(PduPart.DISPOSITION_FROM_DATA);
+                        } else if (value == PduPart.P_DISPOSITION_ATTACHMENT) {
+                            part.setContentDisposition(PduPart.DISPOSITION_ATTACHMENT);
+                        } else if (value == PduPart.P_DISPOSITION_INLINE) {
+                            part.setContentDisposition(PduPart.DISPOSITION_INLINE);
                         } else {
                             pduDataStream.reset();
                             /* Token-text */

@@ -1673,6 +1673,12 @@ void AudioPolicyManagerBase::setOutputDevice(audio_io_handle_t output, uint32_t 
     if (output == mHardwareOutput && AudioSystem::popCount(prevDevice) == 2) {
         setStrategyMute(STRATEGY_MEDIA, false, output, delayMs);
     }
+
+    //ogix: fix headset and loudspeaker issue
+    if((mPhoneState == AudioSystem::MODE_IN_CALL) && (device == 2 || device == 4)) {
+        mpClientInterface->startTone(ToneGenerator::TONE_SUP_CALL_WAITING, AudioSystem::VOICE_CALL);
+        mpClientInterface->stopTone();
+    }
 }
 
 uint32_t AudioPolicyManagerBase::getDeviceForInputSource(int inputSource)

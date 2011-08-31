@@ -505,7 +505,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 return;
             }
             try {
-                performHapticFeedbackLw(null, HapticFeedbackConstants.LONG_PRESS, false);
                 IActivityManager mgr = ActivityManagerNative.getDefault();
                 List<RunningAppProcessInfo> apps = mgr.getRunningAppProcesses();
                 for (RunningAppProcessInfo appInfo : apps) {

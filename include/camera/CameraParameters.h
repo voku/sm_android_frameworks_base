@@ -22,15 +22,24 @@
 
 namespace android {
 
+struct Size {
+    int width;
+    int height;
+
+    Size() {
+        width = 0;
+        height = 0;
+    }
+
+    Size(int w, int h) {
+        width = w;
+        height = h;
+    }
+};
+
 class CameraParameters
 {
 public:
-    enum {
-        CAMERA_ORIENTATION_UNKNOWN = 0,
-        CAMERA_ORIENTATION_PORTRAIT = 1,
-        CAMERA_ORIENTATION_LANDSCAPE = 2,
-    };
-    
     CameraParameters();
     CameraParameters(const String8 &params) { unflatten(params); }
     ~CameraParameters();
@@ -49,17 +58,23 @@ public:
 
     void setPreviewSize(int width, int height);
     void getPreviewSize(int *width, int *height) const;
+    void getSupportedPreviewSizes(Vector<Size> &sizes) const;
     void setPreviewFrameRate(int fps);
     int getPreviewFrameRate() const;
+    void getPreviewFpsRange(int *min_fps, int *max_fps) const;
+    void setPreviewFrameRateMode(const char *mode);
+    const char *getPreviewFrameRateMode() const;
     void setPreviewFormat(const char *format);
     const char *getPreviewFormat() const;
     void setPictureSize(int width, int height);
     void getPictureSize(int *width, int *height) const;
+    void getSupportedPictureSizes(Vector<Size> &sizes) const;
     void setPictureFormat(const char *format);
     const char *getPictureFormat() const;
-
-    int getOrientation() const;
-    void setOrientation(int orientation);
+    void setTouchIndexAec(int x, int y);
+    void getTouchIndexAec(int *x, int *y) const;
+    void setTouchIndexAf(int x, int y);
+    void getTouchIndexAf(int *x, int *y) const;
 
     void dump() const;
     status_t dump(int fd, const Vector<String16>& args) const;
@@ -74,25 +89,48 @@ public:
     // Supported preview frame sizes in pixels.
     // Example value: "800x600,480x320". Read only.
     static const char KEY_SUPPORTED_PREVIEW_SIZES[];
-    // The image format for preview frames.
+    // The current minimum and maximum preview fps. This controls the rate of
+    // preview frames received (CAMERA_MSG_PREVIEW_FRAME). The minimum and
+    // maximum fps must be one of the elements from
+    // KEY_SUPPORTED_PREVIEW_FPS_RANGE parameter.
+    // Example value: "10500,26623"
+    static const char KEY_PREVIEW_FPS_RANGE[];
+    // The supported preview fps (frame-per-second) ranges. Each range contains
+    // a minimum fps and maximum fps. If minimum fps equals to maximum fps, the
+    // camera outputs frames in fixed frame rate. If not, the camera outputs
+    // frames in auto frame rate. The actual frame rate fluctuates between the
+    // minimum and the maximum. The list has at least one element. The list is
+    // sorted from small to large (first by maximum fps and then minimum fps).
+    // Example value: "(10500,26623),(15000,26623),(30000,30000)"
+    static const char KEY_SUPPORTED_PREVIEW_FPS_RANGE[];
+    // The image format for preview frames. See CAMERA_MSG_PREVIEW_FRAME in
+    // frameworks/base/include/camera/Camera.h.
     // Example value: "yuv420sp" or PIXEL_FORMAT_XXX constants. Read/write.
     static const char KEY_PREVIEW_FORMAT[];
     // Supported image formats for preview frames.
     // Example value: "yuv420sp,yuv422i-yuyv". Read only.
     static const char KEY_SUPPORTED_PREVIEW_FORMATS[];
-    // Number of preview frames per second.
+    // Number of preview frames per second. This is the target frame rate. The
+    // actual frame rate depends on the driver.
     // Example value: "15". Read/write.
     static const char KEY_PREVIEW_FRAME_RATE[];
     // Supported number of preview frames per second.
     // Example value: "24,15,10". Read.
     static const char KEY_SUPPORTED_PREVIEW_FRAME_RATES[];
+    // The mode of preview frame rate.
+    // Example value: "frame-rate-auto, frame-rate-fixed".
+    static const char KEY_PREVIEW_FRAME_RATE_MODE[];
+    static const char KEY_SUPPORTED_PREVIEW_FRAME_RATE_MODES[];
+    static const char KEY_PREVIEW_FRAME_RATE_AUTO_MODE[];
+    static const char KEY_PREVIEW_FRAME_RATE_FIXED_MODE[];
     // The dimensions for captured pictures in pixels (width x height).
     // Example value: "1024x768". Read/write.
     static const char KEY_PICTURE_SIZE[];
     // Supported dimensions for captured pictures in pixels.
     // Example value: "2048x1536,1024x768". Read only.
     static const char KEY_SUPPORTED_PICTURE_SIZES[];
-    // The image format for captured pictures.
+    // The image format for captured pictures. See CAMERA_MSG_COMPRESSED_IMAGE
+    // in frameworks/base/include/camera/Camera.h.
     // Example value: "jpeg" or PIXEL_FORMAT_XXX constants. Read/write.
     static const char KEY_PICTURE_FORMAT[];
     // Supported image formats for captured pictures.
@@ -104,10 +142,7 @@ public:
     // The height (in pixels) of EXIF thumbnail in Jpeg picture.
     // Example value: "384". Read/write.
     static const char KEY_JPEG_THUMBNAIL_HEIGHT[];
-
-    //++TODO is the following parameter is needed when jpeg thumbnail is available
     static const char KEY_SUPPORTED_THUMBNAIL_SIZES[];
-
     // Supported EXIF thumbnail sizes (width x height). 0x0 means not thumbnail
     // in EXIF.
     // Example value: "512x384,320x240,0x0". Read only.
@@ -120,28 +155,37 @@ public:
     // the best.
     // Example value: "90". Read/write.
     static const char KEY_JPEG_QUALITY[];
-    // The orientation of the device in degrees. For example, suppose the
-    // natural position of the device is landscape. If the user takes a picture
-    // in landscape mode in 2048x1536 resolution, the rotation will be set to
-    // "0". If the user rotates the phone 90 degrees clockwise, the rotation
-    // should be set to "90".
-    // The camera driver can set orientation in the EXIF header without rotating
-    // the picture. Or the driver can rotate the picture and the EXIF thumbnail.
-    // If the Jpeg picture is rotated, the orientation in the EXIF header should
-    // be missing or 1 (row #0 is top and column #0 is left side). The driver
-    // should not set default value for this parameter.
+    // The rotation angle in degrees relative to the orientation of the camera.
+    // This affects the pictures returned from CAMERA_MSG_COMPRESSED_IMAGE. The
+    // camera driver may set orientation in the EXIF header without rotating the
+    // picture. Or the driver may rotate the picture and the EXIF thumbnail. If
+    // the Jpeg picture is rotated, the orientation in the EXIF header will be
+    // missing or 1 (row #0 is top and column #0 is left side).
+    //
+    // Note that the JPEG pictures of front-facing cameras are not mirrored
+    // as in preview display.
+    //
+    // For example, suppose the natural orientation of the device is portrait.
+    // The device is rotated 270 degrees clockwise, so the device orientation is
+    // 270. Suppose a back-facing camera sensor is mounted in landscape and the
+    // top side of the camera sensor is aligned with the right edge of the
+    // display in natural orientation. So the camera orientation is 90. The
+    // rotation should be set to 0 (270 + 90).
+    //
     // Example value: "0" or "90" or "180" or "270". Write only.
     static const char KEY_ROTATION[];
-    // GPS latitude coordinate. This will be stored in JPEG EXIF header.
-    // Example value: "25.032146". Write only.
+    // GPS latitude coordinate. GPSLatitude and GPSLatitudeRef will be stored in
+    // JPEG EXIF header.
+    // Example value: "25.032146" or "-33.462809". Write only.
     static const char KEY_GPS_LATITUDE[];
-    // GPS longitude coordinate. This will be stored in JPEG EXIF header.
-    // Example value: "121.564448". Write only.
+    // GPS longitude coordinate. GPSLongitude and GPSLongitudeRef will be stored
+    // in JPEG EXIF header.
+    // Example value: "121.564448" or "-70.660286". Write only.
     static const char KEY_GPS_LONGITUDE[];
-    // GPS altitude. This will be stored in JPEG EXIF header.
-    // Example value: "21.0". Write only.
+    // GPS altitude. GPSAltitude and GPSAltitudeRef will be stored in JPEG EXIF
+    // header.
+    // Example value: "21.0" or "-5". Write only.
     static const char KEY_GPS_ALTITUDE[];
-
     static const char KEY_GPS_LATITUDE_REF[];
     static const char KEY_GPS_LONGITUDE_REF[];
     static const char KEY_GPS_ALTITUDE_REF[];
@@ -167,7 +211,6 @@ public:
     static const char AUTO_EXPOSURE_SPOT_METERING[];
 
 
-
     // GPS timestamp (UTC in seconds since January 1, 1970). This should be
     // stored in JPEG EXIF header.
     // Example value: "1251192757". Write only.
@@ -187,6 +230,13 @@ public:
     // Supported color effect settings.
     // Example value: "none,mono,sepia". Read only.
     static const char KEY_SUPPORTED_EFFECTS[];
+    //Touch Af/AEC settings.
+    static const char KEY_TOUCH_AF_AEC[];
+    static const char KEY_SUPPORTED_TOUCH_AF_AEC[];
+    //Touch Index for AEC.
+    static const char KEY_TOUCH_INDEX_AEC[];
+    //Touch Index for AF.
+    static const char KEY_TOUCH_INDEX_AF[];
     // Current antibanding setting.
     // Example value: "auto" or ANTIBANDING_XXX constants. Read/write.
     static const char KEY_ANTIBANDING[];
@@ -205,10 +255,9 @@ public:
     // Supported flash modes.
     // Example value: "auto,on,off". Read only.
     static const char KEY_SUPPORTED_FLASH_MODES[];
-    // Current focus mode. If the camera does not support auto-focus, the value
-    // should be FOCUS_MODE_FIXED. If the focus mode is not FOCUS_MODE_FIXED or
-    // or FOCUS_MODE_INFINITY, applications should call
-    // CameraHardwareInterface.autoFocus to start the focus.
+    // Current focus mode. This will not be empty. Applications should call
+    // CameraHardwareInterface.autoFocus to start the focus if focus mode is
+    // FOCUS_MODE_AUTO or FOCUS_MODE_MACRO.
     // Example value: "auto" or FOCUS_MODE_XXX constants. Read/write.
     static const char KEY_FOCUS_MODE[];
     // Supported focus modes.
@@ -261,12 +310,45 @@ public:
     // Example value: "true". Read only.
     static const char KEY_SMOOTH_ZOOM_SUPPORTED[];
 
+    // The distances (in meters) from the camera to where an object appears to
+    // be in focus. The object is sharpest at the optimal focus distance. The
+    // depth of field is the far focus distance minus near focus distance.
+    //
+    // Focus distances may change after starting auto focus, canceling auto
+    // focus, or starting the preview. Applications can read this anytime to get
+    // the latest focus distances. If the focus mode is FOCUS_MODE_CONTINUOUS,
+    // focus distances may change from time to time.
+    //
+    // This is intended to estimate the distance between the camera and the
+    // subject. After autofocus, the subject distance may be within near and far
+    // focus distance. However, the precision depends on the camera hardware,
+    // autofocus algorithm, the focus area, and the scene. The error can be
+    // large and it should be only used as a reference.
+    //
+    // Far focus distance > optimal focus distance > near focus distance. If
+    // the far focus distance is infinity, the value should be "Infinity" (case
+    // sensitive). The format is three float values separated by commas. The
+    // first is near focus distance. The second is optimal focus distance. The
+    // third is far focus distance.
+    // Example value: "0.95,1.9,Infinity" or "0.049,0.05,0.051". Read only.
+    static const char KEY_FOCUS_DISTANCES[];
+
+    // The image format for video frames. See CAMERA_MSG_VIDEO_FRAME in
+    // frameworks/base/include/camera/Camera.h.
+    // Example value: "yuv420sp" or PIXEL_FORMAT_XXX constants. Read only.
+    static const char KEY_VIDEO_FRAME_FORMAT[];
+
     // Value for KEY_ZOOM_SUPPORTED or KEY_SMOOTH_ZOOM_SUPPORTED.
     static const char TRUE[];
 
+    // Value for KEY_FOCUS_DISTANCES.
+    static const char FOCUS_DISTANCE_INFINITY[];
+
     //Continuous AF.
     static const char KEY_CAF[];
+    static const char KEY_CONTINUOUS_AF[];
     static const char KEY_SUPPORTED_CAF[];
+    static const char KEY_SUPPORTED_CONTINUOUS_AF[];
 
     // Values for white balance settings.
     static const char WHITE_BALANCE_AUTO[];
@@ -288,6 +370,10 @@ public:
     static const char EFFECT_WHITEBOARD[];
     static const char EFFECT_BLACKBOARD[];
     static const char EFFECT_AQUA[];
+
+    // Values for Touch AF/AEC
+    static const char TOUCH_AF_AEC_OFF[] ;
+    static const char TOUCH_AF_AEC_ON[] ;
 
     // Values for antibanding settings.
     static const char ANTIBANDING_AUTO[];
@@ -338,13 +424,17 @@ public:
     static const char PIXEL_FORMAT_JPEG[];
     static const char PIXEL_FORMAT_RAW[];
 
+
     // Values for focus mode settings.
-    // Auto-focus mode.
+    // Auto-focus mode. Applications should call
+    // CameraHardwareInterface.autoFocus to start the focus in this mode.
     static const char FOCUS_MODE_AUTO[];
     // Focus is set at infinity. Applications should not call
     // CameraHardwareInterface.autoFocus in this mode.
     static const char FOCUS_MODE_INFINITY[];
     static const char FOCUS_MODE_NORMAL[];
+    // Macro (close-up) focus mode. Applications should call
+    // CameraHardwareInterface.autoFocus to start the focus in this mode.
     static const char FOCUS_MODE_MACRO[];
     // Focus is fixed. The camera is always in this mode if the focus is not
     // adjustable. If the camera has auto-focus, this mode can fix the
@@ -355,6 +445,21 @@ public:
     // continuously. Applications should not call
     // CameraHardwareInterface.autoFocus in this mode.
     static const char FOCUS_MODE_EDOF[];
+    // Continuous auto focus mode intended for video recording. The camera
+    // continuously tries to focus. This is ideal for shooting video.
+    // Applications still can call CameraHardwareInterface.takePicture in this
+    // mode but the subject may not be in focus. Auto focus starts when the
+    // parameter is set. Applications should not call
+    // CameraHardwareInterface.autoFocus in this mode. To stop continuous focus,
+    // applications should change the focus mode to other modes.
+    static const char FOCUS_MODE_CONTINUOUS_VIDEO[];
+
+    // Values for Continuous AF
+    static const char CAF_OFF[] ;
+    static const char CAF_ON[] ;
+    // Proprietaries from CodeAurora use these...
+    static const char CONTINUOUS_AF_OFF[] ;
+    static const char CONTINUOUS_AF_ON[] ;
 
     static const char ISO_AUTO[];
     static const char ISO_HJR[] ;
@@ -367,9 +472,6 @@ public:
     static const char LENSSHADE_ENABLE[] ;
     static const char LENSSHADE_DISABLE[] ;
 
-    // Values for Continuous AF
-    static const char CAF_OFF[] ;
-    static const char CAF_ON[] ;
 
 private:
     DefaultKeyedVector<String8,String8>    mMap;
@@ -378,4 +480,3 @@ private:
 }; // namespace android
 
 #endif
-
