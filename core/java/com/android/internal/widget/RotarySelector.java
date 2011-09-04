@@ -161,6 +161,7 @@ public class RotarySelector extends View {
     private VelocityTracker mVelocityTracker;
     private int mMinimumVelocity;
     private int mMaximumVelocity;
+    private long mMaxAnimationDuration;
 
     /**
      * The number of dimples we are flinging when we do the "spin" animation.  Used to know when to
@@ -218,6 +219,7 @@ public class RotarySelector extends View {
         final ViewConfiguration configuration = ViewConfiguration.get(mContext);
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity() * 2;
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+        mMaxAnimationDuration = 1000;
     }
 
     private Bitmap getBitmapFor(int resId) {
@@ -711,6 +713,7 @@ public class RotarySelector extends View {
         mAnimating = true;
         mAnimationStartTime = currentAnimationTimeMillis();
         mAnimationDuration = 1000 * (endX - startX) / pixelsPerSecond;
+        mAnimationDuration = Math.min(mAnimationDuration, mMaxAnimationDuration);
         mAnimatingDeltaXStart = startX;
         mAnimatingDeltaXEnd = endX;
         setGrabbedState(NOTHING_GRABBED);
