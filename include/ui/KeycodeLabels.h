@@ -155,7 +155,6 @@ static const KeycodeLabel KEYCODES[] = {
 // These constants need to match the above mappings.
 typedef enum KeyCode {
     kKeyCodeUnknown = 0,
-
     kKeyCodeSoftLeft = 1,
     kKeyCodeSoftRight = 2,
     kKeyCodeHome = 3,
@@ -248,7 +247,7 @@ typedef enum KeyCode {
     kKeyCodeForward = 90,
     kKeyCodeMute = 91,
     kKeyCodeDump = 92,
-    kKeyCodeHold = 93,
+    kKeyCodeHold = 93
 } KeyCode;
 
 static const KeycodeLabel FLAGS[] = {

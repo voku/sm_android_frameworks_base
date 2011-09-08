@@ -37,6 +37,7 @@
 #include "CameraService.h"
 
 #include <cutils/atomic.h>
+#include <cutils/properties.h>
 
 namespace android {
 
@@ -261,8 +262,19 @@ CameraService::Client::Client(const sp<CameraService>& cameraService,
                                  CAMERA_MSG_ZOOM |
                                  CAMERA_MSG_FOCUS);
 
-        mMediaPlayerClick = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
-        mMediaPlayerBeep = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
+        char value[PROPERTY_VALUE_MAX];
+        property_get("ro.camera.sound.disabled", value, "0");
+        int systemMute = atoi(value);
+        property_get("persist.sys.camera-mute", value, "0");
+        int userMute = atoi(value);
+	if(!systemMute && !userMute) {
+            mMediaPlayerClick = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
+            mMediaPlayerBeep = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
+        }
+        else {
+            mMediaPlayerClick = NULL;
+            mMediaPlayerBeep = NULL;
+        }
         mOverlayW = 0;
         mOverlayH = 0;
 

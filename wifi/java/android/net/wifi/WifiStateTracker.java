@@ -371,7 +371,9 @@ public class WifiStateTracker extends NetworkStateTracker {
         mInterfaceName = SystemProperties.get("wifi.interface", "eth0");
         mDnsPropNames = new String[] {
             "net." + mInterfaceName + ".dns1",
-            "net." + mInterfaceName + ".dns2"
+            "net." + mInterfaceName + ".dns2",
+            "dhcp." + mInterfaceName + ".dns1",
+            "dhcp." + mInterfaceName + ".dns2"
         };
         mBatteryStats = IBatteryStats.Stub.asInterface(ServiceManager.getService("batteryinfo"));
 

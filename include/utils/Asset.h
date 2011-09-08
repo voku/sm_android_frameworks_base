@@ -63,7 +63,11 @@ public:
 
     enum {
         /* data larger than this does not get uncompressed into a buffer */
-        UNCOMPRESS_DATA_MAX = 3 * 1024 * 1024
+#ifdef HAVE_ANDROID_OS
+        UNCOMPRESS_DATA_MAX = 1 * 1024 * 1024
+#else
+        UNCOMPRESS_DATA_MAX = 2 * 1024 * 1024
+#endif
     };
 
     /*
