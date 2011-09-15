@@ -345,6 +345,8 @@ public class ThrottleService extends IThrottleManager.Stub {
     private static final int EVENT_POLL_ALARM      = 2;
     private static final int EVENT_RESET_ALARM     = 3;
     private static final int EVENT_IFACE_UP        = 4;
+    private static final int EVENT_NTP_ALARM       = 5;
+
     private class MyHandler extends Handler {
         public MyHandler(Looper l) {
             super(l);
@@ -367,6 +369,9 @@ public class ThrottleService extends IThrottleManager.Stub {
                 break;
             case EVENT_IFACE_UP:
                 onIfaceUp();
+                break;
+            case EVENT_NTP_ALARM:
+                onNtpAlarm();
             }
         }
 
@@ -518,6 +523,26 @@ public class ThrottleService extends IThrottleManager.Stub {
                 } catch (Exception e) {
                     Slog.e(TAG, "error setting Throttle: " + e);
                 }
+            }
+        }
+
+        private void onNtpAlarm() {
+            long ntpAge = SystemClock.elapsedRealtime() - cachedNtpTimestamp;
+            SntpClient client = new SntpClient();
+            if (client.requestTime(mNtpServer, MAX_NTP_FETCH_WAIT)) {
+                cachedNtp = client.getNtpTime();
+                cachedNtpTimestamp = SystemClock.elapsedRealtime();
+                if (!mNtpActive) {
+                    mNtpActive = true;
+                    if (VDBG) Slog.d(TAG, "found Authoritative time - reseting alarm");
+                    mHandler.obtainMessage(EVENT_RESET_ALARM).sendToTarget();
+                }
+                // Cache has been updated, throw away any pending requests in queue.
+                mHandler.removeMessages(EVENT_NTP_ALARM);
+            }
+            else if (mNtpActive && ntpAge > mMaxNtpCacheAgeSec * 1000) {
+                // Failed to retreive time and cache is old
+                mNtpActive = false;
             }
         }
 
@@ -730,29 +755,27 @@ public class ThrottleService extends IThrottleManager.Stub {
 
     private long getBestTime() {
         if (mNtpServer != null) {
-            if (mNtpActive) {
-                long ntpAge = SystemClock.elapsedRealtime() - cachedNtpTimestamp;
-                if (ntpAge < mMaxNtpCacheAgeSec * 1000) {
-                    if (VDBG) Slog.v(TAG, "using cached time");
-                    return cachedNtp + ntpAge;
-                }
+            // Use cached time if available and not about to expire.
+            // NTP requests are sent over UDP, so should request new time ahead
+            // (3 * mPolicyPollPeriodSec) of expiration.
+            long ntpAge = SystemClock.elapsedRealtime() - cachedNtpTimestamp;
+            if (mNtpActive &&
+                    ntpAge < (mMaxNtpCacheAgeSec - 3 * mPolicyPollPeriodSec) * 1000) {
+                if (VDBG) Slog.v(TAG, "using cached time");
+                return cachedNtp + ntpAge;
             }
-            SntpClient client = new SntpClient();
-            if (client.requestTime(mNtpServer, MAX_NTP_FETCH_WAIT)) {
-                cachedNtp = client.getNtpTime();
-                cachedNtpTimestamp = SystemClock.elapsedRealtime();
-                if (!mNtpActive) {
-                    mNtpActive = true;
-                    if (VDBG) Slog.d(TAG, "found Authoritative time - reseting alarm");
-                    mHandler.obtainMessage(EVENT_RESET_ALARM).sendToTarget();
-                }
-                if (VDBG) Slog.v(TAG, "using Authoritative time: " + cachedNtp);
-                return cachedNtp;
+
+            // Request new time.
+            mHandler.obtainMessage(EVENT_NTP_ALARM).sendToTarget();
+
+            // If cache is still valid, use it.
+            if (mNtpActive && ntpAge < mMaxNtpCacheAgeSec * 1000) {
+                if (VDBG) Slog.v(TAG, "using cached time");
+                return cachedNtp + ntpAge;
             }
         }
         long time = System.currentTimeMillis();
         if (VDBG) Slog.v(TAG, "using User time: " + time);
-        mNtpActive = false;
         return time;
     }
 

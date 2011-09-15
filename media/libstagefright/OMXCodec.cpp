@@ -171,6 +171,13 @@ struct OMXCodecObserver : public BnOMXObserver {
         }
     }
 
+    virtual void registerBuffers(const sp<IMemoryHeap> &mem) {
+        sp<OMXCodec> codec = mTarget.promote();
+        if (codec.get() != NULL) {
+            codec->registerBuffers(mem);
+        }
+    }
+
 protected:
     virtual ~OMXCodecObserver() {}
 
@@ -303,6 +310,7 @@ uint32_t OMXCodec::getComponentQuirks(const char *componentName) {
         quirks |= kRequiresAllocateBufferOnInputPorts;
         quirks |= kRequiresAllocateBufferOnOutputPorts;
         quirks |= kDefersOutputBufferAllocation;
+        quirks |= kDoesNotRequireMemcpyOnOutputPort;
     }
 
     if (!strncmp(componentName, "OMX.TI.", 7)) {
@@ -1070,7 +1078,8 @@ OMXCodec::OMXCodec(
       mNoMoreOutputData(false),
       mOutputPortSettingsHaveChanged(false),
       mSeekTimeUs(-1),
-      mLeftOverBuffer(NULL) {
+      mLeftOverBuffer(NULL),
+      mPmemInfo(NULL){
     mPortStatus[kPortIndexInput] = ENABLED;
     mPortStatus[kPortIndexOutput] = ENABLED;
 
@@ -1240,7 +1249,7 @@ status_t OMXCodec::allocateBuffersOnPort(OMX_U32 portIndex) {
         IOMX::buffer_id buffer;
         if (portIndex == kPortIndexInput
                 && (mQuirks & kRequiresAllocateBufferOnInputPorts)) {
-            if (mOMXLivesLocally) {
+            if (mOMXLivesLocally || (mQuirks & kDoesNotRequireMemcpyOnOutputPort)) {
                 mem.clear();
 
                 err = mOMX->allocateBuffer(
@@ -1294,7 +1303,7 @@ status_t OMXCodec::allocateBuffersOnPort(OMX_U32 portIndex) {
         info.mMediaBuffer = NULL;
 
         if (portIndex == kPortIndexOutput) {
-            if (!(mOMXLivesLocally
+            if (!((mOMXLivesLocally || (mQuirks & kDoesNotRequireMemcpyOnOutputPort))
                         && (mQuirks & kRequiresAllocateBufferOnOutputPorts)
                         && (mQuirks & kDefersOutputBufferAllocation))) {
                 // If the node does not fill in the buffer ptr at this time,
@@ -1412,7 +1421,7 @@ void OMXCodec::on_message(const omx_message &msg) {
                 CHECK_EQ(mPortStatus[kPortIndexOutput], ENABLED);
 
                 if (info->mMediaBuffer == NULL) {
-                    CHECK(mOMXLivesLocally);
+                    CHECK(mOMXLivesLocally || (mQuirks & kDoesNotRequireMemcpyOnOutputPort));
                     CHECK(mQuirks & kRequiresAllocateBufferOnOutputPorts);
                     CHECK(mQuirks & kDefersOutputBufferAllocation);
 
@@ -1441,7 +1450,11 @@ void OMXCodec::on_message(const omx_message &msg) {
                 }
 
                 MediaBuffer *buffer = info->mMediaBuffer;
-
+                if(!mOMXLivesLocally && mPmemInfo != NULL && buffer != NULL) {
+                    OMX_U8* base = (OMX_U8*)mPmemInfo->getBase();
+                    OMX_U8* data = base + msg.u.extended_buffer_data.pmem_offset;
+                    buffer->setData(data);
+                }
                 buffer->set_range(
                         msg.u.extended_buffer_data.range_offset,
                         msg.u.extended_buffer_data.range_length);
@@ -1485,7 +1498,9 @@ void OMXCodec::on_message(const omx_message &msg) {
         }
     }
 }
-
+void OMXCodec::registerBuffers(const sp<IMemoryHeap> &mem) {
+    mPmemInfo = mem;
+}
 void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
     switch (event) {
         case OMX_EventCmdComplete:
@@ -1603,6 +1618,10 @@ void OMXCodec::onCmdComplete(OMX_COMMANDTYPE cmd, OMX_U32 data) {
 
         case OMX_CommandPortDisable:
         {
+            if(mState == ERROR) {
+              CODEC_LOGE("Ignoring OMX_CommandPortDisable in ERROR state");
+              break;
+            }
             OMX_U32 portIndex = data;
             CODEC_LOGV("PORT_DISABLED(%ld)", portIndex);
 
@@ -1637,6 +1656,10 @@ void OMXCodec::onCmdComplete(OMX_COMMANDTYPE cmd, OMX_U32 data) {
             OMX_U32 portIndex = data;
             CODEC_LOGV("PORT_ENABLED(%ld)", portIndex);
 
+            if(ERROR == mState) {
+              CODEC_LOGE("Ignoring port Enable since component is in ERROR state");
+              break;
+            }
             CHECK(mState == EXECUTING || mState == RECONFIGURING);
             CHECK_EQ(mPortStatus[portIndex], ENABLING);
 
@@ -1664,6 +1687,10 @@ void OMXCodec::onCmdComplete(OMX_COMMANDTYPE cmd, OMX_U32 data) {
             CHECK_EQ(countBuffersWeOwn(mPortBuffers[portIndex]),
                      mPortBuffers[portIndex].size());
 
+            if(mState == ERROR) {
+              CODEC_LOGE("Ignoring OMX_CommandFlush in ERROR state");
+              break;
+            }
             if (mState == RECONFIGURING) {
                 CHECK_EQ(portIndex, kPortIndexOutput);
 
@@ -2536,7 +2563,7 @@ status_t OMXCodec::read(
             onCmdComplete(OMX_CommandFlush, kPortIndexOutput);
         }
 
-        while (mSeekTimeUs >= 0) {
+        while (mState != ERROR && mSeekTimeUs >= 0) {
             wait_status = mBufferFilled.waitRelative(mLock, 3000000000);
             if (wait_status) {
                 LOGE("Timed out waiting for the buffer! Line %d", __LINE__);

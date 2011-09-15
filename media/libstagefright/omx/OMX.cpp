@@ -335,6 +335,7 @@ OMX_ERRORTYPE OMX::OnEvent(
     LOGV("OnEvent(%d, %ld, %ld)", eEvent, nData1, nData2);
 
     omx_message msg;
+    long offset = 0;
     msg.type = omx_message::EVENT;
     msg.node = node;
     msg.u.event_data.event = eEvent;
@@ -375,9 +376,23 @@ OMX_ERRORTYPE OMX::OnFillBufferDone(
     msg.u.extended_buffer_data.platform_private = pBuffer->pPlatformPrivate;
     msg.u.extended_buffer_data.data_ptr = pBuffer->pBuffer;
 
-    mDispatcher->post(msg);
+   PLATFORM_PRIVATE_LIST *pPlatfromList = (PLATFORM_PRIVATE_LIST *)pBuffer->pPlatformPrivate;
+   PLATFORM_PRIVATE_ENTRY *pPlatformEntry;
+   PLATFORM_PRIVATE_PMEM_INFO *pPMEMInfo;
 
-    return OMX_ErrorNone;
+   if(pPlatfromList) {
+     for(size_t i=0; i<pPlatfromList->nEntries; i++) {
+       if(pPlatfromList->entryList->type == PLATFORM_PRIVATE_PMEM)
+       {
+         pPlatformEntry = (PLATFORM_PRIVATE_ENTRY *)pPlatfromList->entryList;
+         pPMEMInfo = (PLATFORM_PRIVATE_PMEM_INFO *)pPlatformEntry->entry;
+         break;
+       }
+     }
+   }
+   mDispatcher->post(msg);
+
+   return OMX_ErrorNone;
 }
 
 OMX::node_id OMX::makeNodeID(OMXNodeInstance *instance) {

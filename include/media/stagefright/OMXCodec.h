@@ -53,6 +53,7 @@ struct OMXCodec : public MediaSource,
             MediaBuffer **buffer, const ReadOptions *options = NULL);
 
     void on_message(const omx_message &msg);
+    void registerBuffers(const sp<IMemoryHeap> &mem);
 
     // from MediaBufferObserver
     virtual void signalBufferReturned(MediaBuffer *buffer);
@@ -98,6 +99,7 @@ private:
         kDecoderLiesAboutNumberOfChannels     = 256,
         kInputBufferSizesAreBogus             = 512,
         kSupportsMultipleFramesPerInputBuffer = 1024,
+        kDoesNotRequireMemcpyOnOutputPort     = 2048,
     };
 
     struct BufferInfo {
@@ -125,7 +127,7 @@ private:
     sp<MediaSource> mSource;
     Vector<CodecSpecificData *> mCodecSpecificData;
     size_t mCodecSpecificDataIndex;
-
+    sp<IMemoryHeap> mPmemInfo;
     sp<MemoryDealer> mDealer[2];
 
     State mState;

@@ -374,6 +374,12 @@ public class BluetoothA2dpService extends IBluetoothA2dp.Stub {
             return true;
         }
 
+        switch (state) {
+            case BluetoothA2dp.STATE_DISCONNECTED:
+            case BluetoothA2dp.STATE_DISCONNECTING:
+                return false;
+        }
+
         // State is CONNECTING or CONNECTED or PLAYING
         handleSinkStateChange(device, state, BluetoothA2dp.STATE_DISCONNECTING);
         if (!disconnectSinkNative(path)) {
@@ -557,9 +563,12 @@ public class BluetoothA2dpService extends IBluetoothA2dp.Stub {
         if (!result) {
             if (deviceObjectPath != null) {
                 String address = mBluetoothService.getAddressFromObjectPath(deviceObjectPath);
-                BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                int state = getSinkState(device);
-                handleSinkStateChange(device, state, BluetoothA2dp.STATE_DISCONNECTED);
+                if(address != null ) {
+                    // address can be null when callback called for some previous session
+                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
+                    int state = getSinkState(device);
+                    handleSinkStateChange(device, state, BluetoothA2dp.STATE_DISCONNECTED);
+                }
             }
         }
     }

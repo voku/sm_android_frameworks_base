@@ -51,6 +51,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.provider.Settings.SettingNotFoundException;
 import android.provider.Settings;
 import android.util.EventLog;
@@ -351,7 +352,7 @@ class PowerManagerService extends IPowerManager.Stub
                     // temporarily set mUserActivityAllowed to true so this will work
                     // even when the keyguard is on.
                     synchronized (mLocks) {
-                        if (!wasPowered || (mPowerState & SCREEN_ON_BIT) != 0) {
+                        if (!SystemProperties.get("ro.config.no_action_on_plug").equals("1") && (!wasPowered || (mPowerState & SCREEN_ON_BIT) != 0)) {
                             forceUserActivityLocked();
                         }
                     }

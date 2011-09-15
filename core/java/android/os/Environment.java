@@ -53,8 +53,7 @@ public class Environment {
                     "Android"), "media");
 
     private static final File DOWNLOAD_CACHE_DIRECTORY
-            = new File (getDirectory("EXTERNAL_STORAGE", "/sdcard"),
-                    ".cache");
+            = getDirectory("DOWNLOAD_CACHE", "/cache");
 
     /**
      * Gets the Android data directory.
