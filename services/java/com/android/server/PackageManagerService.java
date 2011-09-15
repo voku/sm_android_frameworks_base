@@ -7653,8 +7653,7 @@ class PackageManagerService extends IPackageManager.Stub {
             this.pkgFlags = pkgFlags & (
                     ApplicationInfo.FLAG_SYSTEM |
                     ApplicationInfo.FLAG_FORWARD_LOCK |
-                    ApplicationInfo.FLAG_EXTERNAL_STORAGE |
-                    ApplicationInfo.FLAG_SDEXT_STORAGE);
+                    ApplicationInfo.FLAG_EXTERNAL_STORAGE);
         }
     }
 
