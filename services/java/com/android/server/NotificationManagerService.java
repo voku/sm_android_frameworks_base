@@ -88,7 +88,7 @@ class NotificationManagerService extends INotificationManager.Stub {
 
     private static final int SHORT_DELAY = 2000; // 2 seconds
 
-    private static final long[] DEFAULT_VIBRATE_PATTERN = {0, 250, 250, 250};
+    private static final long[] DEFAULT_VIBRATE_PATTERN = {0, 700, 500, 1000};
 
     private static final int DEFAULT_STREAM_TYPE = AudioManager.STREAM_NOTIFICATION;
 
