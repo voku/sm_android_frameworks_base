@@ -329,8 +329,8 @@ bool BootAnimation::android()
         if (res == EGL_FALSE)
             break;
 
-        // 4fps: don't animate too fast to preserve CPU
-        const nsecs_t sleepTime = 250000 - ns2us(systemTime() - now);
+        // 12fps: don't animate too fast to preserve CPU
+        const nsecs_t sleepTime = 83333 - ns2us(systemTime() - now);
         if (sleepTime > 0)
             usleep(sleepTime);
     } while (!exitPending());
