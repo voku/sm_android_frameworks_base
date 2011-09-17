@@ -88,11 +88,6 @@ class GsmCall extends Call {
         owner.hangup(this);
     }
 
-    public void
-    hangupAllCalls() throws CallStateException {
-        owner.hangupAllCalls();
-    }
-
     public String
     toString() {
         return state.toString();

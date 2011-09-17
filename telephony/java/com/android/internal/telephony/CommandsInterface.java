@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,9 +154,6 @@ public interface CommandsInterface {
 
     RadioState getRadioState();
 
-    void getCdmaSubscriptionSource(Message result);
-    void getCdmaPrlVersion(Message result);
-
     /**
      * Fires on any RadioState transition
      * Always fires immediately as well
@@ -168,12 +164,6 @@ public interface CommandsInterface {
      */
     void registerForRadioStateChanged(Handler h, int what, Object obj);
     void unregisterForRadioStateChanged(Handler h);
-
-    void registerForCdmaSubscriptionSourceChanged(Handler h, int what, Object obj);
-    void unregisterForCdmaSubscriptionSourceChanged(Handler h);
-
-    void registerForCdmaPrlChanged(Handler h, int what, Object obj);
-    void unregisterForCdmaPrlChanged(Handler h);
 
     /**
      * Fires on any transition into RadioState.isOn()
@@ -252,12 +242,6 @@ public interface CommandsInterface {
      */
     void registerForRUIMReady(Handler h, int what, Object obj);
     void unregisterForRUIMReady(Handler h);
-
-    /**
-     * Fires on any change in ICC status
-     */
-    void registerForIccStatusChanged(Handler h, int what, Object obj);
-    void unregisterForIccStatusChanged(Handler h);
 
     /**
      * unlike the register* methods, there's only one new SMS handler
@@ -1196,9 +1180,6 @@ public interface CommandsInterface {
 
     void invokeOemRilRequestStrings(String[] strings, Message response);
 
-    void setOnUnsolOemHookExtApp(Handler h, int what, Object obj);
-
-    void unSetOnUnsolOemHookExtApp(Handler h);
 
     /**
      * Send TERMINAL RESPONSE to the SIM, after processing a proactive command

@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,11 +243,6 @@ public abstract class PhoneBase extends Handler implements Phone {
     public void handleMessage(Message msg) {
         AsyncResult ar;
 
-        if (!mIsTheCurrentActivePhone) {
-            Log.e(LOG_TAG, "Received message " + msg +
-                    "[" + msg.what + "] while being destroyed. Ignoring.");
-            return;
-        }
         switch(msg.what) {
             case EVENT_CALL_RING:
                 Log.d(LOG_TAG, "Event EVENT_CALL_RING Received state=" + getState());
@@ -366,14 +360,6 @@ public abstract class PhoneBase extends Handler implements Phone {
     // Inherited documentation suffices.
     public void unregisterForInCallVoicePrivacyOff(Handler h){
         mCM.unregisterForInCallVoicePrivacyOff(h);
-    }
-
-    public void setOnUnsolOemHookExtApp(Handler h, int what, Object obj) {
-        mCM.setOnUnsolOemHookExtApp(h, what, obj);
-    }
-
-    public void unSetOnUnsolOemHookExtApp(Handler h) {
-        mCM.unSetOnUnsolOemHookExtApp(h);
     }
 
     // Inherited documentation suffices.
@@ -1004,11 +990,6 @@ public abstract class PhoneBase extends Handler implements Phone {
      */
     protected void notifyNewRingingConnectionP(Connection cn) {
         AsyncResult ar = new AsyncResult(null, cn, null);
-        if (SystemProperties.getBoolean(
-                "ro.telephony.call_ring.absent", false)) {
-            sendMessageDelayed(
-                    obtainMessage(EVENT_CALL_RING_CONTINUE, mCallRingContinueToken, 0), mCallRingDelay);
-        }
         mNewRingingConnectionRegistrants.notifyRegistrants(ar);
     }
 

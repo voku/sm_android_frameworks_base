@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +39,6 @@ import android.os.Message;
 import android.os.Parcel;
 import android.os.PowerManager;
 import android.os.SystemProperties;
-import android.os.RegistrantList;
 import android.os.PowerManager.WakeLock;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneNumberUtils;
@@ -67,8 +65,6 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -380,26 +376,23 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 case EVENT_WAKE_LOCK_TIMEOUT:
                     // Haven't heard back from the last request.  Assume we're
                     // not getting a response and  release the wake lock.
+                    // TODO should we clean up mRequestList and mRequestPending
                     synchronized (mWakeLock) {
                         if (mWakeLock.isHeld()) {
-                            // The timer of WAKE_LOCK_TIMEOUT is reset with each
-                            // new send request. So when WAKE_LOCK_TIMEOUT occurs
-                            // all requests in mRequestList already waited at
-                            // least DEFAULT_WAKE_LOCK_TIMEOUT but no response.
-                            // Therefore all should be treated as lost requests.
-                            // Those lost requests return GENERIC_FAILURE and
-                            // request list is cleared.
-                            //
-                            // Note: mRequestMessagesPending shows how many
-                            //       requests are waiting to be sent (and before
-                            //       to be added in request list) since star the
-                            //       timer. It should be
-                            //       zero here since all request should already
-                            //       be put in request list while TIMEOUT occurs.
-                            clearRequestsList(GENERIC_FAILURE, true);
-                            if (mRequestMessagesPending != 0) {
-                                Log.e(LOG_TAG, "ERROR: mReqPending is NOT 0 at TIMEOUT, "
-                                    + "mReqPending = " + mRequestMessagesPending);
+                            if (RILJ_LOGD) {
+                                synchronized (mRequestsList) {
+                                    int count = mRequestsList.size();
+                                    Log.d(LOG_TAG, "WAKE_LOCK_TIMEOUT " +
+                                        " mReqPending=" + mRequestMessagesPending +
+                                        " mRequestList=" + count);
+
+                                    for (int i = 0; i < count; i++) {
+                                        rr = mRequestsList.get(i);
+                                        Log.d(LOG_TAG, i + ": [" + rr.mSerial + "] " +
+                                            requestToString(rr.mRequest));
+
+                                    }
+                                }
                             }
                             mWakeLock.release();
                         }
@@ -571,7 +564,15 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 RILRequest.resetSerial();
 
                 // Clear request list on close
-                clearRequestsList(RADIO_NOT_AVAILABLE, false);
+                synchronized (mRequestsList) {
+                    for (int i = 0, sz = mRequestsList.size() ; i < sz ; i++) {
+                        RILRequest rr = mRequestsList.get(i);
+                        rr.onError(RADIO_NOT_AVAILABLE, null);
+                        rr.release();
+                    }
+
+                    mRequestsList.clear();
+                }
             }} catch (Throwable tr) {
                 Log.e(LOG_TAG,"Uncaught exception", tr);
             }
@@ -637,24 +638,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
     }
 
     //***** CommandsInterface implementation
-
-    public void getCdmaSubscriptionSource(Message result) {
-        RILRequest rr = RILRequest.obtain(RIL_REQUEST_CDMA_GET_SUBSCRIPTION_SOURCE, result);
-
-        if (RILJ_LOGD)
-            riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
-
-        send(rr);
-    }
-
-    public void getCdmaPrlVersion(Message result) {
-        RILRequest rr = RILRequest.obtain(RIL_REQUEST_CDMA_PRL_VERSION, result);
-
-        if (RILJ_LOGD)
-            riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
-
-        send(rr);
-    }
 
     @Override public void
     setOnNITZTime(Handler h, int what, Object obj) {
@@ -1359,7 +1342,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                     send(rrPnt);
 
                     RILRequest rrCs = RILRequest.obtain(
-                                   RIL_REQUEST_CDMA_SET_SUBSCRIPTION_SOURCE, null);
+                                   RIL_REQUEST_CDMA_SET_SUBSCRIPTION, null);
                     rrCs.mp.writeInt(1);
                     rrCs.mp.writeInt(mCdmaSubscription);
                     if (RILJ_LOGD) riljLog(rrCs.serialString() + "> "
@@ -2104,34 +2087,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         releaseWakeLockIfDone();
     }
 
-    /**
-     * Release each request in mReqeustsList then clear the list
-     * @param error is the RIL_Errno sent back
-     * @param loggable true means to print all requests in mRequestslist
-     */
-    private void clearRequestsList(int error, boolean loggable) {
-        RILRequest rr;
-        synchronized (mRequestsList) {
-            int count = mRequestsList.size();
-            if (RILJ_LOGD && loggable) {
-                Log.d(LOG_TAG, "WAKE_LOCK_TIMEOUT " +
-                        " mReqPending=" + mRequestMessagesPending +
-                        " mRequestList=" + count);
-            }
-
-            for (int i = 0; i < count ; i++) {
-                rr = mRequestsList.get(i);
-                if (RILJ_LOGD && loggable) {
-                    Log.d(LOG_TAG, i + ": [" + rr.mSerial + "] " +
-                            requestToString(rr.mRequest));
-                }
-                rr.onError(error, null);
-                rr.release();
-            }
-            mRequestsList.clear();
-        }
-    }
-
     private RILRequest findAndRemoveRequestFromList(int serial) {
         synchronized (mRequestsList) {
             for (int i = 0, s = mRequestsList.size() ; i < s ; i++) {
@@ -2251,7 +2206,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_REQUEST_GET_PREFERRED_NETWORK_TYPE: ret =  responseInts(p); break;
             case RIL_REQUEST_GET_NEIGHBORING_CELL_IDS: ret = responseCellList(p); break;
             case RIL_REQUEST_SET_LOCATION_UPDATES: ret =  responseVoid(p); break;
-            case RIL_REQUEST_CDMA_SET_SUBSCRIPTION_SOURCE: ret =  responseVoid(p); break;
+            case RIL_REQUEST_CDMA_SET_SUBSCRIPTION: ret =  responseVoid(p); break;
             case RIL_REQUEST_CDMA_SET_ROAMING_PREFERENCE: ret =  responseVoid(p); break;
             case RIL_REQUEST_CDMA_QUERY_ROAMING_PREFERENCE: ret =  responseInts(p); break;
             case RIL_REQUEST_SET_TTY_MODE: ret =  responseVoid(p); break;
@@ -2410,7 +2365,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_UNSOL_RESTRICTED_STATE_CHANGED: ret = responseInts(p); break;
             case RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED:  ret =  responseVoid(p); break;
             case RIL_UNSOL_RESPONSE_CDMA_NEW_SMS:  ret =  responseCdmaSms(p); break;
-            case RIL_UNSOL_RESPONSE_NEW_BROADCAST_SMS:  ret =  responseRaw(p); break;
+            case RIL_UNSOL_RESPONSE_NEW_BROADCAST_SMS:  ret =  responseString(p); break;
             case RIL_UNSOL_CDMA_RUIM_SMS_STORAGE_FULL:  ret =  responseVoid(p); break;
             case RIL_UNSOL_ENTER_EMERGENCY_CALLBACK_MODE: ret = responseVoid(p); break;
             case RIL_UNSOL_CDMA_CALL_WAITING: ret = responseCdmaCallWaiting(p); break;
@@ -2437,18 +2392,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
                 switchToRadioState(newState);
             break;
-            case RIL_UNSOL_CDMA_SUBSCRIPTION_SOURCE_CHANGED:
-                if (RILJ_LOGD) unsljLog(response);
-
-                mCdmaSubscriptionSourceChangedRegistrants
-                    .notifyRegistrants(new AsyncResult(null, null, null));
-                break;
-            case RIL_UNSOL_CDMA_PRL_CHANGED:
-                if (RILJ_LOGD) unsljLog(response);
-
-                mCdmaPrlChangedRegistrants
-                    .notifyRegistrants(new AsyncResult(null, null, null));
-                break;
             case RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED:
                 if (RILJ_LOGD) unsljLog(response);
 
@@ -2712,14 +2655,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
             case RIL_UNSOL_OEM_HOOK_RAW:
                 if (RILJ_LOGD) unsljLogvRet(response, IccUtils.bytesToHexString((byte[])ret));
-                ByteBuffer oemHookResponse = ByteBuffer.wrap((byte[])ret);
-                oemHookResponse.order(ByteOrder.nativeOrder());
-
-                if (isQcUnsolOemHookResp(oemHookResponse)) {
-                    Log.d(LOG_TAG, "OEM ID check Passed");
-                    processUnsolOemhookResponse(oemHookResponse);
-                } else if (mUnsolOemHookRawRegistrant != null) {
-                    Log.d(LOG_TAG, "External OEM message, to be notified");
+                if (mUnsolOemHookRawRegistrant != null) {
                     mUnsolOemHookRawRegistrant.notifyRegistrant(new AsyncResult(null, ret, null));
                 }
                 break;
@@ -2741,101 +2677,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                                         new AsyncResult (null, ret, null));
                 }
         }
-    }
-
-    private boolean isQcUnsolOemHookResp(ByteBuffer oemHookResponse) {
-        String mOemIdentifier = "QUALCOMM";
-        int INT_SIZE = 4;
-        int mHeaderSize = mOemIdentifier.length() + 2 * INT_SIZE;
-
-        /* Check OEM ID in UnsolOemHook response */
-        if (oemHookResponse.capacity() < mHeaderSize) {
-            /*
-             * size of UnsolOemHook message is less than expected, considered as
-             * External OEM's message
-             */
-            Log.d(LOG_TAG, "RIL_UNSOL_OEM_HOOK_RAW data size is " + oemHookResponse.capacity());
-            return false;
-        } else {
-            byte[] oem_id_bytes = new byte[mOemIdentifier.length()];
-            oemHookResponse.get(oem_id_bytes);
-            String oem_id_str = new String(oem_id_bytes);
-            Log.d(LOG_TAG, "Oem ID in RIL_UNSOL_OEM_HOOK_RAW is " + oem_id_str);
-            if (!oem_id_str.equals(mOemIdentifier)) {
-                /* OEM ID not matched, considered as External OEM's message */
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private void processUnsolOemhookResponse(ByteBuffer oemHookResponse) {
-        /** Starting number for QCRILHOOK request and response IDs */
-        final int QCRILHOOK_BASE = 0x80000;
-
-        /** qcrilhook unsolicited response IDs */
-        final int QCRILHOOK_UNSOL_EXTENDED_DBM_INTL = QCRILHOOK_BASE + 1000;
-        final int QCRILHOOK_UNSOL_CDMA_BURST_DTMF = QCRILHOOK_BASE + 1001;
-        final int QCRILHOOK_UNSOL_CDMA_CONT_DTMF_START = QCRILHOOK_BASE + 1002;
-        final int QCRILHOOK_UNSOL_CDMA_CONT_DTMF_STOP = QCRILHOOK_BASE + 1003;
-
-        int response_id = 0, response_size = 0;
-
-        response_id = oemHookResponse.getInt();
-        Log.d(LOG_TAG, "Response ID in RIL_UNSOL_OEM_HOOK_RAW is " + response_id);
-
-        response_size = oemHookResponse.getInt();
-        if (response_size < 0) {
-            Log.e(LOG_TAG, "Response Size is Invalid " + response_size);
-            return;
-        }
-        byte[] response_data = new byte[response_size];
-        oemHookResponse.get(response_data, 0, response_size);
-
-        switch (response_id) {
-            case QCRILHOOK_UNSOL_CDMA_BURST_DTMF:
-                notifyCdmaFwdBurstDtmf(response_data);
-                break;
-
-            case QCRILHOOK_UNSOL_CDMA_CONT_DTMF_START:
-                notifyCdmaFwdContDtmfStart(response_data);
-                break;
-
-            case QCRILHOOK_UNSOL_CDMA_CONT_DTMF_STOP:
-                notifyCdmaFwdContDtmfStop();
-                break;
-
-            default:
-                Log.d(LOG_TAG, "Response ID " + response_id + "is not served in this process.");
-                Log.d(LOG_TAG, "To broadcast an Intent via the notifier to external apps");
-                if (mUnsolOemHookExtAppRegistrant != null) {
-                    oemHookResponse.rewind();
-                    byte[] origData = oemHookResponse.array();
-                    mUnsolOemHookExtAppRegistrant.notifyRegistrant(new AsyncResult(null, origData,
-                            null));
-                }
-                break;
-        }
-
-    }
-
-    /** Notify registrants of FWD Burst DTMF Tone. */
-
-    protected void notifyCdmaFwdBurstDtmf(byte[] data) {
-        AsyncResult ar = new AsyncResult(null, data, null);
-        mCdmaFwdBurstDtmfRegistrants.notifyRegistrants(ar);
-    }
-
-    /** Notify registrants of FWD Continuous DTMF Tone Start. */
-    protected void notifyCdmaFwdContDtmfStart(byte[] data) {
-        AsyncResult ar = new AsyncResult(null, data, null);
-        mCdmaFwdContDtmfStartRegistrants.notifyRegistrants(ar);
-    }
-
-    /** Notify registrants of FWD Continuous DTMF Tone Stop. */
-    protected void notifyCdmaFwdContDtmfStop() {
-        AsyncResult ar = new AsyncResult(null, null, null);
-        mCdmaFwdContDtmfStopRegistrants.notifyRegistrants(ar);
     }
 
     private Object
@@ -3001,8 +2842,8 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             ca.aid            = p.readString();
             ca.app_label      = p.readString();
             ca.pin1_replaced  = p.readInt();
-            ca.pin1           = ca.PinStateFromRILInt(p.readInt());
-            ca.pin2           = ca.PinStateFromRILInt(p.readInt());
+            ca.pin1           = p.readInt();
+            ca.pin2           = p.readInt();
             status.addApplication(ca);
         }
         return status;
@@ -3409,7 +3250,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_REQUEST_GET_PREFERRED_NETWORK_TYPE: return "REQUEST_GET_PREFERRED_NETWORK_TYPE";
             case RIL_REQUEST_GET_NEIGHBORING_CELL_IDS: return "REQUEST_GET_NEIGHBORING_CELL_IDS";
             case RIL_REQUEST_SET_LOCATION_UPDATES: return "REQUEST_SET_LOCATION_UPDATES";
-            case RIL_REQUEST_CDMA_SET_SUBSCRIPTION_SOURCE: return "RIL_REQUEST_CDMA_SET_SUBSCRIPTION_SOURCE";
+            case RIL_REQUEST_CDMA_SET_SUBSCRIPTION: return "RIL_REQUEST_CDMA_SET_SUBSCRIPTION";
             case RIL_REQUEST_CDMA_SET_ROAMING_PREFERENCE: return "RIL_REQUEST_CDMA_SET_ROAMING_PREFERENCE";
             case RIL_REQUEST_CDMA_QUERY_ROAMING_PREFERENCE: return "RIL_REQUEST_CDMA_QUERY_ROAMING_PREFERENCE";
             case RIL_REQUEST_SET_TTY_MODE: return "RIL_REQUEST_SET_TTY_MODE";
@@ -3436,8 +3277,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_REQUEST_EXIT_EMERGENCY_CALLBACK_MODE: return "REQUEST_EXIT_EMERGENCY_CALLBACK_MODE";
             case RIL_REQUEST_REPORT_SMS_MEMORY_STATUS: return "RIL_REQUEST_REPORT_SMS_MEMORY_STATUS";
             case RIL_REQUEST_REPORT_STK_SERVICE_IS_RUNNING: return "RIL_REQUEST_REPORT_STK_SERVICE_IS_RUNNING";
-            case RIL_REQUEST_CDMA_GET_SUBSCRIPTION_SOURCE: return "RIL_REQUEST_CDMA_GET_SUBSCRIPTION_SOURCE";
-            case RIL_REQUEST_CDMA_PRL_VERSION: return "RIL_REQUEST_CDMA_PRL_VERSION";
             default: return "<unknown request>";
         }
     }
@@ -3482,9 +3321,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
             case RIL_UNSOL_OEM_HOOK_RAW: return "UNSOL_OEM_HOOK_RAW";
             case RIL_UNSOL_RINGBACK_TONE: return "UNSOL_RINGBACK_TONG";
             case RIL_UNSOL_RESEND_INCALL_MUTE: return "UNSOL_RESEND_INCALL_MUTE";
-            case RIL_UNSOL_CDMA_SUBSCRIPTION_SOURCE_CHANGED: return "UNSOL_CDMA_SUBSCRIPTION_SOURCE_CHANGED";
-            case RIL_UNSOL_CDMA_PRL_CHANGED: return "UNSOL_CDMA_PRL_CHANGED";
-            default: return "<unknown response>";
+            default: return "<unknown reponse>";
         }
     }
 
@@ -3569,7 +3406,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
      */
     public void setCdmaSubscription(int cdmaSubscription , Message response) {
         RILRequest rr = RILRequest.obtain(
-                RILConstants.RIL_REQUEST_CDMA_SET_SUBSCRIPTION_SOURCE, response);
+                RILConstants.RIL_REQUEST_CDMA_SET_SUBSCRIPTION, response);
 
         rr.mp.writeInt(1);
         rr.mp.writeInt(cdmaSubscription);

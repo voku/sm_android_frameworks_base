@@ -37,12 +37,7 @@ public class IccCardApplication {
         APPSTATE_PIN,
         APPSTATE_PUK,
         APPSTATE_SUBSCRIPTION_PERSO,
-        APPSTATE_READY,
-        APPSTATE_ILLEGAL;
-        // Even if the app state is marked as Illegal by NAS, ICC IO
-        // operations should be permitted. Hence treating the illegal
-        // app state as card present. Network access requests will
-        // anyway be rejected and ME will be in limited service.
+        APPSTATE_READY;
 
         boolean isPinRequired() {
             return this == APPSTATE_PIN;
@@ -57,7 +52,7 @@ public class IccCardApplication {
         }
 
         boolean isAppReady() {
-            return ((this == APPSTATE_READY) || (this == APPSTATE_ILLEGAL));
+            return this == APPSTATE_READY;
         }
 
         boolean isAppNotReady() {
@@ -96,26 +91,6 @@ public class IccCardApplication {
         boolean isPersoSubStateUnknown() {
             return this == PERSOSUBSTATE_UNKNOWN;
         }
-
-        boolean isPersoSubStateSimNetwork() {
-            return this == PERSOSUBSTATE_SIM_NETWORK;
-        }
-    };
-
-    public enum PinState{
-        PINSTATE_UNKNOWN,
-        PINSTATE_ENABLED_NOT_VERIFIED,
-        PINSTATE_ENABLED_VERIFIED,
-        PINSTATE_DISABLED,
-        PINSTATE_ENABLED_BLOCKED,
-        PINSTATE_ENABLED_PERM_BLOCKED;
-
-        boolean isPinBlocked() {
-            return this == PINSTATE_ENABLED_BLOCKED;
-        }
-        boolean isPukBlocked() {
-            return this == PINSTATE_ENABLED_PERM_BLOCKED;
-        }
     };
 
     public AppType        app_type;
@@ -128,8 +103,8 @@ public class IccCardApplication {
     public String         app_label;
     // applicable to USIM and CSIM
     public int            pin1_replaced;
-    public PinState       pin1;
-    public PinState       pin2;
+    public int            pin1;
+    public int            pin2;
 
     AppType AppTypeFromRILInt(int type) {
         AppType newType;
@@ -140,7 +115,6 @@ public class IccCardApplication {
             case 2: newType = AppType.APPTYPE_USIM;    break;
             case 3: newType = AppType.APPTYPE_RUIM;    break;
             case 4: newType = AppType.APPTYPE_CSIM;    break;
-            case 5: newType = AppType.APPTYPE_USIM;    break;
             default:
                 throw new RuntimeException(
                             "Unrecognized RIL_AppType: " +type);
@@ -158,7 +132,6 @@ public class IccCardApplication {
             case 3: newState = AppState.APPSTATE_PUK; break;
             case 4: newState = AppState.APPSTATE_SUBSCRIPTION_PERSO; break;
             case 5: newState = AppState.APPSTATE_READY; break;
-            case 6: newState = AppState.APPSTATE_ILLEGAL; break;
             default:
                 throw new RuntimeException(
                             "Unrecognized RIL_AppState: " +state);
@@ -200,23 +173,6 @@ public class IccCardApplication {
                             "Unrecognized RIL_PersoSubstate: " +substate);
         }
         return newSubState;
-    }
-
-    PinState PinStateFromRILInt(int type) {
-        PinState newState;
-        /* RIL_PinState ril.h */
-        switch(type) {
-            case 0: newState = PinState.PINSTATE_UNKNOWN; break;
-            case 1: newState = PinState.PINSTATE_ENABLED_NOT_VERIFIED; break;
-            case 2: newState = PinState.PINSTATE_ENABLED_VERIFIED; break;
-            case 3: newState = PinState.PINSTATE_DISABLED; break;
-            case 4: newState = PinState.PINSTATE_ENABLED_BLOCKED; break;
-            case 5: newState = PinState.PINSTATE_ENABLED_PERM_BLOCKED; break;
-            default:
-                throw new RuntimeException(
-                            "Unrecognized RIL_PIN_STATE: " +type);
-        }
-        return newState;
     }
 
 }

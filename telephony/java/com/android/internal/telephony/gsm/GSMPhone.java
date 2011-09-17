@@ -966,9 +966,7 @@ public class GSMPhone extends PhoneBase {
     }
 
     public void getCallWaiting(Message onComplete) {
-        //As per 3GPP TS 24.083, section 1.6 UE doesn't need to send service
-        //class parameter in call waiting interrogation  to network
-        mCM.queryCallWaiting(CommandsInterface.SERVICE_CLASS_NONE, onComplete);
+        mCM.queryCallWaiting(CommandsInterface.SERVICE_CLASS_VOICE, onComplete);
     }
 
     public void setCallWaiting(boolean enable, Message onComplete) {
@@ -1013,18 +1011,10 @@ public class GSMPhone extends PhoneBase {
 
         // get the message
         Message msg = obtainMessage(EVENT_SET_NETWORK_AUTOMATIC_COMPLETE, nsm);
+        if (LOCAL_DEBUG)
+            Log.d(LOG_TAG, "wrapping and sending message to connect automatically");
 
-        // Mode is automatic already, dont send request to RIL
-        if (!mSST.ss.getIsManualSelection()) {
-            Log.d(LOG_TAG, "Posting EVENT_SET_NETWORK_AUTOMATIC_COMPLETE internally ");
-            AsyncResult.forMessage(msg, null, null);
-            msg.sendToTarget();
-        } else {
-            mCM.setNetworkSelectionModeAutomatic(msg);
-            if (LOCAL_DEBUG)
-                Log.d(LOG_TAG, "wrapping and sending message to connect automatically");
-
-        }
+        mCM.setNetworkSelectionModeAutomatic(msg);
     }
 
     public void
@@ -1206,11 +1196,6 @@ public class GSMPhone extends PhoneBase {
         AsyncResult ar;
         Message onComplete;
 
-        if (!mIsTheCurrentActivePhone) {
-            Log.e(LOG_TAG, "Received message " + msg +
-                    "[" + msg.what + "] while being destroyed. Ignoring.");
-            return;
-        }
         switch (msg.what) {
             case EVENT_RADIO_AVAILABLE: {
                 mCM.getBasebandVersion(
@@ -1414,9 +1399,6 @@ public class GSMPhone extends PhoneBase {
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(NETWORK_SELECTION_KEY, nsm.operatorNumeric);
         editor.putString(NETWORK_SELECTION_NAME_KEY, nsm.operatorAlphaLong);
-
-        Log.d(LOG_TAG, "Writing NETWORK_SELECTION_KEY " + nsm.operatorNumeric);
-        Log.d(LOG_TAG, "Writing NETWORK_SELECTION_NAME_KEY " + nsm.operatorAlphaLong);
 
         // commit and log the result.
         if (! editor.commit()) {

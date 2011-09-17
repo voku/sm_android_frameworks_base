@@ -108,22 +108,14 @@ public final class GsmCallTracker extends CallTracker {
 
         for(GsmConnection c : connections) {
             try {
-                if(c != null) {
-                    hangup(c);
-                    // Since by now we are unregistered, we won't notify
-                    // PhoneApp that the call is gone. Do that here
-                    c.onDisconnect(Connection.DisconnectCause.LOST_SIGNAL);
-                }
+                if(c != null) hangup(c);
             } catch (CallStateException ex) {
                 Log.e(LOG_TAG, "unexpected error on hangup during dispose");
             }
         }
 
         try {
-            if(pendingMO != null) {
-                hangup(pendingMO);
-                pendingMO.onDisconnect(Connection.DisconnectCause.LOST_SIGNAL);
-            }
+            if(pendingMO != null) hangup(pendingMO);
         } catch (CallStateException ex) {
             Log.e(LOG_TAG, "unexpected error on hangup during dispose");
         }
@@ -757,37 +749,6 @@ public final class GsmCallTracker extends CallTracker {
         phone.notifyPreciseCallStateChanged();
     }
 
-    void hangupAllCalls () throws CallStateException {
-        boolean hungUp = false;
-        if (!ringingCall.isIdle()) {
-             // Do not hangup waiting call
-             // as per 3GPP TS 22.030, 6.5.5.1.
-             if (ringingCall.getState() != GsmCall.State.WAITING) {
-                 log("hangupAllCalls: hang up ringing call");
-                 cm.hangupWaitingOrBackground(obtainCompleteMessage());
-                 ringingCall.onHangupLocal();
-                 hungUp = true;
-             }
-        }
-        if (!foregroundCall.isIdle()) {
-            log("hangupAllCalls: hang up active call");
-            hangupAllConnections(foregroundCall);
-            foregroundCall.onHangupLocal();
-            hungUp = true;
-        }
-        if (!backgroundCall.isIdle()) {
-            log("hangupAllCalls: hang up held call");
-            hangupAllConnections(backgroundCall);
-            backgroundCall.onHangupLocal();
-            hungUp = true;
-        }
-        if (hungUp) {
-            phone.notifyPreciseCallStateChanged();
-        } else {
-            throw new CallStateException("no active connections to hangup");
-        }
-    }
-
     /* package */
     void hangupWaitingOrBackground() {
         if (Phone.DEBUG_PHONE) log("hangupWaitingOrBackground");
@@ -860,11 +821,6 @@ public final class GsmCallTracker extends CallTracker {
     handleMessage (Message msg) {
         AsyncResult ar;
 
-        if (!phone.mIsTheCurrentActivePhone) {
-            Log.e(LOG_TAG, "Received message " + msg +
-                    "[" + msg.what + "] while being destroyed. Ignoring.");
-            return;
-        }
         switch (msg.what) {
             case EVENT_POLL_CALLS_RESULT:
                 ar = (AsyncResult)msg.obj;

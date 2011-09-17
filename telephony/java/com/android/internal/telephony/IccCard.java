@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +48,6 @@ public abstract class IccCard {
     private boolean mIccPinLocked = true; // Default to locked
     private boolean mIccFdnEnabled = false; // Default to disabled.
                                             // Will be updated when SIM_READY.
-    private boolean mIccPin2Blocked = false; // Default to disabled.
-                                             // Will be updated when sim status changes.
-    private boolean mIccPuk2Blocked = false; // Default to disabled.
-                                             // Will be updated when sim status changes.
 
 
     /* The extra data for broacasting intent INTENT_ICC_STATE_CHANGE */
@@ -89,7 +84,6 @@ public abstract class IccCard {
     private static final int EVENT_CHANGE_ICC_PASSWORD_DONE = 9;
     private static final int EVENT_QUERY_FACILITY_FDN_DONE = 10;
     private static final int EVENT_CHANGE_FACILITY_FDN_DONE = 11;
-    protected static final int EVENT_ICC_STATUS_CHANGED = 12;
 
     /*
       UNKNOWN is a transient state, for example, after uesr inputs ICC pin under
@@ -493,12 +487,6 @@ public abstract class IccCard {
                             CommandsInterface.SERVICE_CLASS_DATA +
                             CommandsInterface.SERVICE_CLASS_FAX;
 
-	    if (!mPhone.mIsTheCurrentActivePhone) {
-		Log.e(mLogTag, "Received message " + msg +
-		    "[" + msg.what + "] while being destroyed. Ignoring.");
-		return;
-	    }
-
             switch (msg.what) {
                 case EVENT_RADIO_OFF_OR_NOT_AVAILABLE:
                     mState = null;
@@ -594,10 +582,6 @@ public abstract class IccCard {
                                                         = ar.exception;
                     ((Message)ar.userObj).sendToTarget();
                     break;
-                case EVENT_ICC_STATUS_CHANGED:
-                    Log.d(mLogTag, "Received EVENT_ICC_STATUS_CHANGED, calling getIccCardStatus");
-                    mPhone.mCM.getIccCardStatus(obtainMessage(EVENT_GET_ICC_STATUS_DONE));
-                    break;
                 default:
                     Log.e(mLogTag, "[IccCard] Unknown Event " + msg.what);
             }
@@ -641,32 +625,12 @@ public abstract class IccCard {
             else {
                 index = mIccCardStatus.getGsmUmtsSubscriptionAppIndex();
             }
-	    IccCardApplication app;
-	    if ((index < mIccCardStatus.CARD_MAX_APPS) && (index >= 0)) {
-		app = mIccCardStatus.getApplication(index);
-	    } else {
-		Log.e(mLogTag, "[IccCard] Invalid Subscription Application index:" + index);
-		return IccCard.State.ABSENT;
-	    }
+
+            IccCardApplication app = mIccCardStatus.getApplication(index);
 
             if (app == null) {
                 Log.e(mLogTag, "[IccCard] Subscription Application in not present");
                 return IccCard.State.ABSENT;
-            }
-
-            Log.i(mLogTag, "PIN1 Status " + app.pin1 + "PIN2 Status " + app.pin2);
-            if (app.pin2.isPinBlocked()) {
-                Log.i(mLogTag, "PIN2 is blocked, PUK2 required.");
-                mIccPin2Blocked = true;
-                mIccPuk2Blocked = false;
-            } else if (app.pin2.isPukBlocked()) {
-                Log.i(mLogTag, "PUK2 is permanently blocked.");
-                mIccPuk2Blocked = true;
-                mIccPin2Blocked = false;
-            } else {
-                Log.i(mLogTag, "Neither PIN2 nor PUK2 is blocked.");
-                mIccPin2Blocked = false;
-                mIccPuk2Blocked = false;
             }
 
             // check if PIN required
@@ -677,20 +641,7 @@ public abstract class IccCard {
                 return IccCard.State.PUK_REQUIRED;
             }
             if (app.app_state.isSubscriptionPersoEnabled()) {
-                //"At present ME de-personalization is supported only for
-                //SIM/USIM Network Depersonalization (as specified in 3GPP TS
-                //22.022, section 5.1). If SIM_STATUS_CHANGED is handled,
-                //perso substate should be checked for declaring SIM/USIM
-                //Network depersonalization. Otherwise, any personalization
-                //will be treated as SIM/USIM Network Personalization. Besides
-                //this, there is no support for ME personalization for RUIM."
-                if (app.perso_substate.isPersoSubStateSimNetwork()) {
-                    return IccCard.State.NETWORK_LOCKED;
-                } else {
-                    Log.e(mLogTag,"[IccCard] UnSupported De-Personalization, substate "
-                          + app.perso_substate + " assuming ICC_NOT_READY");
-                    return IccCard.State.NOT_READY;
-                }
+                return IccCard.State.NETWORK_LOCKED;
             }
             if (app.app_state.isAppReady()) {
                 return IccCard.State.READY;
@@ -721,26 +672,13 @@ public abstract class IccCard {
      * @return true if a ICC card is present
      */
     public boolean hasIccCard() {
-        if (mIccCardStatus == null) {
-            return false;
-        } else {
-            // Returns ICC card status for both GSM and CDMA mode
+        boolean isIccPresent;
+        if (mPhone.getPhoneName().equals("GSM")) {
             return mIccCardStatus.getCardState().isCardPresent();
+        } else {
+            // TODO: Make work with a CDMA device with a RUIM card.
+            return false;
         }
-    }
-
-    /**
-     * @return true if ICC card is PIN2 blocked
-     */
-    public boolean getIccPin2Blocked() {
-        return mIccPin2Blocked;
-    }
-
-    /**
-     * @return true if ICC card is PUK2 blocked
-     */
-    public boolean getIccPuk2Blocked() {
-        return mIccPuk2Blocked;
     }
 
     private void log(String msg) {

@@ -35,7 +35,6 @@ import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.TelephonyProperties;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -51,7 +50,7 @@ public final class CdmaCallTracker extends CallTracker {
 
     //***** Constants
 
-    static final int MAX_CONNECTIONS = 2;
+    static final int MAX_CONNECTIONS = 1;   // only 1 connection allowed in CDMA
     static final int MAX_CONNECTIONS_PER_CALL = 1; // only 1 connection allowed per call
 
     //***** Instance Variables
@@ -108,22 +107,14 @@ public final class CdmaCallTracker extends CallTracker {
         cm.unregisterForCallWaitingInfo(this);
         for(CdmaConnection c : connections) {
             try {
-                if(c != null) {
-                    hangup(c);
-                    // Since by now we are unregistered, we won't notify
-                    // PhoneApp that the call is gone. Do that here
-                    c.onDisconnect(Connection.DisconnectCause.LOST_SIGNAL);
-                }
+                if(c != null) hangup(c);
             } catch (CallStateException ex) {
                 Log.e(LOG_TAG, "unexpected error on hangup during dispose");
             }
         }
 
         try {
-            if(pendingMO != null) {
-                hangup(pendingMO);
-                pendingMO.onDisconnect(Connection.DisconnectCause.LOST_SIGNAL);
-            }
+            if(pendingMO != null) hangup(pendingMO);
         } catch (CallStateException ex) {
             Log.e(LOG_TAG, "unexpected error on hangup during dispose");
         }
@@ -453,44 +444,12 @@ public final class CdmaCallTracker extends CallTracker {
         }
     }
 
-    private void dumpConnection(CdmaConnection con) {
-        if (con != null) {
-            Log.d(LOG_TAG, "[conn] number: " + con.address +
-                    " index: " + con.index + " incoming: " +
-                    con.isIncoming + " alive: " + con.isAlive() +
-                    " ringing: " + con.isRinging());
-        }
-    }
-    private void dumpDC(DriverCall dc) {
-        if (dc != null) {
-            Log.d(LOG_TAG, "[ dc ] number:" + dc.number + " index: " +
-                    dc.index + " incoming: " + dc.isMT + " state: " + dc.state);
-        }
-    }
-    private void dumpState(List dcalls) {
-        Log.d(LOG_TAG, "Connections:");
-        for (int i = 0 ; i < connections.length ; i ++) {
-            if(connections[i] == null) {
-                Log.d(LOG_TAG, "Connection " + i + ": NULL");
-            } else {
-                Log.d(LOG_TAG, "Connection " + i + ": " );
-                dumpConnection(connections[i]);
-            }
-        }
-        if (dcalls != null) {
-            Log.d(LOG_TAG, "Driver Calls:");
-            for (Object dcall : dcalls) {
-                DriverCall dc = (DriverCall) dcall;
-                dumpDC(dc);
-            }
-        }
-    }
     // ***** Overwritten from CallTracker
 
     protected void
     handlePollCalls(AsyncResult ar) {
         List polledCalls;
-        Log.d(LOG_TAG, ">handlePollCalls");
+
         if (ar.exception == null) {
             polledCalls = (List)ar.result;
         } else if (isCommandExceptionRadioNotAvailable(ar.exception)) {
@@ -510,7 +469,6 @@ public final class CdmaCallTracker extends CallTracker {
         boolean needsPollDelay = false;
         boolean unknownConnectionAppeared = false;
 
-        dumpState(polledCalls);
         for (int i = 0, curDC = 0, dcSize = polledCalls.size()
                 ; i < connections.length; i++) {
             CdmaConnection conn = connections[i];
@@ -530,19 +488,7 @@ public final class CdmaCallTracker extends CallTracker {
             if (DBG_POLL) log("poll: conn[i=" + i + "]=" +
                     conn+", dc=" + dc);
 
-            if (conn != null && dc != null && conn.address.length() != 0 && !conn.compareTo(dc)) {
-                // This means we received a different call than we expected in the call list.
-                // Drop the call, and set conn to null, so that the dc can be processed as a new
-                // call by the logic below.
-                // This may happen if for some reason the modem drops the call, and replaces it
-                // with another one, but still using the same index (for instance, if BS drops our
-                // MO and replaces with an MT due to priority rules)
-                Log.d(LOG_TAG, "New call with same index. Dropping old call");
-                droppedDuringPoll.add(conn);
-                conn = null;
-            }
             if (conn == null && dc != null) {
-                Log.d(LOG_TAG, "conn(" + conn + ")");
                 // Connection appeared in CLCC response that we don't know about
                 if (pendingMO != null && pendingMO.compareTo(dc)) {
 
@@ -587,36 +533,26 @@ public final class CdmaCallTracker extends CallTracker {
                 }
                 hasNonHangupStateChanged = true;
             } else if (conn != null && dc == null) {
-                if(dcSize != 0)
-                {
-                    // This happens if the call we are looking at (index i)
-                    // got dropped but the call list is not yet empty.
-                    Log.d(LOG_TAG, "conn != null, dc == null. Still have connections in the call list");
-                    droppedDuringPoll.add(conn);
-                } else {
-                    // This case means the RIL has no more active call anymore and
-                    // we need to clean up the foregroundCall and ringingCall.
-                    // Loop through foreground call connections as
-                    // it contains the known logical connections.
-                    int count = foregroundCall.connections.size();
-                    for (int n = 0; n < count; n++) {
-                        if (Phone.DEBUG_PHONE)
-                            log("adding fgCall cn " + n + " to droppedDuringPoll");
-                        CdmaConnection cn = (CdmaConnection)foregroundCall.connections.get(n);
-                        droppedDuringPoll.add(cn);
-                    }
-                    count = ringingCall.connections.size();
-                    // Loop through ringing call connections as
-                    // it may contain the known logical connections.
-                    for (int n = 0; n < count; n++) {
-                        if (Phone.DEBUG_PHONE)
-                            log("adding rgCall cn " + n + " to droppedDuringPoll");
-                        CdmaConnection cn = (CdmaConnection)ringingCall.connections.get(n);
-                        droppedDuringPoll.add(cn);
-                    }
-                    foregroundCall.setGeneric(false);
-                    ringingCall.setGeneric(false);
+                // This case means the RIL has no more active call anymore and
+                // we need to clean up the foregroundCall and ringingCall.
+                // Loop through foreground call connections as
+                // it contains the known logical connections.
+                int count = foregroundCall.connections.size();
+                for (int n = 0; n < count; n++) {
+                    if (Phone.DEBUG_PHONE) log("adding fgCall cn " + n + " to droppedDuringPoll");
+                    CdmaConnection cn = (CdmaConnection)foregroundCall.connections.get(n);
+                    droppedDuringPoll.add(cn);
                 }
+                count = ringingCall.connections.size();
+                // Loop through ringing call connections as
+                // it may contain the known logical connections.
+                for (int n = 0; n < count; n++) {
+                    if (Phone.DEBUG_PHONE) log("adding rgCall cn " + n + " to droppedDuringPoll");
+                    CdmaConnection cn = (CdmaConnection)ringingCall.connections.get(n);
+                    droppedDuringPoll.add(cn);
+                }
+                foregroundCall.setGeneric(false);
+                ringingCall.setGeneric(false);
 
                 // Re-start Ecm timer when the connected emergency call ends
                 if (mIsEcmTimerCanceled) {
@@ -628,9 +564,9 @@ public final class CdmaCallTracker extends CallTracker {
                 // Dropped connections are removed from the CallTracker
                 // list but kept in the Call list
                 connections[i] = null;
-            } else if (conn != null && dc != null ) {
+            } else if (conn != null && dc != null) { /* implicit conn.compareTo(dc) */
+                // Call collision case
                 if (conn.isIncoming != dc.isMT) {
-                    // Call collision case
                     if (dc.isMT == true){
                         // Mt call takes precedence than Mo,drops Mo
                         droppedDuringPoll.add(conn);
@@ -752,7 +688,6 @@ public final class CdmaCallTracker extends CallTracker {
         if (hasNonHangupStateChanged || newRinging != null) {
             phone.notifyPreciseCallStateChanged();
         }
-        Log.d(LOG_TAG, "<handlePollCalls");
 
         //dumpState();
     }
@@ -985,10 +920,6 @@ public final class CdmaCallTracker extends CallTracker {
     handleMessage (Message msg) {
         AsyncResult ar;
 
-        if (!phone.mIsTheCurrentActivePhone) {
-            Log.w(LOG_TAG, "Ignoring events received on inactive CdmaPhone");
-            return;
-        }
         switch (msg.what) {
             case EVENT_POLL_CALLS_RESULT:{
                 Log.d(LOG_TAG, "Event EVENT_POLL_CALLS_RESULT Received");
@@ -1076,12 +1007,10 @@ public final class CdmaCallTracker extends CallTracker {
 
             case EVENT_THREE_WAY_DIAL_L2_RESULT_CDMA:
                 ar = (AsyncResult)msg.obj;
-                if (ar.exception == null && pendingMO != null) {
+                if (ar.exception == null) {
                     // Assume 3 way call is connected
                     pendingMO.onConnectedInOrOut();
-                    if(!PhoneNumberUtils.isEmergencyNumber(pendingMO.address)) {
-                        pendingMO = null;
-                    }
+                    pendingMO = null;
                 }
             break;
 

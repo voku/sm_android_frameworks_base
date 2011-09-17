@@ -170,12 +170,6 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
     private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (!phone.mIsTheCurrentActivePhone) {
-                Log.e(LOG_TAG, "Received Intent " + intent +
-                    " while being destroyed. Ignoring.");
-                return;
-            }
-
             if (intent.getAction().equals(Intent.ACTION_LOCALE_CHANGED)) {
                 // update emergency string whenever locale changed
                 updateSpnDisplay();
@@ -350,11 +344,6 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
         String[] strings;
         Message message;
 
-        if (!phone.mIsTheCurrentActivePhone) {
-            Log.e(LOG_TAG, "Received message " + msg +
-                    "[" + msg.what + "] while being destroyed. Ignoring.");
-            return;
-        }
         switch (msg.what) {
             case EVENT_RADIO_AVAILABLE:
                 //this is unnecessary
@@ -370,6 +359,8 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                             EVENT_SIM_RECORDS_LOADED, null);
                     mNeedToRegForSimLoaded = false;
                 }
+                // restore the previous network selection.
+                phone.restoreSavedNetworkSelection(null);
                 pollState();
                 // Signal strength polling stops when radio is off
                 queueNextSignalStrengthPoll();
@@ -404,8 +395,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                 ar = (AsyncResult) msg.obj;
 
                 if (ar.exception == null) {
-                    RegStateResponse r = (RegStateResponse)ar.result;
-                    String states[] = r.getRecord(0);
+                    String states[] = (String[])ar.result;
                     int lac = -1;
                     int cid = -1;
                     if (states.length >= 3) {
@@ -1291,11 +1281,6 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
      * returns true if registered roam, false otherwise
      */
     private boolean regCodeIsRoaming (int code) {
-        //If ADAPT is enabled, roaming indication should not be displayed.
-        if (SystemProperties.getBoolean("persist.cust.tel.adapt",false)) {
-            Log.w(LOG_TAG,"Setting Roaming Status to false");
-            return false;
-        }
         // 5 is  "in service -- roam"
         return 5 == code;
     }
