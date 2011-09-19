@@ -1064,6 +1064,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
             switch (status) {
                 case GPS_STATUS_SESSION_BEGIN:
                     mNavigating = true;
+                    mEngineOn = true;
                     break;
                 case GPS_STATUS_SESSION_END:
                     mNavigating = false;

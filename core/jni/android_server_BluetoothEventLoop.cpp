@@ -268,7 +268,7 @@ const char * get_adapter_path(DBusConnection *conn) {
                 if (dbus_error_has_name(&err,
                     "org.freedesktop.DBus.Error.ServiceUnknown")) {
                     // bluetoothd is still down, retry
-                    dbus_error_free(&err);
+                    LOG_AND_FREE_DBUS_ERROR(&err);
                     usleep(10000);  // 10 ms
                     continue;
                 } else {
@@ -1082,8 +1082,6 @@ void onCreatePairedDeviceResult(DBusMessage *msg, void *user, void *n) {
     DBusError err;
     dbus_error_init(&err);
     JNIEnv *env;
-    jstring addr;
-
     nat->vm->GetEnv((void**)&env, nat->envVer);
 
     LOGV("... address = %s", address);
@@ -1132,12 +1130,10 @@ void onCreatePairedDeviceResult(DBusMessage *msg, void *user, void *n) {
         }
     }
 
-    addr = env->NewStringUTF(address);
     env->CallVoidMethod(nat->me,
                         method_onCreatePairedDeviceResult,
-                        addr,
+                        env->NewStringUTF(address),
                         result);
-    env->DeleteLocalRef(addr);
 done:
     dbus_error_free(&err);
     free(user);
@@ -1164,12 +1160,10 @@ void onCreateDeviceResult(DBusMessage *msg, void *user, void *n) {
         }
         LOG_AND_FREE_DBUS_ERROR(&err);
     }
-    jstring addr = env->NewStringUTF(address);
     env->CallVoidMethod(nat->me,
                         method_onCreateDeviceResult,
-                        addr,
+                        env->NewStringUTF(address),
                         result);
-    env->DeleteLocalRef(addr);
     free(user);
 }
 
@@ -1190,12 +1184,10 @@ void onDiscoverServicesResult(DBusMessage *msg, void *user, void *n) {
         LOG_AND_FREE_DBUS_ERROR(&err);
         result = JNI_FALSE;
     }
-    jstring jPath = env->NewStringUTF(path);
     env->CallVoidMethod(nat->me,
                         method_onDiscoverServicesResult,
-                        jPath,
+                        env->NewStringUTF(path),
                         result);
-    env->DeleteLocalRef(jPath);
     free(user);
 }
 
@@ -1223,12 +1215,10 @@ void onGetDeviceServiceChannelResult(DBusMessage *msg, void *user, void *n) {
     }
 
 done:
-    jstring addr = env->NewStringUTF(address);
     env->CallVoidMethod(nat->me,
                         method_onGetDeviceServiceChannelResult,
-                        addr,
+                        env->NewStringUTF(address),
                         channel);
-    env->DeleteLocalRef(addr);
     free(user);
 }
 #endif

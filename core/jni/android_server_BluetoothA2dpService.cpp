@@ -256,12 +256,10 @@ DBusHandlerResult a2dp_event_filter(DBusMessage *msg, JNIEnv *env) {
                     parse_property_change(env, msg, (Properties *)&sink_properties,
                                 sizeof(sink_properties) / sizeof(Properties));
         const char *c_path = dbus_message_get_path(msg);
-        jstring path = env->NewStringUTF(c_path);
         env->CallVoidMethod(nat->me,
                             method_onSinkPropertyChanged,
-                            path,
+                            env->NewStringUTF(c_path),
                             str_array);
-        env->DeleteLocalRef(path);
         result = DBUS_HANDLER_RESULT_HANDLED;
         return result;
     } else {
@@ -294,13 +292,10 @@ void onConnectSinkResult(DBusMessage *msg, void *user, void *n) {
         result = JNI_FALSE;
     }
     LOGV("... Device Path = %s, result = %d", path, result);
-
-    jstring jPath = env->NewStringUTF(path);
     env->CallVoidMethod(nat->me,
                         method_onConnectSinkResult,
-                        jPath,
+                        env->NewStringUTF(path),
                         result);
-    env->DeleteLocalRef(jPath);
     free(user);
 }
 

@@ -125,10 +125,12 @@ static void initSocketNative(JNIEnv *env, jobject obj) {
     case TYPE_RFCOMM:
         lm |= auth ? RFCOMM_LM_AUTH : 0;
         lm |= encrypt ? RFCOMM_LM_ENCRYPT : 0;
+        lm |= (auth && encrypt) ? RFCOMM_LM_SECURE : 0;
         break;
     case TYPE_L2CAP:
         lm |= auth ? L2CAP_LM_AUTH : 0;
         lm |= encrypt ? L2CAP_LM_ENCRYPT : 0;
+        lm |= (auth && encrypt) ? L2CAP_LM_SECURE : 0;
         break;
     }
 
@@ -161,7 +163,7 @@ static void connectNative(JNIEnv *env, jobject obj) {
 #ifdef HAVE_BLUETOOTH
     LOGV(__FUNCTION__);
 
-    int ret, total;
+    int ret;
     jint type;
     const char *c_address;
     jstring address;
@@ -426,21 +428,15 @@ static jint readNative(JNIEnv *env, jobject obj, jbyteArray jb, jint offset,
         return -1;
     }
 
-    int total = 0;
-    while(length > 0) {
-        ret = asocket_write(s, &b[offset], length, -1);
-        if (ret < 0) {
-            jniThrowIOException(env, errno);
-            env->ReleaseByteArrayElements(jb, b, JNI_ABORT);
-            return -1;
-        }
-        offset += ret;
-        total += ret;
-        length -= ret;
+    ret = asocket_read(s, &b[offset], length, -1);
+    if (ret < 0) {
+        jniThrowIOException(env, errno);
+        env->ReleaseByteArrayElements(jb, b, JNI_ABORT);
+        return -1;
     }
 
     env->ReleaseByteArrayElements(jb, b, 0);
-    return (jint)total;
+    return (jint)ret;
 
 #endif
     jniThrowIOException(env, ENOSYS);

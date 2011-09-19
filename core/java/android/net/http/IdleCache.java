@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
- * Copyright (C) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +23,6 @@ package android.net.http;
 import org.apache.http.HttpHost;
 
 import android.os.SystemClock;
-import android.os.SystemProperties;
 
 /**
  * {@hide}
@@ -37,7 +35,7 @@ class IdleCache {
         long mTimeout;
     };
 
-    private final static int IDLE_CACHE_MAX = SystemProperties.getInt("http.idle_cache.size", 8);
+    private final static int IDLE_CACHE_MAX = 8;
 
     /* Allow five consecutive empty queue checks before shutdown */
     private final static int EMPTY_CHECK_MAX = 5;

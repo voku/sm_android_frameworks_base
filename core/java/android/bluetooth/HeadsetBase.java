@@ -74,8 +74,8 @@ public final class HeadsetBase {
 
     private native void cleanupNativeDataNative();
 
-    public HeadsetBase(PowerManager pm, BluetoothAdapter adapter,
-                       BluetoothDevice device, int rfcommChannel) {
+    public HeadsetBase(PowerManager pm, BluetoothAdapter adapter, BluetoothDevice device,
+            int rfcommChannel) {
         mDirection = DIRECTION_OUTGOING;
         mConnectTimestamp = System.currentTimeMillis();
         mAdapter = adapter;
@@ -89,10 +89,9 @@ public final class HeadsetBase {
         initializeNativeDataNative(-1);
     }
 
-    /* Create from an existing rfcomm connection */
-    public HeadsetBase(PowerManager pm, BluetoothAdapter adapter,
-                       BluetoothDevice device,
-                       int socketFd, int rfcommChannel, Handler handler) {
+    /* Create from an already exisiting rfcomm connection */
+    public HeadsetBase(PowerManager pm, BluetoothAdapter adapter, BluetoothDevice device,
+            int socketFd, int rfcommChannel, Handler handler) {
         mDirection = DIRECTION_INCOMING;
         mConnectTimestamp = System.currentTimeMillis();
         mAdapter = adapter;
@@ -129,7 +128,7 @@ public final class HeadsetBase {
                        (System.currentTimeMillis() - timestamp) + " ms");
 
         if (result.getResultCode() == AtCommandResult.ERROR) {
-            Log.i(TAG, "Error processing <" + input + ">");
+            Log.i(TAG, "Error pocessing <" + input + ">");
         }
 
         sendURC(result.toString());
@@ -143,9 +142,8 @@ public final class HeadsetBase {
      */
     protected void initializeAtParser() {
         mAtParser = new AtParser();
-
-        //TODO(): Get rid of this as there are no parsers registered. But because of dependencies
-        // it needs to be done as part of refactoring HeadsetBase and BluetoothHandsfree
+        //TODO(): Get rid of this as there are no parsers registered. But because of dependencies,
+        //it needs to be done as part of refactoring HeadsetBase and BluetoothHandsfree
     }
 
     public AtParser getAtParser() {
@@ -161,7 +159,8 @@ public final class HeadsetBase {
                         String input = readNative(500);
                         if (input != null) {
                             handleInput(input);
-                        } else {
+                        }
+                        else {
                             last_read_error = getLastReadStatusNative();
                             if (last_read_error != 0) {
                                 Log.i(TAG, "headset read error " + last_read_error);
@@ -179,6 +178,8 @@ public final class HeadsetBase {
         mEventThreadInterrupted = false;
         mEventThread.start();
     }
+
+
 
     private native String readNative(int timeout_ms);
     private native int getLastReadStatusNative();

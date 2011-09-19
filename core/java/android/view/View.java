@@ -594,18 +594,6 @@ public class View implements Drawable.Callback, KeyEvent.Callback, Accessibility
     private static final boolean DBG = false;
 
     /**
-     * Measure cache for measure() function
-     * measure() is time consuming 
-     */
-	class MeasureCache {
-		int widthMeasureSpec;
-		int heightMeasureSpec;
-		int measuredWidth;
-		int measuredHeight;
-	}
-	private ArrayList<MeasureCache> mMeasureCache = new ArrayList<MeasureCache>();
-
-    /**
      * The logging tag used by this class with android.util.Log.
      */
     protected static final String VIEW_LOG_TAG = "View";
@@ -8210,77 +8198,30 @@ public class View implements Drawable.Callback, KeyEvent.Callback, Accessibility
      * @see #onMeasure(int, int)
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
-    	// optimize measure calls with cache
-    	
-		// first clears the measured dimension flag
-		mPrivateFlags &= ~MEASURED_DIMENSION_SET;
+        if ((mPrivateFlags & FORCE_LAYOUT) == FORCE_LAYOUT ||
+                widthMeasureSpec != mOldWidthMeasureSpec ||
+                heightMeasureSpec != mOldHeightMeasureSpec) {
 
-		if (ViewDebug.TRACE_HIERARCHY) {
-			ViewDebug.trace(this, ViewDebug.HierarchyTraceType.ON_MEASURE);
-		}
-	
-		// look in cache first
-		MeasureCache currentCache = null;
-		if (mMeasureCache != null) {
-			for (MeasureCache mc : mMeasureCache) {
-				if (mc.widthMeasureSpec == widthMeasureSpec && mc.heightMeasureSpec == heightMeasureSpec) {
-					currentCache = mc;
-					break;
-				}
-			}
-		}
+            // first clears the measured dimension flag
+            mPrivateFlags &= ~MEASURED_DIMENSION_SET;
 
-		if (currentCache == null) {
-			// measure ourselves, this should set the measured dimension flag back
-			onMeasure(widthMeasureSpec, heightMeasureSpec);
-			
-			MeasureCache mc = new MeasureCache();
-			mc.widthMeasureSpec = widthMeasureSpec;
-			mc.heightMeasureSpec = heightMeasureSpec;
-			mc.measuredWidth = mMeasuredWidth;
-			mc.measuredHeight = mMeasuredHeight;
-			mMeasureCache.add(mc);
-			// Log.i(VIEW_LOG_TAG, "dx: new measure cache entry");
-		}
-		else {
-			if ((mPrivateFlags & FORCE_LAYOUT) == FORCE_LAYOUT) {
+            if (ViewDebug.TRACE_HIERARCHY) {
+                ViewDebug.trace(this, ViewDebug.HierarchyTraceType.ON_MEASURE);
+            }
 
-		        if (ViewDebug.TRACE_HIERARCHY) {
-		            ViewDebug.trace(this, ViewDebug.HierarchyTraceType.ON_MEASURE);
-		        }
+            // measure ourselves, this should set the measured dimension flag back
+            onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-		        // measure ourselves, this should set the measured dimension flag back
-		        onMeasure(widthMeasureSpec, heightMeasureSpec);
+            // flag not set, setMeasuredDimension() was not invoked, we raise
+            // an exception to warn the developer
+            if ((mPrivateFlags & MEASURED_DIMENSION_SET) != MEASURED_DIMENSION_SET) {
+                throw new IllegalStateException("onMeasure() did not set the"
+                        + " measured dimension by calling"
+                        + " setMeasuredDimension()");
+            }
 
-				// forced layout? save back to the cache
-				currentCache.widthMeasureSpec = widthMeasureSpec;
-				currentCache.heightMeasureSpec = heightMeasureSpec;
-				currentCache.measuredWidth = mMeasuredWidth;
-				currentCache.measuredHeight = mMeasuredHeight;
-
-		        // flag not set, setMeasuredDimension() was not invoked, we raise
-		        // an exception to warn the developer
-		        if ((mPrivateFlags & MEASURED_DIMENSION_SET) != MEASURED_DIMENSION_SET) {
-		            throw new IllegalStateException("onMeasure() did not set the"
-		                    + " measured dimension by calling"
-		                    + " setMeasuredDimension()");
-		        }
-
-		        mPrivateFlags |= LAYOUT_REQUIRED;
-		        // Log.i(VIEW_LOG_TAG, "dx: measure cache hit but force layout");
-		    }
-			else {
-				// found in cache and no ForceLayout. this is cache hit
-				setMeasuredDimension(currentCache.measuredWidth, currentCache.measuredHeight);	        
-				if (widthMeasureSpec != mOldWidthMeasureSpec ||
-		            heightMeasureSpec != mOldHeightMeasureSpec) {
-					//Log.i(VIEW_LOG_TAG, "dx: measure cache hit");
-				}
-				// else {
-				//	Log.i(VIEW_LOG_TAG, "dx: measure cache hit, same old width and height");
-				// }
-			}
-	    }
+            mPrivateFlags |= LAYOUT_REQUIRED;
+        }
 
         mOldWidthMeasureSpec = widthMeasureSpec;
         mOldHeightMeasureSpec = heightMeasureSpec;

@@ -32,7 +32,6 @@ import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Set;
-import android.os.PowerManager;
 
 /**
  * TODO: Move this to
@@ -54,9 +53,6 @@ class BluetoothEventLoop {
     private final BluetoothService mBluetoothService;
     private final BluetoothAdapter mAdapter;
     private final Context mContext;
-    // The WakeLock is used for bringing up the LCD during a pairing request
-    // from remote device when Android is in Suspend state.
-    private PowerManager.WakeLock mWakeLock;
 
     private static final int EVENT_AUTO_PAIRING_FAILURE_ATTEMPT_DELAY = 1;
     private static final int EVENT_RESTART_BLUETOOTH = 2;
@@ -127,11 +123,6 @@ class BluetoothEventLoop {
         mContext = context;
         mPasskeyAgentRequestData = new HashMap();
         mAdapter = adapter;
-        //WakeLock instantiation in BluetoothEventLoop class
-        PowerManager pm = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP
-                | PowerManager.ON_AFTER_RELEASE, TAG);
-        mWakeLock.setReferenceCounted(false);
         initializeNativeDataNative();
     }
 
@@ -300,10 +291,10 @@ class BluetoothEventLoop {
         }
         String name = propValues[0];
         if (name.equals("Name")) {
-            mBluetoothService.setProperty(name, propValues[1]);
             Intent intent = new Intent(BluetoothAdapter.ACTION_LOCAL_NAME_CHANGED);
             intent.putExtra(BluetoothAdapter.EXTRA_LOCAL_NAME, propValues[1]);
             mContext.sendBroadcast(intent, BLUETOOTH_PERM);
+            mBluetoothService.setProperty(name, propValues[1]);
         } else if (name.equals("Pairable") || name.equals("Discoverable")) {
             String pairable = name.equals("Pairable") ? propValues[1] :
                 mBluetoothService.getPropertyInternal("Pairable");
@@ -314,7 +305,6 @@ class BluetoothEventLoop {
             if (pairable == null || discoverable == null)
                 return;
 
-            mBluetoothService.setProperty(name, propValues[1]);
             int mode = BluetoothService.bluezStringToScanMode(
                     pairable.equals("true"),
                     discoverable.equals("true"));
@@ -324,9 +314,9 @@ class BluetoothEventLoop {
                 intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                 mContext.sendBroadcast(intent, BLUETOOTH_PERM);
             }
+            mBluetoothService.setProperty(name, propValues[1]);
         } else if (name.equals("Discovering")) {
             Intent intent;
-            mBluetoothService.setProperty(name, propValues[1]);
             if (propValues[1].equals("true")) {
                 mBluetoothService.setIsDiscovering(true);
                 intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
@@ -337,6 +327,7 @@ class BluetoothEventLoop {
                 intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
             }
             mContext.sendBroadcast(intent, BLUETOOTH_PERM);
+            mBluetoothService.setProperty(name, propValues[1]);
         } else if (name.equals("Devices")) {
             String value = null;
             int len = Integer.valueOf(propValues[1]);
@@ -369,18 +360,18 @@ class BluetoothEventLoop {
         }
         BluetoothDevice device = mAdapter.getRemoteDevice(address);
         if (name.equals("Name")) {
-            mBluetoothService.setRemoteDeviceProperty(address, name, propValues[1]);
             Intent intent = new Intent(BluetoothDevice.ACTION_NAME_CHANGED);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
             intent.putExtra(BluetoothDevice.EXTRA_NAME, propValues[1]);
             mContext.sendBroadcast(intent, BLUETOOTH_PERM);
-        } else if (name.equals("Class")) {
             mBluetoothService.setRemoteDeviceProperty(address, name, propValues[1]);
+        } else if (name.equals("Class")) {
             Intent intent = new Intent(BluetoothDevice.ACTION_CLASS_CHANGED);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
             intent.putExtra(BluetoothDevice.EXTRA_CLASS,
                     new BluetoothClass(Integer.valueOf(propValues[1])));
             mContext.sendBroadcast(intent, BLUETOOTH_PERM);
+            mBluetoothService.setRemoteDeviceProperty(address, name, propValues[1]);
         } else if (name.equals("Connected")) {
             Intent intent = null;
             if (propValues[1].equals("true")) {
@@ -482,46 +473,37 @@ class BluetoothEventLoop {
             mHandler.sendMessageDelayed(message, 1500);
             return;
         }
-        // Acquire wakelock during PIN code request to bring up LCD display
-        mWakeLock.acquire();
+
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mAdapter.getRemoteDevice(address));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT,
                         BluetoothDevice.PAIRING_VARIANT_CONSENT);
         mContext.sendBroadcast(intent, BLUETOOTH_ADMIN_PERM);
-        // Release wakelock to allow the LCD to go off after the PIN popup notifcation.
-        mWakeLock.release();
         return;
     }
 
     private void onRequestPasskeyConfirmation(String objectPath, int passkey, int nativeData) {
         String address = checkPairingRequestAndGetAddress(objectPath, nativeData);
         if (address == null) return;
-        // Acquire wakelock during PIN code request to bring up LCD display
-        mWakeLock.acquire();
+
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mAdapter.getRemoteDevice(address));
         intent.putExtra(BluetoothDevice.EXTRA_PASSKEY, passkey);
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT,
                 BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION);
         mContext.sendBroadcast(intent, BLUETOOTH_ADMIN_PERM);
-        // Release wakelock to allow the LCD to go off after the PIN popup notifcation.
-        mWakeLock.release();
         return;
     }
 
     private void onRequestPasskey(String objectPath, int nativeData) {
         String address = checkPairingRequestAndGetAddress(objectPath, nativeData);
         if (address == null) return;
-        // Acquire wakelock during PIN code request to bring up LCD display
-        mWakeLock.acquire();
+
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mAdapter.getRemoteDevice(address));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT,
                 BluetoothDevice.PAIRING_VARIANT_PASSKEY);
         mContext.sendBroadcast(intent, BLUETOOTH_ADMIN_PERM);
-        // Release wakelock to allow the LCD to go off after the PIN popup notifcation.
-        mWakeLock.release();
         return;
     }
 
@@ -570,16 +552,12 @@ class BluetoothEventLoop {
         String address = checkPairingRequestAndGetAddress(objectPath, nativeData);
         if (address == null) return;
 
-        // Acquire wakelock during PIN code request to bring up LCD display
-        mWakeLock.acquire();
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mAdapter.getRemoteDevice(address));
         intent.putExtra(BluetoothDevice.EXTRA_PASSKEY, passkey);
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT,
                         BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY);
         mContext.sendBroadcast(intent, BLUETOOTH_ADMIN_PERM);
-        //Release wakelock to allow the LCD to go off after the PIN popup notifcation.
-        mWakeLock.release();
     }
 
     private boolean onAgentAuthorize(String objectPath, String deviceUuid) {

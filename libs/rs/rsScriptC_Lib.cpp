@@ -834,14 +834,6 @@ static void SC_drawRect(float x1, float y1,
                 x2, y1, z,
                 x1, y1, z);
 }
-static void SC_drawRectTexCoord(float x1, float y1,
-                        float x2, float y2, float z, float tx1, float ty1, float tx2, float ty2)
-{
-	SC_drawQuadTexCoords(x1, y2, z, tx1, ty2,
-                         x2, y2, z, tx2, ty2,
-                         x2, y1, z, tx2, ty1,
-                         x1, y1, z, tx1, ty1);
-}
 
 static void SC_drawSimpleMesh(RsSimpleMesh vsm)
 {
@@ -1312,8 +1304,6 @@ ScriptCState::SymbolTable_t ScriptCState::gSyms[] = {
     // drawing
     { "drawRect", (void *)&SC_drawRect,
         "void", "(float x1, float y1, float x2, float y2, float z)" },
-    { "drawRectTexCoord", (void *)&SC_drawRectTexCoord,
-        "void", "(float x1, float y1, float x2, float y2, float z, float tx1, float ty1, float tx2, float ty2)" },
     { "drawQuad", (void *)&SC_drawQuad,
         "void", "(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4)" },
     { "drawQuadTexCoords", (void *)&SC_drawQuadTexCoords,

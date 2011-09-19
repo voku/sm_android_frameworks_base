@@ -1073,26 +1073,43 @@ public class FmReceiver extends FmTransceiver
       int piHigher = 0;
 
       FmReceiverJNI.getBufferNative(sFd, buff, 3);
+
+      FmRxRdsData rdsData = new FmRxRdsData(sFd);
+
       String rdsStr = new String(buff);
+
+
       /* byte is signed ;(
       *  knock down signed bits
       */
       piLower = buff[3] & 0xFF;
       piHigher = buff[2] & 0xFF;
+
+      Log.d (TAG, "lowerByte " + piLower);
+      Log.d (TAG, "higherByte " + piHigher);
+
       int pi = ((piHigher << 8) | piLower);
-      mRdsData.setPrgmId (pi);
-      mRdsData.setPrgmType ( (int)( buff[1] & 0x1F));
+
+      Log.d (TAG, "pi " + pi);
+
+
+      rdsData.setPrgmId (pi);
+      rdsData.setPrgmType ( (int)( buff[1] & 0x1F));
+
       int numOfPs = (int)(buff[0] & 0x0F);
+
       try
       {
          rdsStr = rdsStr.substring(5, (int )((numOfPs*8) + 5) );
-         mRdsData.setPrgmServices (rdsStr);
+         rdsData.setPrgmServices (rdsStr);
 
       } catch (StringIndexOutOfBoundsException x)
       {
          Log.d (TAG, "Number of PS names " + numOfPs);
       }
-      return mRdsData;
+
+      return rdsData;
+
    }
 
    /*==============================================================
@@ -1121,27 +1138,41 @@ public class FmReceiver extends FmTransceiver
       byte [] buff = new byte[120];
       int piLower = 0;
       int piHigher = 0;
-
       FmReceiverJNI.getBufferNative(sFd, buff, 2);
+
+      FmRxRdsData rdsData = new FmRxRdsData(sFd);
+
       String rdsStr = new String(buff);
+
       /* byte is signed ;(
       *  knock down signed bit
       */
       piLower = buff[3] & 0xFF;
       piHigher = buff[2] & 0xFF;
+
+      Log.d (TAG, "lowerByte " + piLower);
+      Log.d (TAG, "higherByte " + piHigher);
+
       int pi = ((piHigher << 8) | piLower);
-      mRdsData.setPrgmId (pi);
-      mRdsData.setPrgmType ( (int)( buff[1] & 0x1F));
+
+      Log.d (TAG, "pi " + pi);
+
+
+      rdsData.setPrgmId (pi);
+      rdsData.setPrgmType ( (int)( buff[1] & 0x1F));
+
       try
       {
          rdsStr = rdsStr.substring(5, (int) buff[0]+ 5);
-         mRdsData.setRadioText (rdsStr);
+         rdsData.setRadioText (rdsStr);
 
       } catch (StringIndexOutOfBoundsException x)
       {
          Log.d (TAG, "StringIndexOutOfBoundsException ...");
       }
-      return mRdsData;
+
+      return rdsData;
+
    }
 
    /*==============================================================

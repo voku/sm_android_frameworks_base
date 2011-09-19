@@ -50,8 +50,6 @@ import android.view.VolumePanel;
 import android.os.SystemProperties;
 
 import com.android.internal.telephony.ITelephony;
-import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.cdma.TtyIntent;
 
 import java.io.FileDescriptor;
 import java.io.IOException;

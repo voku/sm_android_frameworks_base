@@ -33,10 +33,9 @@ public class NetworkInfo implements Parcelable {
     String operatorAlphaLong;
     String operatorAlphaShort;
     String operatorNumeric;
-    String operatorRAT;
 
     State state = State.UNKNOWN;
-
+    String NumState = "0";
 
     public String
     getOperatorAlphaLong() {
@@ -57,31 +56,19 @@ public class NetworkInfo implements Parcelable {
     getState() {
         return state;
     }
-    public String
-    getOperatorRAT() {
-        return operatorRAT;
-    }
 
     NetworkInfo(String operatorAlphaLong,
                 String operatorAlphaShort,
                 String operatorNumeric,
-                State state) {
+                State state,
+                String NumState) {
 
         this.operatorAlphaLong = operatorAlphaLong;
         this.operatorAlphaShort = operatorAlphaShort;
         this.operatorNumeric = operatorNumeric;
+
         this.state = state;
-        this.operatorRAT = "";
-}
-    NetworkInfo(String operatorAlphaLong,
-                String operatorAlphaShort,
-                String operatorNumeric,
-                State state, String operatorRAT) {
-        this.operatorAlphaLong = operatorAlphaLong;
-        this.operatorAlphaShort = operatorAlphaShort;
-        this.operatorNumeric = operatorNumeric;
-        this.state = state;
-        this.operatorRAT = operatorRAT;
+        this.NumState = NumState;
     }
 
 
@@ -89,9 +76,9 @@ public class NetworkInfo implements Parcelable {
                 String operatorAlphaShort,
                 String operatorNumeric,
                 String stateString,
-                String operatorRAT) {
+                String NumState) {
         this (operatorAlphaLong, operatorAlphaShort,
-                operatorNumeric, rilStateToState(stateString), operatorRAT);
+                operatorNumeric, rilStateToState(stateString), NumState);
     }
 
     /**
@@ -117,7 +104,8 @@ public class NetworkInfo implements Parcelable {
         return "NetworkInfo " + operatorAlphaLong
                 + "/" + operatorAlphaShort
                 + "/" + operatorNumeric
-                + "/" + state;
+                + "/" + state
+                + "/" + NumState;
     }
 
     /**
@@ -141,7 +129,7 @@ public class NetworkInfo implements Parcelable {
         dest.writeString(operatorAlphaShort);
         dest.writeString(operatorNumeric);
         dest.writeSerializable(state);
-        dest.writeString(operatorRAT);
+        dest.writeString(NumState);
     }
 
     /**
@@ -156,7 +144,7 @@ public class NetworkInfo implements Parcelable {
                         in.readString(), /*operatorAlphaShort*/
                         in.readString(), /*operatorNumeric*/
                         (State) in.readSerializable(), /*state*/
-                        in.readString()); /*operatorRAT*/
+                        in.readString());
                 return netInfo;
             }
 

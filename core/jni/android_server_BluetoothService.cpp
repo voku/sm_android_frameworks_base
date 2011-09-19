@@ -1,6 +1,5 @@
 /*
 ** Copyright 2006, The Android Open Source Project
-** Copyright (C) 2010, 2011 Code Aurora Forum. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License"); 
 ** you may not use this file except in compliance with the License. 
@@ -887,38 +886,6 @@ static jboolean setLinkTimeoutNative(JNIEnv *env, jobject object, jstring object
     return JNI_FALSE;
 }
 
-
-static jstring findDeviceNative(JNIEnv *env, jobject object,
-    jstring address) {
-  LOGV(__FUNCTION__);
-#ifdef HAVE_BLUETOOTH
-  native_data_t *nat = get_native_data(env, object);
-  jobject eventLoop = env->GetObjectField(object, field_mEventLoop);
-  struct event_loop_native_data_t *eventLoopNat =
-    get_EventLoop_native_data(env, eventLoop);
-  if (nat && eventLoopNat) {
-    const char *c_address = env->GetStringUTFChars(address, NULL);
-    LOGV("... address = %s", c_address);
-    DBusMessage *reply = dbus_func_args(env, nat->conn,
-        get_adapter_path(env, object),
-        DBUS_ADAPTER_IFACE, "FindDevice",
-        DBUS_TYPE_STRING, &c_address,
-        DBUS_TYPE_INVALID);
-    env->ReleaseStringUTFChars(address, c_address);
-    if (reply == NULL) {
-      return NULL;
-    }
-    char *object_path = NULL;
-    if (dbus_message_get_args(reply, NULL,
-          DBUS_TYPE_OBJECT_PATH, &object_path,
-          DBUS_TYPE_INVALID)) {
-      return (jstring) env->NewStringUTF(object_path);
-    }
-  }
-#endif
-  return NULL;
-}
-
 static JNINativeMethod sMethods[] = {
      /* name, signature, funcPtr */
     {"classInitNative", "()V", (void*)classInitNative},
@@ -964,7 +931,6 @@ static JNINativeMethod sMethods[] = {
     {"addRfcommServiceRecordNative", "(Ljava/lang/String;JJS)I", (void *)addRfcommServiceRecordNative},
     {"removeServiceRecordNative", "(I)Z", (void *)removeServiceRecordNative},
     {"setLinkTimeoutNative", "(Ljava/lang/String;I)Z", (void *)setLinkTimeoutNative},
-    {"findDeviceNative", "(Ljava/lang/String;)Ljava/lang/String;", (void*)findDeviceNative},
 };
 
 int register_android_server_BluetoothService(JNIEnv *env) {

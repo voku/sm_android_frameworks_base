@@ -39,9 +39,11 @@
 #include <utils/String16.h>
 
 #include "CameraService.h"
+
 #ifdef USE_OVERLAY_FORMAT_YCbCr_420_SP
 #include "gralloc_priv.h"
 #endif
+
 #include <cutils/properties.h>
 
 namespace android {
@@ -60,7 +62,6 @@ static void setLogLevel(int level) {
 
 // ----------------------------------------------------------------------------
 
-#ifdef BOARD_USE_FROYO_LIBCAMERA
 struct camera_size_type {
     int width;
     int height;
@@ -70,7 +71,6 @@ static const camera_size_type preview_sizes[] = {
     { 1280, 720 }, // 720P
     { 768, 432 },
 };
-#endif
 
 static int getCallingPid() {
     return IPCThreadState::self()->getCallingPid();
@@ -594,14 +594,12 @@ status_t CameraService::Client::registerPreviewBuffers() {
     CameraParameters params(mHardware->getParameters());
     params.getPreviewSize(&w, &h);
 
-#ifdef BOARD_USE_FROYO_LIBCAMERA
     //for 720p recording , preview can be 800X448
     if(w ==  preview_sizes[0].width && h== preview_sizes[0].height){
         LOGD("registerpreviewbufs :changing dimensions to 768X432 for 720p recording.");
         w = preview_sizes[1].width;
         h = preview_sizes[1].height;
     }
-#endif
 
     // FIXME: don't use a hardcoded format here.
     ISurface::BufferHeap buffers(w, h, w, h,
@@ -622,14 +620,12 @@ status_t CameraService::Client::setOverlay() {
     CameraParameters params(mHardware->getParameters());
     params.getPreviewSize(&w, &h);
 
-#ifdef BOARD_USE_FROYO_LIBCAMERA
     //for 720p recording , preview can be 800X448
     if(w == preview_sizes[0].width && h==preview_sizes[0].height){
         LOGD("Changing overlay dimensions to 768X432 for 720p recording.");
         w = preview_sizes[1].width;
         h = preview_sizes[1].height;
     }
-#endif
 
     if (w != mOverlayW || h != mOverlayH || mOrientationChanged) {
         // Force the destruction of any previous overlay

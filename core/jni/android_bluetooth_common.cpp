@@ -46,7 +46,6 @@ static Properties remote_device_properties[] = {
     {"Paired", DBUS_TYPE_BOOLEAN},
     {"Connected", DBUS_TYPE_BOOLEAN},
     {"Trusted", DBUS_TYPE_BOOLEAN},
-    {"Blocked", DBUS_TYPE_BOOLEAN},
     {"Alias", DBUS_TYPE_STRING},
     {"Nodes", DBUS_TYPE_ARRAY},
     {"Adapter", DBUS_TYPE_OBJECT_PATH},
@@ -66,7 +65,6 @@ static Properties adapter_properties[] = {
     {"PairableTimeout", DBUS_TYPE_UINT32},
     {"Discovering", DBUS_TYPE_BOOLEAN},
     {"Devices", DBUS_TYPE_ARRAY},
-    {"UUIDs", DBUS_TYPE_ARRAY},
 };
 
 typedef union {

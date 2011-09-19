@@ -40,7 +40,6 @@ import static android.view.WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
 import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD;
 import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD_DIALOG;
 import static android.view.WindowManager.LayoutParams.TYPE_WALLPAPER;
-import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_MEDIA_OVERLAY;
 
 import com.android.internal.app.IBatteryStats;
 import com.android.internal.policy.PolicyManager;
@@ -2540,11 +2539,7 @@ public class WindowManagerService extends IWindowManager.Stub
                             if (mInputMethodWindow == win) {
                                 mInputMethodWindow = null;
                             }
-
-			    /* If its Wallpaper preview, do not destroy surface */
-			    if (win.getAttrs().type != TYPE_APPLICATION_MEDIA_OVERLAY &&
-			            win.mAttrs.windowAnimations != com.android.internal.R.style.Animation_Wallpaper)
-                                win.destroySurfaceLocked();
+                            win.destroySurfaceLocked();
                         }
                     }
                 }
@@ -5496,13 +5491,12 @@ public class WindowManagerService extends IWindowManager.Stub
         int metaState = ev.getMetaState();
         int deviceId = ev.getDeviceId();
         int scancode = ev.getScanCode();
-        int flags = ev.getFlags();
 
         if (eventTime == 0) eventTime = SystemClock.uptimeMillis();
         if (downTime == 0) downTime = eventTime;
 
         KeyEvent newEvent = new KeyEvent(downTime, eventTime, action, code, repeatCount, metaState,
-                deviceId, scancode, flags | KeyEvent.FLAG_FROM_SYSTEM);
+                deviceId, scancode, KeyEvent.FLAG_FROM_SYSTEM);
 
         final int pid = Binder.getCallingPid();
         final int uid = Binder.getCallingUid();
@@ -5821,10 +5815,6 @@ public class WindowManagerService extends IWindowManager.Stub
                         //dump();
                         if (targetWin != null) {
                             at = targetWin.getAppToken();
-                            if (at == null) {
-                               removeWindowInnerLocked(targetWin.mSession, targetWin);
-                               return null;
-                            }
                         } else if (targetApp != null) {
                             at = targetApp.appToken;
                         }
@@ -10711,10 +10701,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 if (win == mWallpaperTarget) {
                     wallpaperDestroyed = true;
                 }
-                /* If its Wallpaper preview, do not destroy surface */
-                if (win.getAttrs().type != TYPE_APPLICATION_MEDIA_OVERLAY &&
-                        win.mAttrs.windowAnimations != com.android.internal.R.style.Animation_Wallpaper)
-                    win.destroySurfaceLocked();
+                win.destroySurfaceLocked();
             } while (i > 0);
             mDestroySurface.clear();
         }

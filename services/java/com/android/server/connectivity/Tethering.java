@@ -1180,17 +1180,17 @@ public class Tethering extends INetworkManagementEventObserver.Stub {
                 for (String iface : ifaces) {
                     for (String regex : mUpstreamIfaceRegexs) {
                         if (iface.matches(regex)) {
-                            // verify it is active
+                            // verify it is up!
                             InterfaceConfiguration ifcg = null;
                             try {
                                 ifcg = service.getInterfaceConfig(iface);
-                                if (ifcg.isActive()) {
-                                    return iface;
-                                }
                             } catch (Exception e) {
                                 Log.e(TAG, "Error getting iface config :" + e);
                                 // ignore - try next
                                 continue;
+                            }
+                            if (ifcg.interfaceFlags.contains("up")) {
+                                return iface;
                             }
                         }
                     }
