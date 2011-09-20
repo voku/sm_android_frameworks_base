@@ -328,6 +328,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     // We put empty content processes after any hidden processes that have
     // been idle for less than 120 seconds.
     static final long EMPTY_APP_IDLE_OFFSET = 120*1000;
+	
+	static final String GMAPS_NLS = 
+            "com.google.android.apps.maps/com.google.android.location.internal.server.NetworkLocationService";
     
     static {
         // These values are set in system/rootdir/init.rc on startup.
@@ -11215,6 +11218,13 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             int intentFlags, boolean whileRestarting) {
         //Slog.i(TAG, "Bring up service:");
         //r.dump("  ");
+		
+		// don't start NetworkLocationService if Gmaps is not running
+		if (r.shortName.equals(GMAPS_NLS)
+                && getProcessRecordLocked("com.google.android.apps.maps",
+                r.appInfo.uid) == null) {
+            return true;
+        }
 
         if (r.app != null && r.app.thread != null) {
             sendServiceArgsLocked(r, false);
@@ -11968,8 +11978,12 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                         case Service.START_STICKY: {
                             // We are done with the associated start arguments.
                             r.findDeliveredStart(startId, true);
-                            // Don't stop if killed.
-                            r.stopIfKilled = false;
+                            // stop Gmaps NetworkLocationService if killed
+                            if (r.shortName.equals(GMAPS_NLS)) {
+                                r.stopIfKilled = true;
+                            } else {
+                                r.stopIfKilled = false;
+                            }
                             break;
                         }
                         case Service.START_NOT_STICKY: {
@@ -13994,6 +14008,14 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     // even though the service no longer has an impact.
                     if (adj > SECONDARY_SERVER_ADJ) {
                         app.adjType = "started-bg-services";
+                    }
+					// let the Gmaps NetworkLocationService die if Gmaps is not running
+					if (s.shortName.equals(GMAPS_NLS)
+                            && getProcessRecordLocked("com.google.android.apps.maps",
+                            s.appInfo.uid) == null) {
+                        adj = hiddenAdj;
+                        app.hidden = true;
+                        app.adjType = "bg-services";
                     }
                 }
                 if (s.connections.size() > 0 && (adj > FOREGROUND_APP_ADJ
