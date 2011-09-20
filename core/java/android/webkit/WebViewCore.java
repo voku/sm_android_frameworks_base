@@ -1668,8 +1668,7 @@ final class WebViewCore {
             // ensure {@link #webkitDraw} is called as we were blocking in
             // {@link #contentDraw} when mCurrentViewWidth is 0
             if (DebugFlags.WEB_VIEW_CORE) Log.v(LOGTAG, "viewSizeChanged");
-            //we pass false as the parameter paintHeader to contentDraw since here we are not painting a cached header
-            contentDraw(false);
+            contentDraw();
         }
         mEventHub.sendMessage(Message.obtain(null,
                 EventHub.UPDATE_CACHE_AND_TEXT_ENTRY));
@@ -1857,8 +1856,7 @@ final class WebViewCore {
                 core.mDrawIsPaused = false;
                 if (core.mDrawIsScheduled) {
                     core.mDrawIsScheduled = false;
-                    //we pass false as the parameter paintHeader to contentDraw since here we are not painting a cached header
-                    core.contentDraw(false);
+                    core.contentDraw();
                 }
             }
         }
@@ -1882,15 +1880,13 @@ final class WebViewCore {
     //-------------------------------------------------------------------------
 
     // called from JNI or WebView thread
-    /* package */ void contentDraw(boolean paintHeader) {
+    /* package */ void contentDraw() {
         // don't update the Picture until we have an initial width and finish
         // the first layout
 
-        if (mCurrentViewWidth == 0)
+        if (mCurrentViewWidth == 0 || !mBrowserFrame.firstLayoutDone()) {
             return;
-
-        if (!paintHeader && !mBrowserFrame.firstLayoutDone())
-            return;
+	}
 
         // only fire an event if this is our first request
         synchronized (this) {
@@ -1976,7 +1972,7 @@ final class WebViewCore {
                 WebViewWorker.MSG_CACHE_TRANSACTION_TICKER);
         WebViewWorker.getHandler().sendEmptyMessage(
                 WebViewWorker.MSG_CACHE_TRANSACTION_TICKER);
-        contentDraw(false);
+        contentDraw();
     }
 
     /*  Called by JNI. The coordinates are in doc coordinates, so they need to
