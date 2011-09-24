@@ -1496,7 +1496,7 @@
 
     <!-- When the user inserts a sim card from an unsupported network, it becomes network
          locked -->
-    <string name="lockscreen_sim_network_locked_message">Network locked</string>
+    <string name="lockscreen_network_locked_message">Network locked</string>
 
 
     <!-- When the user enters a wrong sim pin too many times, it becomes
@@ -1505,35 +1505,13 @@
     <!-- Shown in the lock screen when the SIM has become PUK locked and the user must call customer care to unlock it. -->
     <string name="lockscreen_sim_puk_locked_instructions">Please see the User Guide or contact Customer Care.</string>
 
-    <!-- Shown in the lock screen to tell the user that their SIM/RUIM is locked and they must unlock it. -->
-    <string name="lockscreen_pin_locked_message">SIM/RUIM card is locked.</string>
+    <!-- Shown in the lock screen to tell the user that their SIM is locked and they must unlock it. -->
+    <string name="lockscreen_sim_locked_message">SIM card is locked.</string>
 
     <!-- For the unlock screen, When the user enters a sim unlock code, it takes a little while to check
          whether it is valid, and to unlock the sim if it is valid.  we display a
          progress dialog in the meantime.  this is the emssage. -->
     <string name="lockscreen_sim_unlock_progress_dialog_message">Unlocking SIM card\u2026</string>
-
-    <!-- Shown in the lock screen when there is RUIM card IO error. -->
-    <string name="lockscreen_ruim_error_message_short">Invalid Card.</string>
-    <!-- Shown in the lock screen when there is RUIM card error. -->
-    <string name="lockscreen_ruim_error_message">RUIM card is Invalid.</string>
-
-    <!-- Shown in the lock screen when there is no RUIM card. -->
-    <string name="lockscreen_missing_ruim_message_short">No RUIM card.</string>
-    <!-- Shown in the lock screen when there is no RUIM card. -->
-    <string name="lockscreen_missing_ruim_message">No RUIM card in phone.</string>
-    <!-- Shown in the lock screen to ask the user to insert a RUIM card. -->
-    <string name="lockscreen_missing_ruim_instructions">Please insert a RUIM card.</string>
-
-    <!-- When the user inserts a ruim card from an unsupported network, it becomes network
-         locked -->
-    <string name="lockscreen_ruim_network_locked_message">Network locked</string>
-
-    <!-- When the user enters a wrong ruim pin too many times, it becomes
-         PUK locked (Pin Unlock Kode) -->
-    <string name="lockscreen_ruim_puk_locked_message">RUIM card is PUK-locked.</string>
-    <!-- Shown in the lock screen when the RUIM has become PUK locked and the user must call customer care to unlock it. -->
-    <string name="lockscreen_ruim_puk_locked_instructions">Please see the User Guide or contact Customer Care.</string>
 
     <!-- For the unlock screen, Information message shown in dialog when user has too many failed attempts -->
     <string name="lockscreen_too_many_failed_attempts_dialog_message">
@@ -2080,7 +2058,7 @@
     <!-- The default permission group for any permissions that have not explicitly set a group. -->
     <string name="default_permission_group">Default</string>
     <!-- Do not translate. -->
-    <string name="permissions_format" translatable="false"><xliff:g id="perm_line1">%1$s</xliff:g>, <xliff:g id="perm_line2">%2$s</xliff:g></string>
+    <string name="permissions_format"><xliff:g id="perm_line1">%1$s</xliff:g>, <xliff:g id="perm_line2">%2$s</xliff:g></string>
     <!-- Shown for an application when it doesn't require any permission grants. -->
     <string name="no_permissions">No permissions required</string>
     <!-- When installing an application, the less-dangerous permissions are hidden.  If the user showed those, this is the text to hide them again.  -->
@@ -2149,7 +2127,7 @@
     <!-- locale string based on mcc values.  By default (0-length string) we don't replace the %s   -->
     <!-- at all and later replace it with a locale string based on the users chosen locale          -->
     <!-- DO NOT TRANSLATE -->
-    <string name="locale_replacement" translatable="false">""</string>
+    <string name="locale_replacement">""</string>
 
     <!-- Title of the pop-up dialog in which the user switches input method components. -->
     <string name="select_input_method">Select input method</string>
@@ -2269,7 +2247,7 @@
     <string name="chooser_wallpaper">Change wallpaper</string>
 
     <!-- Do Not Translate: Alternate eri.xml -->
-    <string name="alternate_eri_file" translatable="false">/data/eri.xml</string>
+    <string name="alternate_eri_file">/data/eri.xml</string>
 
     <string name="pptp_vpn_description">Point-to-Point Tunneling Protocol</string>
     <string name="l2tp_vpn_description">Layer 2 Tunneling Protocol</string>
