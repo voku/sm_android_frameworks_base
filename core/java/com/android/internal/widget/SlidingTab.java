@@ -156,7 +156,7 @@ public class SlidingTab extends ViewGroup {
      * {@link #target} is the target the user must drag the slider past to trigger the slider.
      *
      */
-    private static class Slider {
+    private class Slider {
         /**
          * Tab alignment - determines which side the tab should be drawn on
          */
@@ -305,6 +305,7 @@ public class SlidingTab extends ViewGroup {
             int dy = horiz ? 0 : (alignment == ALIGN_TOP ? alignment_value - tab.getTop()
                     : alignment_value - tab.getBottom());
             if (animate) {
+                mAnimating = true;
                 TranslateAnimation trans1 = new TranslateAnimation(0, dx, 0, dy);
                 trans1.setDuration(ANIM_DURATION);
                 trans1.setInterpolator(new LinearInterpolator());
@@ -313,9 +314,9 @@ public class SlidingTab extends ViewGroup {
                 trans2.setDuration(ANIM_DURATION);
                 trans2.setInterpolator(new LinearInterpolator());
                 trans2.setFillAfter(true);
-
                 trans1.setAnimationListener(new AnimationListener() {
                     public void onAnimationEnd(Animation animation) {
+                        mAnimating = false;
                         reset(false);
                     }
                     public void onAnimationRepeat(Animation animation) {
@@ -324,9 +325,10 @@ public class SlidingTab extends ViewGroup {
                     }
 
                 });
-                tab.startAnimation(trans1);
-                text.startAnimation(trans2);
+                text.startAnimation(trans1);
+                tab.startAnimation(trans2);
             } else {
+                mAnimating = false;
                 if (horiz) {
                     text.offsetLeftAndRight(dx);
                     tab.offsetLeftAndRight(dx);
