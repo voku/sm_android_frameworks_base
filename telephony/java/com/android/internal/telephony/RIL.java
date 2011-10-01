@@ -2698,12 +2698,6 @@ public final class RIL extends BaseCommands implements CommandsInterface {
     responseNetworkType(Parcel p) {
         int response[] = (int[]) responseInts(p);
 
-        // When the modem responds Phone.NT_MODE_GLOBAL, it means Phone.NT_MODE_WCDMA_PREF
-        if (!mIsSamsungCdma && response[0] == Phone.NT_MODE_GLOBAL) {
-            Log.d(LOG_TAG, "Overriding network type response from global to WCDMA preferred");
-            response[0] = Phone.NT_MODE_WCDMA_PREF;
-        }
-
         return response;
     }
 
