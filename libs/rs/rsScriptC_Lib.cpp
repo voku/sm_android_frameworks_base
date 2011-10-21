@@ -1020,7 +1020,9 @@ static void SC_debugF(const char *s, float f)
 
 static void SC_debugHexF(const char *s, float f)
 {
-    LOGE("%s 0x%x", s, *((int *) (&f)));
+    int fl(0);
+    memcpy(&fl, &f, sizeof(float));
+    LOGE("%s 0x%x", s, fl);
 }
 
 static void SC_debugI32(const char *s, int32_t i)
