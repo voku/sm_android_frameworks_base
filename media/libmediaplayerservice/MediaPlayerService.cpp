@@ -218,6 +218,10 @@ extmap FILE_EXTS [] =  {
         {".wma", PV_PLAYER},
         {".wmv", PV_PLAYER},
         {".asf", PV_PLAYER},
+#else
+        {".wma", STAGEFRIGHT_PLAYER},
+        {".wmv", STAGEFRIGHT_PLAYER},
+        {".asf", STAGEFRIGHT_PLAYER},
 #endif
 #endif
         {".flac", FLAC_PLAYER},
@@ -739,6 +743,10 @@ player_type getPlayerType(int fd, int64_t offset, int64_t length)
         // These are not currently supported through stagefright.
         return PV_PLAYER;
     }
+#else
+    if (ident == 0x75b22630)
+        // The magic number for .asf files, i.e. wmv and wma content.
+        return STAGEFRIGHT_PLAYER;
 #endif
 
 #endif

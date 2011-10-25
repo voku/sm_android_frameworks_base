@@ -49,13 +49,14 @@ public class MediaFile {
     public static final int FILE_TYPE_AAC     = 8;
     public static final int FILE_TYPE_MKA     = 9;
     public static final int FILE_TYPE_FLAC    = 10;
+    public static final int FILE_TYPE_AUDIO_AVI = 11;
     private static final int FIRST_AUDIO_FILE_TYPE = FILE_TYPE_MP3;
-    private static final int LAST_AUDIO_FILE_TYPE = FILE_TYPE_FLAC;
+    private static final int LAST_AUDIO_FILE_TYPE = FILE_TYPE_AUDIO_AVI;
 
     // MIDI file types
-    public static final int FILE_TYPE_MID     = 11;
-    public static final int FILE_TYPE_SMF     = 12;
-    public static final int FILE_TYPE_IMY     = 13;
+    public static final int FILE_TYPE_MID     = 15;
+    public static final int FILE_TYPE_SMF     = 16;
+    public static final int FILE_TYPE_IMY     = 17;
     private static final int FIRST_MIDI_FILE_TYPE = FILE_TYPE_MID;
     private static final int LAST_MIDI_FILE_TYPE = FILE_TYPE_IMY;
 
@@ -69,9 +70,8 @@ public class MediaFile {
 
     public static final int FILE_TYPE_MKV     = 27;
     public static final int FILE_TYPE_MP2TS   = 28;
-    private static final int FIRST_VIDEO_FILE_TYPE = FILE_TYPE_MP4;
-
     public static final int FILE_TYPE_AVI     = 29;
+    private static final int FIRST_VIDEO_FILE_TYPE = FILE_TYPE_MP4;
     private static final int LAST_VIDEO_FILE_TYPE = FILE_TYPE_AVI;
 
     // Image file types
@@ -157,6 +157,7 @@ public class MediaFile {
         addFileType("IMY", FILE_TYPE_IMY, "audio/imelody");
         addFileType("RTX", FILE_TYPE_MID, "audio/midi");
         addFileType("OTA", FILE_TYPE_MID, "audio/midi");
+        addFileType("AVI", FILE_TYPE_AUDIO_AVI, "audio/x-msaudio");
 
         addFileType("MPEG", FILE_TYPE_MP4, "video/mpeg");
         addFileType("MP4", FILE_TYPE_MP4, "video/mp4");
@@ -168,14 +169,14 @@ public class MediaFile {
         addFileType("MKV", FILE_TYPE_MKV, "video/x-matroska");
         addFileType("WEBM", FILE_TYPE_MKV, "video/x-matroska");
         addFileType("TS", FILE_TYPE_MP2TS, "video/mp2ts");
+        addFileType("AVI", FILE_TYPE_AVI, "video/x-msvideo");
+        addFileType("DIVX", FILE_TYPE_AVI, "video/x-msvideo");
 
         if (isWMVEnabled()) {
             addFileType("WMV", FILE_TYPE_WMV, "video/x-ms-wmv");
             addFileType("ASF", FILE_TYPE_ASF, "video/x-ms-asf");
         }
-        if("true".equals(System.getProperty("omap.enhancement"))) {
-            addFileType("AVI", FILE_TYPE_AVI, "video/avi");
-        }
+
         addFileType("JPG", FILE_TYPE_JPEG, "image/jpeg");
         addFileType("JPEG", FILE_TYPE_JPEG, "image/jpeg");
         addFileType("GIF", FILE_TYPE_GIF, "image/gif");
@@ -185,9 +186,9 @@ public class MediaFile {
 
         if(SystemProperties.OMAP_ENHANCEMENT)
         {
-        addFileType("JPS", FILE_TYPE_JPS, "image/jps");
-        addFileType("MPO", FILE_TYPE_MPO, "image/mpo");
-       }
+            addFileType("JPS", FILE_TYPE_JPS, "image/jps");
+            addFileType("MPO", FILE_TYPE_MPO, "image/mpo");
+        }
 
         addFileType("M3U", FILE_TYPE_M3U, "audio/x-mpegurl");
         addFileType("PLS", FILE_TYPE_PLS, "audio/x-scpls");
