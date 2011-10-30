@@ -105,7 +105,7 @@ public:
         Parcel data, reply;
         data.writeInterfaceToken(ISurface::getInterfaceDescriptor());
         data.writeInt32(offset);
-        remote()->transact(POST_BUFFER, data, &reply);
+        remote()->transact(POST_BUFFER, data, &reply, IBinder::FLAG_ONEWAY);
     }
 
     virtual void unregisterBuffers()

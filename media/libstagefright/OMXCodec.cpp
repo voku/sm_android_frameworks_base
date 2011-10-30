@@ -104,7 +104,7 @@ static sp<MediaSource> InstantiateSoftwareCodec(
 #undef FACTORY_CREATE
 
 static const CodecInfo kDecoderInfo[] = {
-    { MEDIA_MIMETYPE_IMAGE_JPEG, "OMX.TI.JPEG.decode" },
+    { MEDIA_MIMETYPE_IMAGE_JPEG, "OMX.TI.JPEG.decoder" },
 //    { MEDIA_MIMETYPE_AUDIO_MPEG, "OMX.TI.MP3.decode" },
     { MEDIA_MIMETYPE_AUDIO_MPEG, "MP3Decoder" },
 //    { MEDIA_MIMETYPE_AUDIO_MPEG, "OMX.PV.mp3dec" },
@@ -2320,7 +2320,7 @@ void OMXCodec::setImageOutputFormat(
 #if 0
     OMX_INDEXTYPE index;
     status_t err = mOMX->get_extension_index(
-            mNode, "OMX.TI.JPEG.decode.Config.OutputColorFormat", &index);
+            mNode, "OMX.TI.JPEG.decoder.Config.OutputColorFormat", &index);
     CHECK_EQ(err, OK);
 
     err = mOMX->set_config(mNode, index, &format, sizeof(format));
@@ -3118,8 +3118,20 @@ void OMXCodec::initOutputFormat(const sp<MetaData> &inputFormat) {
 #ifdef USE_QCOM_OMX_FIX
                 //Update the Stride and Slice Height
                 //Allows creation of Renderer with correct height and width
-                mOutputFormat->setInt32(kKeyWidth, video_def->nStride);
-                mOutputFormat->setInt32(kKeyHeight, video_def->nSliceHeight);
+                if( mIsEncoder ){
+                    int32_t width, height;
+                    bool success = inputFormat->findInt32( kKeyWidth, &width ) &&
+                        inputFormat->findInt32( kKeyHeight, &height);
+                    CHECK( success );
+                    mOutputFormat->setInt32(kKeyWidth, width );
+                    mOutputFormat->setInt32(kKeyHeight, height );
+                }
+                else {
+                    LOGV("video_def->nStride = %d, video_def->nSliceHeight = %d", video_def->nStride,
+                            video_def->nSliceHeight );
+                    mOutputFormat->setInt32(kKeyWidth, video_def->nStride);
+                    mOutputFormat->setInt32(kKeyHeight, video_def->nSliceHeight);
+                }
 #else
                 //Some hardware expects the old behavior
                 mOutputFormat->setInt32(kKeyWidth, video_def->nFrameWidth);

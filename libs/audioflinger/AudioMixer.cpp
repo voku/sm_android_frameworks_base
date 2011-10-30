@@ -754,12 +754,12 @@ void AudioMixer::process__genericResampling(state_t* state, void* output)
 {
     int32_t* const outTemp = state->outputTemp;
     const size_t size = sizeof(int32_t) * MAX_NUM_CHANNELS * state->frameCount;
-    memset(outTemp, 0, size);
 
     int32_t* out = static_cast<int32_t*>(output);
     size_t numFrames = state->frameCount;
 
     uint32_t en = state->enabledTracks;
+    memset(outTemp, 0, size);
     while (en) {
         const int i = 31 - __builtin_clz(en);
         en &= ~(1<<i);
