@@ -407,8 +407,7 @@ status_t MP3Decoder::read(
     bool seekSource = false;
 
     int64_t seekTimeUs;
-    ReadOptions::SeekMode mode;
-    if (options && options->getSeekTo(&seekTimeUs, &mode)) {
+    if (options && options->getSeekTo(&seekTimeUs)) {
         CHECK(seekTimeUs >= 0);
 
         mNumFramesOutput = 0;
