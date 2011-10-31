@@ -3285,6 +3285,7 @@ public class ListView extends AbsListView {
 
         final ListAdapter adapter = mAdapter;
         int closetChildIndex = -1;
+        int closestChildTop = 0;
         if (adapter != null && gainFocus && previouslyFocusedRect != null) {
             previouslyFocusedRect.offset(mScrollX, mScrollY);
 
@@ -3316,12 +3317,13 @@ public class ListView extends AbsListView {
                 if (distance < minDistance) {
                     minDistance = distance;
                     closetChildIndex = i;
+                    closestChildTop = other.getTop();
                 }
             }
         }
 
         if (closetChildIndex >= 0) {
-            setSelection(closetChildIndex + mFirstPosition);
+            setSelectionFromTop(closetChildIndex + mFirstPosition, closestChildTop);
         } else {
             requestLayout();
         }
