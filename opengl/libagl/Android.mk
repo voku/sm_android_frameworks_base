@@ -10,15 +10,15 @@ include $(CLEAR_VARS)
 LIBAGL_USE_GRALLOC_COPYBITS := 1
 
 LOCAL_SRC_FILES:= \
-	egl.cpp                     \
-	state.cpp		            \
-	texture.cpp		            \
-    Tokenizer.cpp               \
-    TokenManager.cpp            \
-    TextureObjectManager.cpp.arm    \
-    BufferObjectManager.cpp     \
+	egl.cpp                         \
+	state.cpp		        \
+	texture.cpp		        \
+	Tokenizer.cpp                   \
+	TokenManager.cpp                \
+	TextureObjectManager.cpp.arm    \
+	BufferObjectManager.cpp         \
 	array.cpp.arm		        \
-	fp.cpp.arm		            \
+	fp.cpp.arm		        \
 	light.cpp.arm		        \
 	matrix.cpp.arm		        \
 	mipmap.cpp.arm		        \
@@ -27,7 +27,7 @@ LOCAL_SRC_FILES:= \
 
 LOCAL_CFLAGS += -DLOG_TAG=\"libagl\"
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
-LOCAL_CFLAGS += -fvisibility=hidden
+LOCAL_CFLAGS += -ffast-math -fvisibility=hidden
 
 LOCAL_SHARED_LIBRARIES := libcutils libhardware libutils libpixelflinger libETC1
 LOCAL_LDLIBS := -lpthread -ldl
