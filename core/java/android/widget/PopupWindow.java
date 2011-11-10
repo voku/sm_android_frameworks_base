@@ -1046,6 +1046,8 @@ public class PopupWindow {
      */
     public void dismiss() {
         if (isShowing() && mPopupView != null) {
+            mIsShowing = false;
+
             unregisterForScrollChanged();
 
             try {
@@ -1055,7 +1057,6 @@ public class PopupWindow {
                     ((ViewGroup) mPopupView).removeView(mContentView);
                 }
                 mPopupView = null;
-                mIsShowing = false;
     
                 if (mOnDismissListener != null) {
                     mOnDismissListener.onDismiss();
