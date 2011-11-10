@@ -964,7 +964,7 @@ public class ImageView extends View {
     }
 
     @Override
-    public void onAttachedToWindow() {
+    protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         if (mDrawable != null) {
             mDrawable.setVisible(getVisibility() == VISIBLE, false);
@@ -972,7 +972,7 @@ public class ImageView extends View {
     }
 
     @Override
-    public void onDetachedFromWindow() {
+    protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         if (mDrawable != null) {
             mDrawable.setVisible(false, false);
