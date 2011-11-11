@@ -954,6 +954,7 @@ public class ImageView extends View {
         }
     }
 
+    @RemotableViewMethod
     @Override
     public void setVisibility(int visibility) {
         super.setVisibility(visibility);
