@@ -486,7 +486,7 @@ sp<AudioSystem::AudioPolicyServiceClient> AudioSystem::gAudioPolicyServiceClient
 // establish binder interface to AudioFlinger service
 const sp<IAudioPolicyService>& AudioSystem::get_audio_policy_service()
 {
-    int timeout = 60; // 30 s
+    int timeout = 10; // 5 s
     gLock.lock();
     if (gAudioPolicyService.get() == 0) {
         sp<IServiceManager> sm = defaultServiceManager();
