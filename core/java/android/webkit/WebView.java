@@ -243,7 +243,7 @@ import junit.framework.Assert;
  *
  * <p>The screen density of a device is based on the screen resolution. A screen with low density
  * has fewer available pixels per inch, where a screen with high density
- * has more — sometimes significantly more — pixels per inch. The density of a
+ * has more - sometimes significantly more - pixels per inch. The density of a
  * screen is important because, other things being equal, a UI element (such as a button) whose
  * height and width are defined in terms of screen pixels will appear larger on the lower density
  * screen and smaller on the higher density screen.
@@ -1418,16 +1418,23 @@ public class WebView extends AbsoluteLayout
         final File temp = new File(dest.getPath() + ".writing");
         new Thread(new Runnable() {
             public void run() {
+                FileOutputStream out = null;
                 try {
-                    FileOutputStream out = new FileOutputStream(temp);
+                    out = new FileOutputStream(temp);
                     p.writeToStream(out);
-                    out.close();
                     // Writing the picture succeeded, rename the temporary file
                     // to the destination.
                     temp.renameTo(dest);
                 } catch (Exception e) {
                     // too late to do anything about it.
                 } finally {
+                    if (out != null) {
+                        try {
+                            out.close();
+                        } catch (Exception e) {
+                            // Can't do anything about that
+                        }
+                    }
                     temp.delete();
                 }
             }
@@ -1482,20 +1489,23 @@ public class WebView extends AbsoluteLayout
             final Bundle copy = new Bundle(b);
             new Thread(new Runnable() {
                 public void run() {
-                    final Picture p = Picture.createFromStream(in);
-                    if (p != null) {
-                        // Post a runnable on the main thread to update the
-                        // history picture fields.
-                        mPrivateHandler.post(new Runnable() {
-                            public void run() {
-                                restoreHistoryPictureFields(p, copy);
-                            }
-                        });
-                    }
                     try {
-                        in.close();
-                    } catch (Exception e) {
-                        // Nothing we can do now.
+                        final Picture p = Picture.createFromStream(in);
+                        if (p != null) {
+                            // Post a runnable on the main thread to update the
+                            // history picture fields.
+                            mPrivateHandler.post(new Runnable() {
+                                public void run() {
+                                    restoreHistoryPictureFields(p, copy);
+                                }
+                            });
+                        }
+                    } finally {
+                        try {
+                            in.close();
+                        } catch (Exception e) {
+                            // Nothing we can do now.
+                        }
                     }
                 }
             }).start();
@@ -3972,6 +3982,16 @@ public class WebView extends AbsoluteLayout
             } else if (!nativeCursorWantsKeyEvents() && !mSelectingText) {
                 setUpSelect();
             }
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_PAGE_UP) {
+            pageUp(false);
+            return true;
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_PAGE_DOWN) {
+            pageDown(false);
+            return true;
         }
 
         if (keyCode >= KeyEvent.KEYCODE_DPAD_UP

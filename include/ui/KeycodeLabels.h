@@ -116,31 +116,25 @@ static const KeycodeLabel KEYCODES[] = {
     { "MUTE", 91 },
     { "DUMP", 92 },
     { "HOLD", 93 },
-#if defined(VISION_KEYPAD)
     { "USER1", 92 },
     { "USER2", 93 },
     { "USER3", 94 },
     { "USER4", 95 },
     { "USER5", 96 },
-    { "FUNC_1", 97 },
-    { "FUNC_2", 98 },
-    { "FUNC_3", 99 },
-    { "FUNC_4", 100 },
-    { "FUNC_5", 101 },
-    { "FUNC_6", 102 },
-    { "FUNC_7", 103 },
-    { "FUNC_8", 104 },
-    { "QUECHAR", 105 },
-#elif defined(LATTE_KEYPAD)
-    { "FUNC_1", 92 },
-    { "FUNC_2", 93 },
-    { "FUNC_3", 94 },
-    { "FUNC_4", 95 },
-    { "FUNC_5", 96 },
-    { "FUNC_6", 97 },
-    { "FUNC_7", 98 },
-    { "FUNC_8", 99 },
-    { "QUECHAR", 100 },
+    { "PAGE_UP", 97 },
+    { "PAGE_DOWN", 98 },
+    { "PICTSYMBOLS", 99 },
+    { "SWITCH_CHARSET", 100 },
+#if defined(VISION_KEYPAD) || defined(LATTE_KEYPAD)
+    { "FUNC_1", 101 },
+    { "FUNC_2", 102 },
+    { "FUNC_3", 103 },
+    { "FUNC_4", 104 },
+    { "FUNC_5", 105 },
+    { "FUNC_6", 106 },
+    { "FUNC_7", 107 },
+    { "FUNC_8", 108 },
+    { "QUECHAR", 109 },
 #endif
 
     // NOTE: If you add a new keycode here you must also add it to:
@@ -247,7 +241,11 @@ typedef enum KeyCode {
     kKeyCodeForward = 90,
     kKeyCodeMute = 91,
     kKeyCodeDump = 92,
-    kKeyCodeHold = 93
+    kKeyCodeHold = 93,
+    kKeyCodePageUp = 97,
+    kKeyCodePageDown = 98,
+    kKeyCodePictSymbols = 99,
+    kKeyCodeSwitchCharset = 100
 } KeyCode;
 
 static const KeycodeLabel FLAGS[] = {

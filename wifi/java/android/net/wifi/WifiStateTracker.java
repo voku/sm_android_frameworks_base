@@ -313,6 +313,8 @@ public class WifiStateTracker extends NetworkStateTracker {
     private String mInterfaceName;
     private static String LS = System.getProperty("line.separator");
 
+    private Runnable mReleaseWakeLockCallback;
+
     /**
      * A structure for supplying information about a supplicant state
      * change in the STATE_CHANGE event message that comes from the
@@ -1918,6 +1920,17 @@ public class WifiStateTracker extends NetworkStateTracker {
     }
 
     /**
+     * Get power mode
+     * @return power mode
+     */
+    public synchronized int getPowerMode() {
+        if (mWifiState.get() != WIFI_STATE_ENABLED && !isDriverStopped()) {
+            return -1;
+        }
+        return WifiNative.getPowerModeCommand();
+    }
+
+    /**
      * Set power mode
      * @param mode
      *     DRIVER_POWER_MODE_AUTO
@@ -2242,6 +2255,8 @@ public class WifiStateTracker extends NetworkStateTracker {
                 case EVENT_DHCP_START:
 
                     boolean modifiedBluetoothCoexistenceMode = false;
+                    int powerMode = DRIVER_POWER_MODE_AUTO;
+
                     if (shouldDisableCoexistenceMode()) {
                         /*
                          * There are problems setting the Wi-Fi driver's power
@@ -2266,7 +2281,15 @@ public class WifiStateTracker extends NetworkStateTracker {
                                 WifiNative.BLUETOOTH_COEXISTENCE_MODE_DISABLED);
                     }
 
-                    setPowerMode(DRIVER_POWER_MODE_ACTIVE);
+                    powerMode = getPowerMode();
+                    if (powerMode < 0) {
+                      // Handle the case where supplicant driver does not support
+                      // getPowerModeCommand.
+                        powerMode = DRIVER_POWER_MODE_AUTO;
+                    }
+                    if (powerMode != DRIVER_POWER_MODE_ACTIVE) {
+                        setPowerMode(DRIVER_POWER_MODE_ACTIVE);
+                    }
 
                     synchronized (this) {
                         // A new request is being made, so assume we will callback
@@ -2282,7 +2305,9 @@ public class WifiStateTracker extends NetworkStateTracker {
                             NetworkUtils.getDhcpError());
                     }
 
-                    setPowerMode(DRIVER_POWER_MODE_AUTO);
+                    if (powerMode != DRIVER_POWER_MODE_ACTIVE) {
+                        setPowerMode(powerMode);
+                    }
 
                     if (modifiedBluetoothCoexistenceMode) {
                         // Set the coexistence mode back to its default value

@@ -161,6 +161,13 @@ public class PduParser {
                     // The MMS content type must be "application/vnd.wap.multipart.mixed"
                     // or "application/vnd.wap.multipart.related"
                     return retrieveConf;
+                } else if (ctTypeStr.equals(ContentType.MULTIPART_ALTERNATIVE)) {
+                    // "application/vnd.wap.multipart.alternative"
+                    // should take only the first part.
+                    PduPart firstPart = mBody.getPart(0);
+                    mBody.removeAll();
+                    mBody.addPart(0, firstPart);
+                    return retrieveConf;
                 }
                 return null;
             case PduHeaders.MESSAGE_TYPE_DELIVERY_IND:
@@ -200,7 +207,18 @@ public class PduParser {
         PduHeaders headers = new PduHeaders();
 
         while (keepParsing && (pduDataStream.available() > 0)) {
+            pduDataStream.mark(1);
             int headerField = extractByteValue(pduDataStream);
+            /* parse custom text header */
+            if ((headerField >= TEXT_MIN) && (headerField <= TEXT_MAX)) {
+                pduDataStream.reset();
+                byte [] bVal = parseWapString(pduDataStream, TYPE_TEXT_STRING);
+                if (LOCAL_LOGV) {
+                    Log.v(LOG_TAG, "TextHeader: " + new String(bVal));
+                }
+                /* we should ignore it at the moment */
+                continue;
+            }
             switch (headerField) {
                 case PduHeaders.MESSAGE_TYPE:
                 {
@@ -778,26 +796,34 @@ public class PduParser {
             /* get part's data */
             if (dataLength > 0) {
                 byte[] partData = new byte[dataLength];
+                String partContentType = new String(part.getContentType());
                 pduDataStream.read(partData, 0, dataLength);
-                // Check Content-Transfer-Encoding.
-                byte[] partDataEncoding = part.getContentTransferEncoding();
-                if (null != partDataEncoding) {
-                    String encoding = new String(partDataEncoding);
-                    if (encoding.equalsIgnoreCase(PduPart.P_BASE64)) {
-                        // Decode "base64" into "binary".
-                        partData = Base64.decodeBase64(partData);
-                    } else if (encoding.equalsIgnoreCase(PduPart.P_QUOTED_PRINTABLE)) {
-                        // Decode "quoted-printable" into "binary".
-                        partData = QuotedPrintable.decodeQuotedPrintable(partData);
-                    } else {
-                        // "binary" is the default encoding.
+                if (partContentType.equalsIgnoreCase(ContentType.MULTIPART_ALTERNATIVE)) {
+                    // parse "multipart/vnd.wap.multipart.alternative".
+                    PduBody childBody = parseParts(new ByteArrayInputStream(partData));
+                    // take the first part of children.
+                    part = childBody.getPart(0);
+                } else {
+                    // Check Content-Transfer-Encoding.
+                    byte[] partDataEncoding = part.getContentTransferEncoding();
+                    if (null != partDataEncoding) {
+                        String encoding = new String(partDataEncoding);
+                        if (encoding.equalsIgnoreCase(PduPart.P_BASE64)) {
+                            // Decode "base64" into "binary".
+                            partData = Base64.decodeBase64(partData);
+                        } else if (encoding.equalsIgnoreCase(PduPart.P_QUOTED_PRINTABLE)) {
+                            // Decode "quoted-printable" into "binary".
+                            partData = QuotedPrintable.decodeQuotedPrintable(partData);
+                        } else {
+                            // "binary" is the default encoding.
+                        }
                     }
+                    if (null == partData) {
+                        log("Decode part data error!");
+                        return null;
+                    }
+                    part.setData(partData);
                 }
-                if (null == partData) {
-                    log("Decode part data error!");
-                    return null;
-                }
-                part.setData(partData);
             }
 
             /* add this part to body */

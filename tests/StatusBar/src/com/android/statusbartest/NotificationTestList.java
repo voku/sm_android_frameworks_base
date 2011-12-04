@@ -21,6 +21,7 @@ import android.app.PendingIntent;
 import android.widget.ArrayAdapter;
 import android.view.View;
 import android.widget.ListView;
+import android.content.Context;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.app.Notification;
@@ -60,7 +61,7 @@ public class NotificationTestList extends TestActivity
     private Test[] mTests = new Test[] {
         new Test("Off and sound") {
             public void run() {
-                PowerManager pm = (PowerManager)NotificationTestList.this.getSystemService("power");
+                PowerManager pm = (PowerManager)NotificationTestList.this.getSystemService(Context.POWER_SERVICE);
                 PowerManager.WakeLock wl = 
                             pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "sound");
                 wl.acquire();
@@ -205,6 +206,8 @@ public class NotificationTestList extends TestActivity
                 Notification n = new Notification();
                 n.flags |= Notification.FLAG_SHOW_LIGHTS;
                 n.ledARGB = 0xff0000ff;
+                n.ledOnMS = 1;
+                n.ledOffMS = 0;
                 mNM.notify(1, n);
             }
         },
@@ -215,6 +218,8 @@ public class NotificationTestList extends TestActivity
                 Notification n = new Notification();
                 n.flags |= Notification.FLAG_SHOW_LIGHTS;
                 n.ledARGB = 0xffff0000;
+                n.ledOnMS = 1;
+                n.ledOffMS = 0;
                 mNM.notify(1, n);
             }
         },
@@ -225,6 +230,20 @@ public class NotificationTestList extends TestActivity
                 Notification n = new Notification();
                 n.flags |= Notification.FLAG_SHOW_LIGHTS;
                 n.ledARGB = 0xffffff00;
+                n.ledOnMS = 1;
+                n.ledOffMS = 0;
+                mNM.notify(1, n);
+            }
+        },
+
+        new Test("Lights off") {
+            public void run()
+            {
+                Notification n = new Notification();
+                n.flags |= Notification.FLAG_SHOW_LIGHTS;
+                n.ledARGB = 0x00000000;
+                n.ledOnMS = 0;
+                n.ledOffMS = 0;
                 mNM.notify(1, n);
             }
         },
@@ -234,7 +253,7 @@ public class NotificationTestList extends TestActivity
             {
                 Notification n = new Notification();
                 n.flags |= Notification.FLAG_SHOW_LIGHTS;
-                n.ledARGB = 0xffffff00;
+                n.ledARGB = 0xff0000ff;
                 n.ledOnMS = 1300;
                 n.ledOffMS = 1300;
                 mNM.notify(1, n);
@@ -246,7 +265,7 @@ public class NotificationTestList extends TestActivity
             {
                 Notification n = new Notification();
                 n.flags |= Notification.FLAG_SHOW_LIGHTS;
-                n.ledARGB = 0xffffff00;
+                n.ledARGB = 0xff0000ff;
                 n.ledOnMS = 300;
                 n.ledOffMS = 300;
                 mNM.notify(1, n);
@@ -581,7 +600,7 @@ public class NotificationTestList extends TestActivity
             public void run()
             {
                 PowerManager.WakeLock wl
-                        = ((PowerManager)NotificationTestList.this.getSystemService("power"))
+                        = ((PowerManager)NotificationTestList.this.getSystemService(Context.POWER_SERVICE))
                             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "crasher");
                 wl.acquire();
                 mHandler.postDelayed(new Runnable() {

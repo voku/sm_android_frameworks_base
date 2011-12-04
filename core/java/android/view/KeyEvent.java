@@ -127,6 +127,10 @@ public class KeyEvent implements Parcelable {
     public static final int KEYCODE_USER3           = 94;
     public static final int KEYCODE_USER4           = 95;
     public static final int KEYCODE_USER5           = 96;
+    public static final int KEYCODE_PAGE_UP         = 97;
+    public static final int KEYCODE_PAGE_DOWN       = 98;
+    public static final int KEYCODE_PICTSYMBOLS     = 99;   // switch symbol-sets (Emoji,Kao-moji)
+    public static final int KEYCODE_SWITCH_CHARSET  = 100;   // switch char-sets (Kanji,Katakana)
 
     // NOTE: If you add a new keycode here you must also add it to:
     //  isSystem()
@@ -142,7 +146,7 @@ public class KeyEvent implements Parcelable {
     //  those new codes.  This is intended to maintain a consistent
     //  set of key code definitions across all Android devices.
 
-    private static final int LAST_KEYCODE           = KEYCODE_USER5;
+    private static final int LAST_KEYCODE           = KEYCODE_SWITCH_CHARSET;
 
     /**
      * @deprecated There are now more than MAX_KEYCODE keycodes.
@@ -701,6 +705,8 @@ public class KeyEvent implements Parcelable {
         case KEYCODE_CAMERA:
         case KEYCODE_FOCUS:
         case KEYCODE_SEARCH:
+        case KEYCODE_PICTSYMBOLS:
+        case KEYCODE_SWITCH_CHARSET:
             return true;
         default:
             return false;

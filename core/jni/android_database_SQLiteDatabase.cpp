@@ -175,7 +175,7 @@ static void dbopen(JNIEnv* env, jobject object, jstring pathString, jint flags)
         else {
             // Set autocheckpoint = 100 pages
             err = sqlite3_wal_autocheckpoint(handle,
-                                             100);
+                                             200);
             if (SQLITE_OK != err) {
                LOGE("sqlite3_exec to set WAL autocheckpoint failed\n");
                throw_sqlite3_exception(env, handle);

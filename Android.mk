@@ -295,7 +295,7 @@ fwbase_dirs_to_document := \
 # as "final" in the official SDK APIs.
 fwbase_dirs_to_document += core/config/sdk
 
-# These are relative to dalvik/libcore
+# These are relative to libcore
 # Intentionally not included from libcore:
 #     icu openssl suncompat support
 libcore_to_document := \

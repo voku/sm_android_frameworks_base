@@ -56,7 +56,7 @@ import java.util.ArrayList;
      *  the current default SMSC
      * @param text the body of the message to send
      * @param sentIntent if not NULL this <code>PendingIntent</code> is
-     *  broadcast when the message is sucessfully sent, or failed.
+     *  broadcast when the message is successfully sent, or failed.
      *  The result code will be <code>Activity.RESULT_OK<code> for success,
      *  or one of these errors:
      *  <code>RESULT_ERROR_GENERIC_FAILURE</code>
@@ -141,7 +141,7 @@ import java.util.ArrayList;
      * @param destinationPort the port to deliver the message to
      * @param data the body of the message to send
      * @param sentIntent if not NULL this <code>PendingIntent</code> is
-     *  broadcast when the message is sucessfully sent, or failed.
+     *  broadcast when the message is successfully sent, or failed.
      *  The result code will be <code>Activity.RESULT_OK<code> for success,
      *  or one of these errors:
      *  <code>RESULT_ERROR_GENERIC_FAILURE</code>
