@@ -173,9 +173,9 @@ static void dbopen(JNIEnv* env, jobject object, jstring pathString, jint flags)
            }
         }
         else {
-            // Set autocheckpoint = 100 pages
+            // Set autocheckpoint = 150 pages
             err = sqlite3_wal_autocheckpoint(handle,
-                                             200);
+                                             150);
             if (SQLITE_OK != err) {
                LOGE("sqlite3_exec to set WAL autocheckpoint failed\n");
                throw_sqlite3_exception(env, handle);
@@ -194,9 +194,9 @@ static void dbopen(JNIEnv* env, jobject object, jstring pathString, jint flags)
     sqlite3_soft_heap_limit(SQLITE_SOFT_HEAP_LIMIT);
 
     // Set the default busy handler to retry for 1000ms and then return SQLITE_BUSY
-    err = sqlite3_busy_timeout(handle, 1000 /* ms */);
+    err = sqlite3_busy_timeout(handle, 500 /* ms */);
     if (err != SQLITE_OK) {
-        LOGE("sqlite3_busy_timeout(handle, 1000) failed for \"%s\"\n", path8);
+        LOGE("sqlite3_busy_timeout(handle, 500) failed for \"%s\"\n", path8);
         throw_sqlite3_exception(env, handle);
         goto done;
     }
