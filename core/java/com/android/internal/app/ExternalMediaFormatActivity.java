@@ -23,10 +23,13 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.storage.IMountService;
+import android.os.Message;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.Environment;
+import android.widget.Toast;
 import android.util.Log;
 
 /**
@@ -35,7 +38,7 @@ import android.util.Log;
  */
 public class ExternalMediaFormatActivity extends AlertActivity implements DialogInterface.OnClickListener {
 
-    private static final int POSITIVE_BUTTON = AlertDialog.BUTTON_POSITIVE;
+    private static final int POSITIVE_BUTTON = AlertDialog.BUTTON1;
 
     /** Used to detect when the media state changes, in case we need to call finish() */
     private BroadcastReceiver mStorageReceiver = new BroadcastReceiver() {
