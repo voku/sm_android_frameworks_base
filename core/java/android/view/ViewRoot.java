@@ -165,6 +165,7 @@ public final class ViewRoot extends Handler implements ViewParent, ViewOpacityMa
     private final Surface mSurface = new Surface();
 
     boolean mAdded;
+    private boolean mAttached;
     boolean mAddedTouchMode;
 
     /*package*/ int mAddNesting;
@@ -724,7 +725,10 @@ public final class ViewRoot extends Handler implements ViewParent, ViewOpacityMa
             attachInfo.mKeepScreenOn = false;
             viewVisibilityChanged = false;
             mLastConfiguration.setTo(host.getResources().getConfiguration());
-            host.dispatchAttachedToWindow(attachInfo, 0);
+            if (!mAttached) {
+                host.dispatchAttachedToWindow(attachInfo, 0);
+                mAttached = true;
+            }
             //Log.i(TAG, "Screen on initialized: " + attachInfo.mKeepScreenOn);
 
         } else {
@@ -1653,8 +1657,9 @@ public final class ViewRoot extends Handler implements ViewParent, ViewOpacityMa
     void dispatchDetachedFromWindow() {
         if (Config.LOGV) Log.v("ViewRoot", "Detaching in " + this + " of " + mSurface);
 
-        if (mView != null) {
+        if (mView != null && mAttached) {
             mView.dispatchDetachedFromWindow();
+            mAttached = false;
         }
 
         mView = null;
