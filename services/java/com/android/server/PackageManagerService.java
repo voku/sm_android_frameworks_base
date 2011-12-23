@@ -717,7 +717,7 @@ class PackageManagerService extends IPackageManager.Stub {
 
         mContext = context;
         mFactoryTest = factoryTest;
-        mNoDexOpt = false;
+        mNoDexOpt = "eng".equals(SystemProperties.get("ro.build.type")); // need testing -> false ?!
         mMetrics = new DisplayMetrics();
         mSettings = new Settings();
         mSettings.addSharedUserLP("android.uid.system",
@@ -2365,7 +2365,8 @@ class PackageManagerService extends IPackageManager.Stub {
                         && (p.applicationInfo.flags&ApplicationInfo.FLAG_PERSISTENT) != 0
                         && (!mSafeMode || (p.applicationInfo.flags
                                 &ApplicationInfo.FLAG_SYSTEM) != 0)) {
-                    finalList.add(PackageParser.generateApplicationInfo(p, flags));
+                    finalList.add(p.applicationInfo); // need testing
+                    // finalList.add(PackageParser.generateApplicationInfo(p, flags));
                 }
             }
         }
@@ -3114,7 +3115,7 @@ class PackageManagerService extends IPackageManager.Stub {
         
         long scanFileTime = scanFile.lastModified();
         final boolean forceDex = (scanMode & SCAN_FORCE_DEX) != 0;
-        final boolean scanFileNewer = forceDex || (scanFileTime >= pkgSetting.getTimeStamp());
+        final boolean scanFileNewer = forceDex || scanFileTime != pkgSetting.getTimeStamp();
         pkg.applicationInfo.processName = fixProcessName(
                 pkg.applicationInfo.packageName,
                 pkg.applicationInfo.processName,
@@ -3527,7 +3528,7 @@ class PackageManagerService extends IPackageManager.Stub {
                 }
             }
 
-            pkgSetting.setTimeStamp(scanFileTime + 1);
+            pkgSetting.setTimeStamp(scanFileTime);
         }
 
         return pkg;
@@ -5826,12 +5827,8 @@ class PackageManagerService extends IPackageManager.Stub {
         if ((newPackage.applicationInfo.flags&ApplicationInfo.FLAG_HAS_CODE) != 0) {
             retCode = mInstaller.movedex(newPackage.mScanPath, newPackage.mPath);
             if (retCode != 0) {
-                // if move dex fails, e.g. moving to /sd-ext, generate dex
-                retCode = mInstaller.dexopt(newPackage.mPath, newPackage.applicationInfo.uid, !isForwardLocked(newPackage));
-                if (retCode != 0) {
-                    Slog.e(TAG, "Couldn't rename dex file: " + newPackage.mPath);
-                    return PackageManager.INSTALL_FAILED_INSUFFICIENT_STORAGE;
-                }
+                Slog.e(TAG, "Couldn't rename dex file: " + newPackage.mPath);
+                return PackageManager.INSTALL_FAILED_INSUFFICIENT_STORAGE;
             }
         }
         return PackageManager.INSTALL_SUCCEEDED;
@@ -6958,7 +6955,7 @@ class PackageManagerService extends IPackageManager.Stub {
         // Read the compatibilty setting when the system is ready.
         boolean compatibilityModeEnabled = android.provider.Settings.System.getInt(
                 mContext.getContentResolver(),
-                android.provider.Settings.System.COMPATIBILITY_MODE, 0) == 1;
+                android.provider.Settings.System.COMPATIBILITY_MODE, 1) == 1;
         PackageParser.setCompatibilityModeEnabled(compatibilityModeEnabled);
         if (DEBUG_SETTINGS) {
             Log.d(TAG, "compatibility mode:" + compatibilityModeEnabled);

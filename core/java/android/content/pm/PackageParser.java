@@ -96,7 +96,7 @@ public class PackageParser {
     private static final Object mSync = new Object();
     private static WeakReference<byte[]> mReadBuffer;
 
-    private static boolean sCompatibilityModeEnabled = false;
+    private static boolean sCompatibilityModeEnabled = true;
     private static final int PARSE_DEFAULT_INSTALL_LOCATION = PackageInfo.INSTALL_LOCATION_UNSPECIFIED;
 
     static class ParsePackageItemArgs {
