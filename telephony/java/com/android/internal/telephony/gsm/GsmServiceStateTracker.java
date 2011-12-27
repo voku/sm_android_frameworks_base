@@ -78,6 +78,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
 
     private int gprsState = ServiceState.STATE_OUT_OF_SERVICE;
     private int newGPRSState = ServiceState.STATE_OUT_OF_SERVICE;
+    private int newGsmState = ServiceState.STATE_OUT_OF_SERVICE;
 
     /**
      *  Values correspond to ServiceStateTracker.DATA_ACCESS_ definitions.
@@ -667,7 +668,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                     }
 
                     mGsmRoaming = regCodeIsRoaming(regState);
-                    newSS.setState (regCodeToServiceState(regState));
+                    newGsmState = regCodeToServiceState(regState) ;
 
                     if (regState == 10 || regState == 12 || regState == 13 || regState == 14) {
                         mEmergencyOnly = true;
@@ -739,6 +740,20 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                 roaming = false;
             }
             newSS.setRoaming(roaming);
+
+            /**
+             *  Since the service states of gsm service and
+             *  data service could be different, the new SS
+             *  is set to in service while either one is in service.
+             */
+            if ((newGsmState != ServiceState.STATE_IN_SERVICE) &&
+                    (newGPRSState == ServiceState.STATE_IN_SERVICE )) {
+                Log.d(LOG_TAG, "DATA ONLY NETWORK ");
+                newSS.setState (ServiceState.STATE_IN_SERVICE);
+            } else {
+                newSS.setState (newGsmState);
+            }
+
             newSS.setEmergencyOnly(mEmergencyOnly);
             pollStateDone();
         }

@@ -1002,7 +1002,7 @@ public interface Phone {
      *
      * @param commandInterfaceCLIRMode is one of the valid call CLIR
      *        modes, as defined in
-     *        <code>com.android.internal.telephony.CommandsInterface</code>
+     *        <code>com.android.internal.telephony.CommandsInterface./code>
      * @param onComplete a callback message when the action is completed.
      */
     void setOutgoingCallerIdDisplay(int commandInterfaceCLIRMode,
@@ -1022,7 +1022,7 @@ public interface Phone {
      * setCallWaiting
      * sets a call forwarding option.
      *
-     * @param ttyMode is a boolean representing the state that you are
+     * @param enable is a boolean representing the state that you are
      *        requesting, true for enabled, false for disabled.
      * @param onComplete a callback message when the action is completed.
      */
@@ -1457,7 +1457,7 @@ public interface Phone {
      * setTTYMode
      * sets a TTY mode option.
      *
-     * @param enable is a boolean representing the state that you are
+     * @param ttyMode is a boolean representing the state that you are
      *        requesting, true for enabled, false for disabled.
      * @param onComplete a callback message when the action is completed
      */
