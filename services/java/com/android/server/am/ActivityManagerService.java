@@ -329,7 +329,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     // been idle for less than 120 seconds.
     static final long EMPTY_APP_IDLE_OFFSET = 120*1000;
 	
-	static final String GMAPS_NLS = 
+    static final String GMAPS_NLS = 
             "com.google.android.apps.maps/com.google.android.location.internal.server.NetworkLocationService";
     
     static {

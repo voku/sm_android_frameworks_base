@@ -30,6 +30,7 @@ import android.os.ServiceManager;
 import android.widget.Toast;
 import android.util.Log;
 import android.location.LocationManager;
+import com.android.internal.location.GpsLocationProvider;
 import com.android.internal.location.GpsNetInitiatedHandler;
 
 /**

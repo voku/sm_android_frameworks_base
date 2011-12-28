@@ -270,7 +270,7 @@ public class SQLiteDatabase extends SQLiteClosable {
     /**
      * @hide
      */
-    public static final int MAX_SQL_CACHE_SIZE = 500;
+    public static final int MAX_SQL_CACHE_SIZE = 250;
     private int mMaxSqlCacheSize = MAX_SQL_CACHE_SIZE; // max cache size per Database instance
     private int mCacheFullWarnings;
     private static final int MAX_WARNINGS_ON_CACHESIZE_CONDITION = 1;

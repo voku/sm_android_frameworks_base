@@ -1461,7 +1461,7 @@ class PowerManagerService extends IPowerManager.Stub
 		    AttributeCache ac = AttributeCache.instance();
                     if (ac != null) {
                         ac.clearCache();
-                        Slog.w(TAG, "AttributeCache cleared");
+                        //Slog.w(TAG, "AttributeCache cleared");
                     }
                 }
             }
