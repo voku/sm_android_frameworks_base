@@ -355,7 +355,7 @@ class PowerManagerService extends IPowerManager.Stub
                     // temporarily set mUserActivityAllowed to true so this will work
                     // even when the keyguard is on.
                     synchronized (mLocks) {
-                        if (!SystemProperties.get("ro.config.no_action_on_plug").equals("1") && (!wasPowered || (mPowerState & SCREEN_ON_BIT) != 0)) {
+                        if ("0".equals(SystemProperties.get("persist.sys.no_action_on_plug", "0")) && (!wasPowered || (mPowerState & SCREEN_ON_BIT) != 0)) {
                             forceUserActivityLocked();
                         }
                     }

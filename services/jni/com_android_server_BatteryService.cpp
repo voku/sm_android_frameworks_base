@@ -18,6 +18,7 @@
 
 #include "JNIHelp.h"
 #include "jni.h"
+#include <cutils/properties.h>
 #include <utils/Log.h>
 #include <utils/misc.h>
 
@@ -178,6 +179,10 @@ static void setIntField(JNIEnv* env, jobject obj, const char* path, jfieldID fie
     if (readFromFile(path, buf, SIZE) > 0) {
         value = atoi(buf);
     }
+
+    /* when using charge_counter, the reported value can get over 100% when connected to usb, let's limit it here */
+    if (fieldID == gFieldIds.mBatteryLevel && value > 100) value = 100;
+
     env->SetIntField(obj, fieldID, value);
 }
 
@@ -228,7 +233,11 @@ static JNINativeMethod sMethods[] = {
 
 int register_android_server_BatteryService(JNIEnv* env)
 {
-    char    path[PATH_MAX];
+    char value[PROPERTY_VALUE_MAX];
+    property_get("persist.sys.one_percent_batt", value, "0");
+    bool mOnePercentBatt = atoi(value) == 1;
+
+    char path[PATH_MAX];
     struct dirent* entry;
 
     DIR* dir = opendir(POWER_SUPPLY_PATH);
@@ -247,6 +256,7 @@ int register_android_server_BatteryService(JNIEnv* env)
         char buf[20];
         // Look for "type" file in each subdirectory
         snprintf(path, sizeof(path), "%s/%s/type", POWER_SUPPLY_PATH, name);
+
         int length = readFromFile(path, buf, sizeof(buf));
         if (length > 0) {
             if (buf[length - 1] == '\n')
@@ -254,49 +264,65 @@ int register_android_server_BatteryService(JNIEnv* env)
 
             if (strcmp(buf, "Mains") == 0) {
                 snprintf(path, sizeof(path), "%s/%s/online", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.acOnlinePath = strdup(path);
             }
             else if (strcmp(buf, "USB") == 0) {
                 snprintf(path, sizeof(path), "%s/%s/online", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.usbOnlinePath = strdup(path);
             }
             else if (strcmp(buf, "Battery") == 0) {
                 snprintf(path, sizeof(path), "%s/%s/status", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.batteryStatusPath = strdup(path);
+
                 snprintf(path, sizeof(path), "%s/%s/health", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.batteryHealthPath = strdup(path);
+
                 snprintf(path, sizeof(path), "%s/%s/present", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.batteryPresentPath = strdup(path);
-                snprintf(path, sizeof(path), "%s/%s/capacity", POWER_SUPPLY_PATH, name);
+
+                if (mOnePercentBatt)
+                    snprintf(path, sizeof(path), "%s/%s/charge_counter", POWER_SUPPLY_PATH, name);
+                else snprintf(path, sizeof(path), "%s/%s/capacity", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.batteryCapacityPath = strdup(path);
 
                 snprintf(path, sizeof(path), "%s/%s/voltage_now", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0) {
                     gPaths.batteryVoltagePath = strdup(path);
                     // voltage_now is in microvolts, not millivolts
                     gVoltageDivisor = 1000;
                 } else {
                     snprintf(path, sizeof(path), "%s/%s/batt_vol", POWER_SUPPLY_PATH, name);
+
                     if (access(path, R_OK) == 0)
                         gPaths.batteryVoltagePath = strdup(path);
                 }
 
                 snprintf(path, sizeof(path), "%s/%s/temp", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0) {
                     gPaths.batteryTemperaturePath = strdup(path);
                 } else {
                     snprintf(path, sizeof(path), "%s/%s/batt_temp", POWER_SUPPLY_PATH, name);
+
                     if (access(path, R_OK) == 0)
                         gPaths.batteryTemperaturePath = strdup(path);
                 }
 
                 snprintf(path, sizeof(path), "%s/%s/technology", POWER_SUPPLY_PATH, name);
+
                 if (access(path, R_OK) == 0)
                     gPaths.batteryTechnologyPath = strdup(path);
             }

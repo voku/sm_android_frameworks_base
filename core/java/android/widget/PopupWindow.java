@@ -564,6 +564,31 @@ public class PopupWindow {
     }
 
     /**
+     * <p>Indicates whether the popup window supports splitting touches.</p>
+     * @return true if the touch splitting is enabled, false otherwise
+     * 
+     * @see #setSplitTouchEnabled(boolean)
+     * @hide
+     */
+
+    /**
+     * <p>Allows the popup window to split touches across other windows that also
+     * support split touch.  When this flag is not set, the first pointer
+     * that goes down determines the window to which all subsequent touches
+     * go until all pointers go up.  When this flag is set, each pointer
+     * (not necessarily the first) that goes down determines the window
+     * to which all subsequent touches of that pointer will go until that
+     * pointer goes up thereby enabling touches with multiple pointers
+     * to be split across multiple windows.</p>
+     *
+     * @param enabled true if the split touches should be enabled, false otherwise
+     * @see #isSplitTouchEnabled()
+     * @hide
+     */
+    public void setSplitTouchEnabled(boolean enabled) {
+    }
+
+    /**
      * <p>Change the width and height measure specs that are given to the
      * window manager by the popup.  By default these are 0, meaning that
      * the current width or height is requested as an explicit size from
