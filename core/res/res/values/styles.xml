@@ -185,9 +185,6 @@
         <item name="windowExitAnimation">@anim/fade_out</item>
     </style>
 
-    <!-- A special animation value used internally for popup windows. -->
-    <style name="Animation.PopupWindow" />
-
     <!-- Status Bar Styles -->
     <style name="TextAppearance.StatusBar">
         <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
@@ -384,9 +381,6 @@
 
     <style name="Widget.TextView">
         <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
-        <item name="android:textSelectHandleLeft">?android:attr/textSelectHandleLeft</item>
-        <item name="android:textSelectHandleRight">?android:attr/textSelectHandleRight</item>
-        <item name="android:textSelectHandle">?android:attr/textSelectHandle</item>
     </style>
     
     <style name="Widget.TextView.ListSeparator">
@@ -549,7 +543,6 @@
     
     <style name="Widget.PopupWindow">
         <item name="android:popupBackground">@android:drawable/editbox_dropdown_background_dark</item>
-        <item name="android:popupAnimationStyle">@android:style/Animation.PopupWindow</item>
     </style>
 
     <style name="Widget.KeyboardView" parent="android:Widget">
@@ -859,16 +852,5 @@
         <item name="android:paddingRight">4dip</item>
         <item name="android:paddingBottom">1dip</item>
         <item name="android:background">@android:drawable/bottom_bar</item>
-    </style>
-
-    <!-- Style for the small popup windows that contain text selection anchors. -->
-    <style name="Widget.TextSelectHandle">
-        <item name="android:popupAnimationStyle">@android:style/Animation.TextSelectHandle</item>
-    </style>
-
-    <!-- Style for animating text selection handles. -->
-    <style name="Animation.TextSelectHandle">
-        <item name="windowEnterAnimation">@android:anim/fade_in</item>
-        <item name="windowExitAnimation">@android:anim/fade_out</item>
     </style>
 </resources>

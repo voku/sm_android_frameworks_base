@@ -57,7 +57,6 @@
   <item type="id" name="selectAll" />
   <item type="id" name="cut" />
   <item type="id" name="copy" />
-  <item type="id" name="copyAll" />
   <item type="id" name="paste" />
   <item type="id" name="copyUrl" />
   <item type="id" name="switchInputMethod" />
