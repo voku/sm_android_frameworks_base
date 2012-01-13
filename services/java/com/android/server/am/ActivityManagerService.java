@@ -329,10 +329,13 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     // been idle for less than 120 seconds.
     static final long EMPTY_APP_IDLE_OFFSET = 120*1000;
 
-    // Apps to be kept running, defined by sys.keep_app_1 & _2 properties
+    // Apps to be kept running, defined by sys.keep_app_1 & _2 ... properties
     // e.g.: echo "sys.keep_app_1=com.whatsapp" >> /system/build.prop;
     static final String KEEP_APP_1;
     static final String KEEP_APP_2;
+    static final String KEEP_APP_3;
+    static final String KEEP_APP_4;
+
 
     // Gmaps bg service ident
     static final boolean GMAPS_HACK;
@@ -372,6 +375,8 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
 
         KEEP_APP_1 = SystemProperties.get("sys.keep_app_1", "0");
         KEEP_APP_2 = SystemProperties.get("sys.keep_app_2", "0");
+        KEEP_APP_3 = SystemProperties.get("sys.keep_app_3", "0");
+        KEEP_APP_4 = SystemProperties.get("sys.keep_app_4", "0");
 
         GMAPS_HACK = Integer.valueOf(SystemProperties.get("persist.sys.gmaps_hack")) == 1;
     }
@@ -13903,7 +13908,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             adj = FOREGROUND_APP_ADJ;
             schedGroup = Process.THREAD_GROUP_DEFAULT;
             app.adjType = "contacts";
-        } else if (KEEP_APP_1.equals(app.processName) || KEEP_APP_2.equals(app.processName)) {
+        } else if (KEEP_APP_1.equals(app.processName) || KEEP_APP_2.equals(app.processName) || KEEP_APP_3.equals(app.processName) || KEEP_APP_4.equals(app.processName)){
             // Custom apps to be kept running
             adj = FOREGROUND_APP_ADJ;
             schedGroup = Process.THREAD_GROUP_DEFAULT;

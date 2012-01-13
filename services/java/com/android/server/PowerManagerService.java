@@ -1641,8 +1641,12 @@ class PowerManagerService extends IPowerManager.Stub
 
     private void updateLightsLocked(int newState, int forceState) {
         final int oldState = mPowerState;
-        newState = applyButtonState(newState);
-        newState = applyKeyboardState(newState);
+        if ((newState & SCREEN_ON_BIT) != 0) {
+            // Only turn on the buttons or keyboard if the screen is also on.
+            // We should never see the buttons on but not the screen.
+            newState = applyButtonState(newState);
+            newState = applyKeyboardState(newState);
+        }
         final int realDifference = (newState ^ oldState);
         final int difference = realDifference | forceState;
         if (difference == 0) {
@@ -2205,6 +2209,14 @@ class PowerManagerService extends IPowerManager.Stub
     private void lightSensorChangedLocked(int value) {
         if (mDebugLightSensor) {
             Slog.d(TAG, "lightSensorChangedLocked " + value);
+        }
+
+        // Don't do anything if the screen is off.
+        if ((mPowerState & SCREEN_ON_BIT) == 0) {
+            if (mDebugLightSensor) {
+                Slog.d(TAG, "dropping lightSensorChangedLocked because screen is off");
+            }
+            return;
         }
 
         // do not allow light sensor value to decrease
