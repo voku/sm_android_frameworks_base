@@ -128,7 +128,9 @@ static bool settingsAllowed() {
 // ----------------------------------------------------------------------------
 AudioFlinger::AudioFlinger()
     : BnAudioFlinger(),
-#ifdef HAVE_FM_RADIO
+#ifdef OMAP_ENHANCEMENT
+        mAudioHardware(0), mFmEnabled(false), mMasterVolume(1.0f), mMasterMute(false), mNextUniqueId(1)
+#elif defined(HAVE_FM_RADIO)
         mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextUniqueId(1),  mFmOn(false)
 #else
         mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextUniqueId(1)
@@ -137,6 +139,11 @@ AudioFlinger::AudioFlinger()
     mHardwareStatus = AUDIO_HW_IDLE;
 
     mAudioHardware = AudioHardwareInterface::create();
+
+#ifdef WITH_STATIC_A2DP
+    mAudioHardware = new A2dpAudioInterface(mAudioHardware);
+#endif
+
 
     mHardwareStatus = AUDIO_HW_INIT;
     if (mAudioHardware->initCheck() == NO_ERROR) {
@@ -470,6 +477,13 @@ status_t AudioFlinger::setMode(int mode)
         return BAD_VALUE;
     }
 
+#ifdef HAS_LGE_STAR_FM_RADIO
+    if (mode == AudioSystem::MODE_FM) {
+        mFmOn = true;
+    } else if (mFmOn) {
+        mFmOn = false;
+    }
+#endif
     { // scope for the lock
         AutoMutex lock(mHardwareLock);
         mHardwareStatus = AUDIO_HW_SET_MODE;
@@ -622,6 +636,11 @@ bool AudioFlinger::streamMute(int stream) const
 bool AudioFlinger::isStreamActive(int stream) const
 {
     Mutex::Autolock _l(mLock);
+#ifdef OMAP_ENHANCEMENT
+      if ((mFmEnabled ) &&  (stream == AudioSystem::MUSIC)) {
+         return true;
+     }
+#endif
     for (uint32_t i = 0; i < mPlaybackThreads.size(); i++) {
         if (mPlaybackThreads.valueAt(i)->isStreamActive(stream)) {
             return true;
@@ -668,7 +687,7 @@ status_t AudioFlinger::setParameters(int ioHandle, const String8& keyValuePairs)
         }
     }
 #endif
-#ifdef HAVE_FM_RADIO
+#if defined(HAVE_FM_RADIO) && !defined(HAS_LGE_STAR_FM_RADIO)
     AudioParameter param = AudioParameter(keyValuePairs);
     String8 key = String8(AudioParameter::keyRouting);
     int device;
@@ -703,7 +722,20 @@ status_t AudioFlinger::setParameters(int ioHandle, const String8& keyValuePairs)
         }
 #endif
         mHardwareStatus = AUDIO_HW_IDLE;
+#ifdef MOTO_DOCK_HACK
+        AudioParameter param = AudioParameter(keyValuePairs);
+        String8 key = String8("DockState");
+        int device;
+        if (NO_ERROR != param.getInt(key, device)) {
+            LOGD("setParameters(): DockState not present");
+        } else {
+            /* We also need to pass routing=int */
+            ioHandle = 1;
+            LOGD("setParameters(): DockState %d trick done!", device);
+        }
+#else
         return result;
+#endif
     }
 
     // hold a strong ref on thread in case closeOutput() or closeInput() is called
@@ -1083,12 +1115,19 @@ status_t AudioFlinger::ThreadBase::dumpBase(int fd, const Vector<String16>& args
 
 
 // ----------------------------------------------------------------------------
-
+#ifdef OMAP_ENHANCEMENT
+AudioFlinger::PlaybackThread::PlaybackThread(const sp<AudioFlinger>& audioFlinger, AudioStreamOut* output, int id, uint32_t device)
+    :   ThreadBase(audioFlinger, id),
+        mMixBuffer(0), mSuspended(0), mBytesWritten(0), mFmInplay(false), mOutput(output),
+        mLastWriteTime(0), mNumWrites(0), mNumDelayedWrites(0), mInWrite(false),
+	mDevice(device)
+#else
 AudioFlinger::PlaybackThread::PlaybackThread(const sp<AudioFlinger>& audioFlinger, AudioStreamOut* output, int id, uint32_t device)
     :   ThreadBase(audioFlinger, id),
         mMixBuffer(0), mSuspended(0), mBytesWritten(0), mOutput(output),
         mLastWriteTime(0), mNumWrites(0), mNumDelayedWrites(0), mInWrite(false),
         mDevice(device)
+#endif
 {
     readOutputParameters();
 
@@ -1499,6 +1538,15 @@ status_t AudioFlinger::PlaybackThread::getRenderPosition(uint32_t *halFrames, ui
     return mOutput->getRenderPosition(dspFrames);
 }
 
+#ifdef OMAP_ENHANCEMENT
+status_t AudioFlinger::PlaybackThread::setFMRxActive(bool state)
+{
+    LOGV("AudioFlinger::PlaybackThread::setFMRxActive(");
+    mFmInplay = state;
+    return NO_ERROR;
+}
+#endif
+
 uint32_t AudioFlinger::PlaybackThread::hasAudioSession(int sessionId)
 {
     Mutex::Autolock _l(mLock);
@@ -1624,7 +1672,11 @@ bool AudioFlinger::MixerThread::threadLoop()
             // put audio hardware into standby after short delay
             if UNLIKELY((!activeTracks.size() && systemTime() > standbyTime) ||
                         mSuspended) {
+#ifdef OMAP_ENHANCEMENT
+                if (!mStandby  && !mFmInplay){
+#else
                 if (!mStandby) {
+#endif
                     LOGV("Audio hardware entering standby, mixer %p, mSuspended %d\n", this, mSuspended);
                     mOutput->standby();
                     mStandby = true;
@@ -4629,6 +4681,22 @@ status_t AudioFlinger::setStreamOutput(uint32_t stream, int output)
     return NO_ERROR;
 }
 
+#ifdef OMAP_ENHANCEMENT
+status_t AudioFlinger::setFMRxActive(bool state)
+{
+     LOGV("setFMRxActive() ");
+    // check calling permissions
+    if (!settingsAllowed()) {
+        return PERMISSION_DENIED;
+    }
+
+    mFmEnabled = state;
+    for (uint32_t i = 0; i < mPlaybackThreads.size(); i++)
+       mPlaybackThreads.valueAt(i)->setFMRxActive(state);
+
+    return NO_ERROR;
+}
+#endif
 
 int AudioFlinger::newAudioSessionId()
 {
@@ -5522,19 +5590,21 @@ void AudioFlinger::EffectModule::process()
 
         // clear auxiliary effect input buffer for next accumulation
         if ((mDescriptor.flags & EFFECT_FLAG_TYPE_MASK) == EFFECT_FLAG_TYPE_AUXILIARY) {
-            memset(mConfig.inputCfg.buffer.raw, 0, mConfig.inputCfg.buffer.frameCount*sizeof(int32_t));
+            memset(mConfig.inputCfg.buffer.raw, 0,
+                   mConfig.inputCfg.buffer.frameCount*sizeof(int32_t));
         }
     } else if ((mDescriptor.flags & EFFECT_FLAG_TYPE_MASK) == EFFECT_FLAG_TYPE_INSERT &&
-                mConfig.inputCfg.buffer.raw != mConfig.outputCfg.buffer.raw){
-        // If an insert effect is idle and input buffer is different from output buffer, copy input to
-        // output
+                mConfig.inputCfg.buffer.raw != mConfig.outputCfg.buffer.raw) {
+        // If an insert effect is idle and input buffer is different from output buffer,
+        // accumulate input onto output
         sp<EffectChain> chain = mChain.promote();
         if (chain != 0 && chain->activeTracks() != 0) {
-            size_t size = mConfig.inputCfg.buffer.frameCount * sizeof(int16_t);
-            if (mConfig.inputCfg.channels == CHANNEL_STEREO) {
-                size *= 2;
+            size_t frameCnt = mConfig.inputCfg.buffer.frameCount * 2;  //always stereo here
+            int16_t *in = mConfig.inputCfg.buffer.s16;
+            int16_t *out = mConfig.outputCfg.buffer.s16;
+            for (size_t i = 0; i < frameCnt; i++) {
+                out[i] = clamp16((int32_t)out[i] + (int32_t)in[i]);
             }
-            memcpy(mConfig.outputCfg.buffer.raw, mConfig.inputCfg.buffer.raw, size);
         }
     }
 }
@@ -5897,7 +5967,8 @@ uint32_t AudioFlinger::EffectModule::deviceAudioSystemToEffectApi(uint32_t devic
 const uint32_t AudioFlinger::EffectModule::sModeConvTable[] = {
     AUDIO_MODE_NORMAL,   // AudioSystem::MODE_NORMAL
     AUDIO_MODE_RINGTONE, // AudioSystem::MODE_RINGTONE
-    AUDIO_MODE_IN_CALL   // AudioSystem::MODE_IN_CALL
+    AUDIO_MODE_IN_CALL,  // AudioSystem::MODE_IN_CALL
+    AUDIO_MODE_IN_CALL   // AudioSystem::MODE_IN_COMMUNICATION, same conversion as for MODE_IN_CALL
 };
 
 int AudioFlinger::EffectModule::modeAudioSystemToEffectApi(uint32_t mode)

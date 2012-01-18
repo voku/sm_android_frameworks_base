@@ -18,11 +18,9 @@ package android.text;
 
 import com.android.internal.R;
 
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.text.method.TextKeyListener.Capitalize;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.AlignmentSpan;
 import android.text.style.BackgroundColorSpan;
@@ -43,10 +41,12 @@ import android.text.style.TextAppearanceSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.URLSpan;
 import android.text.style.UnderlineSpan;
+import android.util.Log;
 import android.util.Printer;
 
 import com.android.internal.util.ArrayUtils;
 
+import java.text.Normalizer;
 import java.util.regex.Pattern;
 import java.util.Iterator;
 
@@ -627,10 +627,16 @@ public class TextUtils {
         public  CharSequence createFromParcel(Parcel p) {
             int kind = p.readInt();
 
-            if (kind == 1)
-                return p.readString();
+            String string = p.readString();
+            if (string == null) {
+                return null;
+            }
 
-            SpannableString sp = new SpannableString(p.readString());
+            if (kind == 1) {
+                return string;
+            }
+
+            SpannableString sp = new SpannableString(string);
 
             while (true) {
                 kind = p.readInt();
@@ -841,10 +847,10 @@ public class TextUtils {
     }
 
     public static int getOffsetBefore(CharSequence text, int offset) {
-        if (offset == 0)
+        if (offset <= 1)
             return 0;
-        if (offset == 1)
-            return 0;
+        if (offset > text.length())
+            return text.length();
 
         char c = text.charAt(offset - 1);
 
@@ -856,7 +862,21 @@ public class TextUtils {
             else
                 offset -= 1;
         } else {
+            String decomposed = Normalizer.normalize(Character.toString(c), Normalizer.Form.NFKD);
+
             offset -= 1;
+            c = decomposed.charAt(0);
+
+            while (Character.getDirectionality(c) == Character.DIRECTIONALITY_NONSPACING_MARK) {
+                offset -= 1;
+
+                if (offset == 0)
+                    break;
+
+                decomposed = Normalizer.normalize(text.subSequence(offset, offset + 1),
+                                                    Normalizer.Form.NFKD);
+                c = decomposed.charAt(0);
+            }
         }
 
         if (text instanceof Spanned) {
@@ -878,10 +898,10 @@ public class TextUtils {
     public static int getOffsetAfter(CharSequence text, int offset) {
         int len = text.length();
 
-        if (offset == len)
+        if (offset >= len-1)
             return len;
-        if (offset == len - 1)
-            return len;
+        if (offset < 0)
+            return 0;
 
         char c = text.charAt(offset);
 
@@ -894,6 +914,18 @@ public class TextUtils {
                 offset += 1;
         } else {
             offset += 1;
+
+            do {
+                String decomposed = Normalizer.normalize(text.subSequence(offset, offset + 1),
+                                                        Normalizer.Form.NFKD);
+
+                c = decomposed.charAt(0);
+
+                if (Character.getDirectionality(c) != Character.DIRECTIONALITY_NONSPACING_MARK)
+                    break;
+
+                offset += 1;
+            } while (offset < len);
         }
 
         if (text instanceof Spanned) {
@@ -1679,6 +1711,247 @@ public class TextUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * @hide
+     */
+    private static boolean isRTLCharacter(char c) {
+        //range of RTL characters per unicode specification
+        return (c >= 0x0590 && c <= 0x05FF) ||
+               (c >= 0xFB1D && c <= 0xFB4F) ||
+               (c >= 0x0600 && c <= 0x07BF) ||
+               (c >= 0xFB50 && c <= 0xFDFF) ||
+               (c >= 0xFE70 && c <= 0xFEFE)    ;
+    }
+
+    /**
+     * @hide
+     */
+    private static boolean isArabicCharacter(char c) {
+        //range of Arabic characters per unicode specification
+        return (c >= 0x0600 && c <= 0x06FF) ||
+               (c >= 0x0750 && c <= 0x077F) ||
+               (c >= 0xFB50 && c <= 0xFDFF) ||
+               (c >= 0xFE70 && c <= 0xFEFE)    ;
+    }
+
+    /**
+     * function to check if text range has RTL characters.
+     * @hide
+     */
+    private static boolean hasRTLCharacters(final char[] text, int start, int end) {
+        if (text == null)
+            return false;
+
+        //go through all characters
+        for (int i = start; i < end; i++) {
+            if (isRTLCharacter(text[i]))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * function to check if text range has Arabic characters.
+     * @hide
+     */
+    private static boolean hasArabicCharacters(final char[] text, int start, int end) {
+        if (text == null)
+            return false;
+
+        //go through all characters
+        for (int i = start; i < end; i++) {
+            if (isArabicCharacter(text[i]))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * function to check if text range has Arabic characters.
+     * @hide
+     */
+    public static boolean hasArabicCharacters(String text, int start, int end) {
+        if (text == null)
+            return false;
+
+        //go through all characters
+        for (int i = start; i < end; i++) {
+            if (isArabicCharacter(text.charAt(i)))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * function to check if text range has RTL characters.
+     * @hide
+     */
+    public static boolean hasRTLCharacters(CharSequence text, int start, int end) {
+        if (text == null)
+            return false;
+
+        //go through all characters
+        for (int i = start; i < end; i++) {
+            if (isRTLCharacter(text.charAt(i)))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * function to process bidi on the given text
+     * @param src
+     * @return String
+     * @hide
+     */
+    public static String processBidi(final String src) {
+        return src == null ? null : TextUtils.processBidi(src, 0, src.length());
+    }
+
+    /**
+     * function to reshape the given text
+     * @param src
+     * @return String
+     * @hide
+     */
+    public static String reshapeArabic(final String src) {
+        return src == null ? null : TextUtils.reshapeArabic(src, 0, src.length());
+    }
+
+    /**
+     * function to process bidi the given text
+     * @param src
+     * @return char[]
+     * @hide
+     */
+    public static char[] processBidi(final char[] src) {
+        return src == null ? null : TextUtils.processBidi(src, 0, src.length);
+    }
+
+    /**
+     * function to reshape the given text
+     * @param src
+     * @return char[]
+     * @hide
+     */
+    public static char[] reshapeArabic(final char[] src) {
+        return src == null ? null : TextUtils.reshapeArabicChars(src, 0, src.length);
+    }
+
+    /**
+     * function to process bidi on the given text
+     * @param src
+     * @param begin
+     * @param end
+     * @return String
+     * @hide
+     */
+    public static String processBidi(final String src, int start, int end) {
+        return src != null && hasRTLCharacters(src, start, end) ? String.valueOf(TextUtils.processBidi(src.toCharArray(), start, end)) : src;
+    }
+
+    /**
+     * function to reshape the given text
+     * @param src
+     * @param begin
+     * @param end
+     * @return String
+     * @hide
+     */
+    public static String reshapeArabic(final String src, int start, int end) {
+        return src != null && hasArabicCharacters(src, start, end) ? String.valueOf(TextUtils.reshapeArabicChars(src.toCharArray(), start, end)) : src;
+    }
+
+    /**
+     * function to process bidi on the given text
+     * @author: Eyad Aboulouz
+     * @param src
+     * @param start
+     * @param end
+     * @return char[]
+     * @hide
+     */
+    public static char[] processBidi(final char[] src, int start, int end) {
+        return src != null && hasRTLCharacters(src, start, end) ? TextUtils.processBidiChars(src, start, end) : src;
+    }
+
+    /**
+     * function to reshape the given text
+     * @author: Eyad Aboulouz
+     * @param src
+     * @param start
+     * @param end
+     * @return char[]
+     * @hide
+     */
+    public static char[] reshapeArabic(final char[] src, int start, int end) {
+        return src != null && hasArabicCharacters(src, start, end) ? TextUtils.reshapeArabicChars(src, start, end) : src;
+    }
+
+    /**
+     * function to process bidi on the given text
+     * @author: Eyad Aboulouz
+     * @param src
+     * @param start
+     * @param end
+     * @return char[]
+     * @hide
+     */
+    private static char[] processBidiChars(final char[] src, int start, int end) {
+
+        try {
+            char[] outputTxt = new char[end-start];
+            char[] ret = src.clone();
+
+            int outputSize = AndroidBidi.reorderAndReshapeBidiText(ret, outputTxt, start, end-start);
+
+            if (outputSize != (end-start))
+                throw new Exception ("Error Processing Bidi Reordering And Reshaping");
+
+            System.arraycopy(outputTxt, 0, ret, start, end-start);
+
+            return (ret);
+
+        } catch (Exception e) {
+
+            return (src);
+        }
+    }
+
+    /**
+     * function to reshape arabic text
+     * @author: Eyad Aboulouz
+     * @param src
+     * @param start
+     * @param end
+     * @return char[]
+     * @hide
+     */
+    private static char[] reshapeArabicChars(final char[] src, int start, int end) {
+
+        try {
+            char[] outputTxt = new char[end-start];
+            char[] ret = src.clone();
+
+            int outputSize = AndroidBidi.reshapeReversedArabicText(ret, outputTxt, start, end-start);
+
+            if (outputSize != (end-start))
+                throw new Exception ("Error Processing Bidi Reordering And Reshaping");
+
+            System.arraycopy(outputTxt, 0, ret, start, end-start);
+
+            return (ret);
+
+        } catch (Exception e) {
+
+            return (src);
+        }
     }
 
     private static Object sLock = new Object();

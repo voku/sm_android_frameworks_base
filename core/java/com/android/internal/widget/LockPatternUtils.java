@@ -19,19 +19,24 @@ package com.android.internal.widget;
 import android.app.admin.DevicePolicyManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.FileObserver;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemClock;
+import android.provider.Calendar;
 import android.provider.Settings;
 import android.security.MessageDigest;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.widget.Button;
 
 import com.android.internal.R;
 import com.android.internal.telephony.ITelephony;
+
 import com.google.android.collect.Lists;
 
 import java.io.File;
@@ -40,9 +45,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.TimeZone;
 
 /**
  * Utilities for the lock patten and its settings.
@@ -94,7 +102,7 @@ public class LockPatternUtils {
     private final static String LOCKOUT_ATTEMPT_DEADLINE = "lockscreen.lockoutattemptdeadline";
     private final static String PATTERN_EVER_CHOSEN_KEY = "lockscreen.patterneverchosen";
     public final static String PASSWORD_TYPE_KEY = "lockscreen.password_type";
-    private final static String LOCK_PASSWORD_SALT_KEY = "lockscreen.password_salt";    
+    private final static String LOCK_PASSWORD_SALT_KEY = "lockscreen.password_salt";
 
     private final Context mContext;
     private final ContentResolver mContentResolver;
@@ -506,21 +514,29 @@ public class LockPatternUtils {
             byte[] saltedPassword = (password + getSalt()).getBytes();
             byte[] sha1 = MessageDigest.getInstance(algo = "SHA-1").digest(saltedPassword);
             byte[] md5 = MessageDigest.getInstance(algo = "MD5").digest(saltedPassword);
-            hashed = (toHex(sha1) + toHex(md5)).getBytes();
+            hashed = toHex(sha1, md5);
         } catch (NoSuchAlgorithmException e) {
             Log.w(TAG, "Failed to encode string because of missing algorithm: " + algo);
         }
         return hashed;
     }
 
-    private static String toHex(byte[] ary) {
-        final String hex = "0123456789ABCDEF";
-        String ret = "";
-        for (int i = 0; i < ary.length; i++) {
-            ret += hex.charAt((ary[i] >> 4) & 0xf);
-            ret += hex.charAt(ary[i] & 0xf);
+    private static final byte[] HEX_CHARS = new byte[]{
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    };
+
+    private static byte[] toHex(final byte[] array1, final byte[] array2) {
+        final byte[] result = new byte[(array1.length + array2.length) * 2];
+        int i = 0;
+        for (final byte b : array1) {
+            result[i++] = HEX_CHARS[(b >> 4) & 0xf];
+            result[i++] = HEX_CHARS[b & 0xf];
         }
-        return ret;
+        for (final byte b : array2) {
+            result[i++] = HEX_CHARS[(b >> 4) & 0xf];
+            result[i++] = HEX_CHARS[b & 0xf];
+        }
+        return result;
     }
 
     /**
@@ -691,6 +707,145 @@ public class LockPatternUtils {
             return null;
         }
         return nextAlarm;
+    }
+
+    /**
+     * @return A formatted string of the next calendar event with a reminder
+     * (for showing on the lock screen), or null if there is no next event
+     * within a certain look-ahead time.
+     */
+    public String getNextCalendarAlarm(long lookahead, String[] calendars,
+            boolean remindersOnly) {
+        long now = System.currentTimeMillis();
+        long later = now + lookahead;
+
+        StringBuilder where = new StringBuilder();
+        if (remindersOnly) {
+            where.append(Calendar.EventsColumns.HAS_ALARM + "=1");
+        }
+        if (calendars != null && calendars.length > 0) {
+            if (remindersOnly) {
+                where.append(" AND ");
+            }
+            where.append(Calendar.EventsColumns.CALENDAR_ID + " in (");
+            for (int i = 0; i < calendars.length; i++) {
+                where.append(calendars[i]);
+                if (i != calendars.length - 1) {
+                    where.append(",");
+                }
+            }
+            where.append(") ");
+        }
+
+        String[] projection = new String[] {
+            Calendar.EventsColumns.TITLE,
+            Calendar.Instances.BEGIN,
+            Calendar.EventsColumns.DESCRIPTION,
+            Calendar.EventsColumns.EVENT_LOCATION,
+            Calendar.EventsColumns.ALL_DAY
+        };
+
+        Uri uri = Uri.withAppendedPath(Calendar.Instances.CONTENT_URI,
+                String.format("%d/%d", now, later));
+        String nextCalendarAlarm = null;
+        Cursor cursor = null;
+
+        try {
+            cursor = mContentResolver.query(uri,
+                    projection, where.toString(), null,
+                    Calendar.Instances.DEFAULT_SORT_ORDER);
+
+            if (cursor != null && cursor.moveToFirst()) {
+
+                String title = cursor.getString(0);
+                long begin = cursor.getLong(1);
+                String description = cursor.getString(2);
+                String location = cursor.getString(3);
+                boolean allDay = cursor.getInt(4) != 0;
+
+                // Check the next event in the case of allday event. As UTC is used for allday
+                // events, the next event may be the one that actually starts sooner
+                if (allDay && !cursor.isLast()) {
+                    cursor.moveToNext();
+                    long nextBegin = cursor.getLong(1);
+                    if (nextBegin < begin + TimeZone.getDefault().getOffset(begin)) {
+                        title = cursor.getString(0);
+                        begin = nextBegin;
+                        description = cursor.getString(2);
+                        location = cursor.getString(3);
+                        allDay = cursor.getInt(4) != 0;
+                    }
+                }
+
+                Date start = new Date(begin);
+                StringBuilder sb = new StringBuilder();
+
+                if (allDay) {
+                    SimpleDateFormat sdf = new SimpleDateFormat(
+                            mContext.getString(R.string.abbrev_wday_month_day_no_year));
+                    // Calendar stores all-day events in UTC -- setting the timezone ensures
+                    // the correct date is shown.
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    sb.append(sdf.format(start));
+                } else {
+                    sb.append(DateFormat.format("E", start));
+                    sb.append(" ");
+                    sb.append(DateFormat.getTimeFormat(mContext).format(start));
+                }
+
+                sb.append(" ");
+                sb.append(title);
+
+                int showLocation = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.LOCKSCREEN_CALENDAR_SHOW_LOCATION, 0);
+
+                if (showLocation != 0 && !TextUtils.isEmpty(location)) {
+                    switch(showLocation) {
+                        case 1:
+                            // Show first line
+                            int end = location.indexOf('\n');
+                            if(end == -1) {
+                                sb.append("\n" + location);
+                            } else {
+                                sb.append("\n" + location.substring(0, end));
+                            }
+                            break;
+                        case 2:
+                            // Show all
+                            sb.append("\n" + location);
+                            break;
+                    }
+                }
+
+                int showDescription = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.LOCKSCREEN_CALENDAR_SHOW_DESCRIPTION, 0);
+
+                if (showDescription != 0 && !TextUtils.isEmpty(description)) {
+                    switch(showDescription) {
+                        case 1:
+                            // Show first line
+                            int end = description.indexOf('\n');
+                            if(end == -1) {
+                                sb.append("\n" + description);
+                            } else {
+                                sb.append("\n" + description.substring(0, end));
+                            }
+                            break;
+                        case 2:
+                            // Show all
+                            sb.append("\n" + description);
+                            break;
+                    }
+                }
+
+                nextCalendarAlarm = sb.toString();
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return nextCalendarAlarm;
     }
 
     private boolean getBoolean(String secureSettingKey) {

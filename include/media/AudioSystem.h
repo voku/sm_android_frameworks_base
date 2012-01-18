@@ -145,12 +145,19 @@ public:
         CHANNEL_IN_Z_AXIS = 0x2000,
         CHANNEL_IN_VOICE_UPLINK = 0x4000,
         CHANNEL_IN_VOICE_DNLINK = 0x8000,
+#ifdef OMAP_ENHANCEMENT
+        CHANNEL_IN_VOICE_UPLINK_DNLINK = 0x10000,
+#endif
         CHANNEL_IN_MONO = CHANNEL_IN_FRONT,
         CHANNEL_IN_STEREO = (CHANNEL_IN_LEFT | CHANNEL_IN_RIGHT),
         CHANNEL_IN_ALL = (CHANNEL_IN_LEFT | CHANNEL_IN_RIGHT | CHANNEL_IN_FRONT | CHANNEL_IN_BACK|
                 CHANNEL_IN_LEFT_PROCESSED | CHANNEL_IN_RIGHT_PROCESSED | CHANNEL_IN_FRONT_PROCESSED | CHANNEL_IN_BACK_PROCESSED|
                 CHANNEL_IN_PRESSURE | CHANNEL_IN_X_AXIS | CHANNEL_IN_Y_AXIS | CHANNEL_IN_Z_AXIS |
-                CHANNEL_IN_VOICE_UPLINK | CHANNEL_IN_VOICE_DNLINK)
+#ifdef OMAP_ENHANCEMENT
+                CHANNEL_IN_VOICE_UPLINK | CHANNEL_IN_VOICE_DNLINK | CHANNEL_IN_VOICE_UPLINK_DNLINK)
+#else
+                CHANNEL_IN_VOICE_UPLINK | CHANNEL_IN_VOICE_DNLINK )
+#endif
     };
 
     enum audio_mode {
@@ -159,6 +166,7 @@ public:
         MODE_NORMAL = 0,
         MODE_RINGTONE,
         MODE_IN_CALL,
+        MODE_IN_COMMUNICATION,
         NUM_MODES  // not a valid entry, denotes end-of-list
     };
 
@@ -272,7 +280,11 @@ public:
         DEVICE_OUT_FM = 0x800,
         DEVICE_OUT_FM_SPEAKER = 0x1000,
         DEVICE_OUT_FM_ALL = (DEVICE_OUT_FM | DEVICE_OUT_FM_SPEAKER),
+#elif defined(OMAP_ENHANCEMENT)
+        DEVICE_OUT_FM_TRANSMIT = 0x800,
+        DEVICE_OUT_LOW_POWER = 0x1000,
 #endif
+        DEVICE_OUT_HDMI = 0x2000,
         DEVICE_OUT_DEFAULT = 0x8000,
         DEVICE_OUT_ALL = (DEVICE_OUT_EARPIECE | DEVICE_OUT_SPEAKER | DEVICE_OUT_WIRED_HEADSET |
 #ifdef HAVE_FM_RADIO
@@ -281,7 +293,12 @@ public:
                 DEVICE_OUT_WIRED_HEADPHONE | DEVICE_OUT_BLUETOOTH_SCO | DEVICE_OUT_BLUETOOTH_SCO_HEADSET |
 #endif
                 DEVICE_OUT_BLUETOOTH_SCO_CARKIT | DEVICE_OUT_BLUETOOTH_A2DP | DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES |
-                DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER | DEVICE_OUT_AUX_DIGITAL | DEVICE_OUT_DEFAULT),
+#if defined(OMAP_ENHANCEMENT) && !defined(HAVE_FM_RADIO)
+                DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER | DEVICE_OUT_AUX_DIGITAL | DEVICE_OUT_LOW_POWER |
+                DEVICE_OUT_FM_TRANSMIT | DEVICE_OUT_DEFAULT),
+#else
+                DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER | DEVICE_OUT_AUX_DIGITAL | DEVICE_OUT_HDMI | DEVICE_OUT_DEFAULT),
+#endif
         DEVICE_OUT_ALL_A2DP = (DEVICE_OUT_BLUETOOTH_A2DP | DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES |
                 DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER),
 
@@ -298,12 +315,17 @@ public:
         DEVICE_IN_FM_RX = 0x1000000,
         DEVICE_IN_FM_RX_A2DP = 0x2000000,
 #endif
+#ifdef OMAP_ENHANCEMENT
+        DEVICE_IN_FM_ANALOG = 0x1000000,
+#endif
         DEVICE_IN_DEFAULT = 0x80000000,
 
         DEVICE_IN_ALL = (DEVICE_IN_COMMUNICATION | DEVICE_IN_AMBIENT | DEVICE_IN_BUILTIN_MIC |
                 DEVICE_IN_BLUETOOTH_SCO_HEADSET | DEVICE_IN_WIRED_HEADSET | DEVICE_IN_AUX_DIGITAL |
 #ifdef HAVE_FM_RADIO
                 DEVICE_IN_VOICE_CALL | DEVICE_IN_BACK_MIC | DEVICE_IN_FM_RX | DEVICE_IN_FM_RX_A2DP | DEVICE_IN_DEFAULT)
+#elif OMAP_ENHANCEMENT
+                DEVICE_IN_VOICE_CALL | DEVICE_IN_BACK_MIC  | DEVICE_IN_FM_ANALOG | DEVICE_IN_DEFAULT)
 #else
                 DEVICE_IN_VOICE_CALL | DEVICE_IN_BACK_MIC | DEVICE_IN_DEFAULT)
 #endif
@@ -493,7 +515,7 @@ public:
     AudioParameter(const String8& keyValuePairs);
     virtual ~AudioParameter();
 
-    // reserved parameter keys for changeing standard parameters with setParameters() function.
+    // reserved parameter keys for changing standard parameters with setParameters() function.
     // Using these keys is mandatory for AudioFlinger to properly monitor audio output/input
     // configuration changes and act accordingly.
     //  keyRouting: to change audio routing, value is an int in AudioSystem::audio_devices
@@ -501,6 +523,8 @@ public:
     //  keyFormat: to change audio format, value is an int in AudioSystem::audio_format
     //  keyChannels: to change audio channel configuration, value is an int in AudioSystem::audio_channels
     //  keyFrameCount: to change audio output frame count, value is an int
+    //  keyInputSource: to change audio input source, value is an int in audio_source
+    //     (defined in media/mediarecorder.h)
     static const char *keyRouting;
     static const char *keySamplingRate;
     static const char *keyFormat;
@@ -510,6 +534,7 @@ public:
     static const char *keyFmOn;
     static const char *keyFmOff;
 #endif
+    static const char *keyInputSource;
 
     String8 toString();
 

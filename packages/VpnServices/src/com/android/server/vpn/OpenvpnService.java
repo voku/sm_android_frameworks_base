@@ -94,7 +94,7 @@ class OpenvpnService extends VpnService<OpenvpnProfile> {
             args.add(USE_INLINE);
             args.add(USE_KEYSTORE + Credentials.USER_PRIVATE_KEY + p.getCertName());
         }
-        args.add("--persist-tun");
+        //args.add("--persist-tun");
         args.add("--persist-key");
         args.add("--management");
         args.add("/dev/socket/" + socketName);
@@ -123,6 +123,14 @@ class OpenvpnService extends VpnService<OpenvpnProfile> {
         if (p.getKeySize() != null && !p.getKeySize().equals("")) {
             args.add("--keysize");
             args.add(p.getKeySize());
+        }
+
+        if (p.getUseTlsAuth() && !p.getTlsAuthKey().equals("") && !p.getTlsAuthKeyDirection().equals("")) {
+            args.add("--tls-auth");
+            args.add(p.getTlsAuthKey());
+            if (!p.getTlsAuthKeyDirection().equals("None")) {
+                args.add(p.getTlsAuthKeyDirection());
+            }
         }
         args.add("--up");
         args.add("/system/xbin/openvpn-up.sh");

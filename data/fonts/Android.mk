@@ -20,6 +20,7 @@ copy_from :=                \
     DroidSans-Bold.ttf      \
     DroidSansArabic.ttf     \
     DroidSansHebrew.ttf     \
+    DroidSansJapanese.ttf   \
     DroidSansThai.ttf       \
     DroidSerif-Regular.ttf  \
     DroidSerif-Bold.ttf     \

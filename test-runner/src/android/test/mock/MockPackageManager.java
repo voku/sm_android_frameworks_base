@@ -498,8 +498,20 @@ public class MockPackageManager extends PackageManager {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * @hide
+     */
     @Override
-    public void setPackageObbPath(String packageName, String path) {
+    public String[] getRevokedPermissions(String packageName) {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * @hide
+     */
+    @Override
+    public void setRevokedPermissions(String packageName, String[] perms) {
+        throw new UnsupportedOperationException();
+    }
+
 }

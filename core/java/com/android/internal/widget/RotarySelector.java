@@ -17,7 +17,8 @@
 package com.android.internal.widget;
 
 import java.util.Date;
-
+import android.provider.Settings;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -103,9 +104,6 @@ public class RotarySelector extends View {
     private boolean mLenseMode=false;
     // are we in rotary revamped mode?
     private boolean mRevampedMode=false;
-    // time format from system settings - contains 12 or 24
-    private int mTime12_24 = 12;
-
 
     // state of the animation used to bring the handle back to its start position when
     // the user lets go before triggering an action
@@ -152,8 +150,6 @@ public class RotarySelector extends View {
 
     // Vibration (haptic feedback)
     private Vibrator mVibrator;
-    private static final long VIBRATE_SHORT = 30;  // msec
-    private static final long VIBRATE_LONG = 40;  // msec
 
     /**
      * The drawable for the arrows need to be scrunched this many dips towards the rotary bg below
@@ -174,8 +170,6 @@ public class RotarySelector extends View {
     /**
      * Dimensions of arc in background drawable.
      */
-    static final int OUTER_ROTARY_RADIUS_DIP = 390;
-    static final int ROTARY_STROKE_WIDTH_DIP = 83;
     static final int SNAP_BACK_ANIMATION_DURATION_MILLIS = 300;
     static final int SPIN_ANIMATION_DURATION_MILLIS = 800;
     static final int LENSE_DATE_SIZE_DIP = 18;
@@ -185,6 +179,8 @@ public class RotarySelector extends View {
     private int mDimpleWidth;
     private int mBackgroundWidth;
     private int mBackgroundHeight;
+    private final int mRotaryOuterRadiusDIP;
+    private final int mRotaryStrokeWidthDIP;
     private final int mOuterRadius;
     private final int mInnerRadius;
     private int mDimpleSpacing;
@@ -192,6 +188,7 @@ public class RotarySelector extends View {
     private VelocityTracker mVelocityTracker;
     private int mMinimumVelocity;
     private int mMaximumVelocity;
+    private long mMaxAnimationDuration;
 
     /**
      * The number of dimples we are flinging when we do the "spin" animation.  Used to know when to
@@ -239,7 +236,7 @@ public class RotarySelector extends View {
          * phones. keep in mind changing build.prop and density
          * isnt officially supported, but this should do for most cases
          */
-        if(densityDpi < 240 && densityDpi >160)
+        if(densityDpi < 240 && densityDpi >180)
             mDensityScaleFactor=(float)(240.0 / densityDpi);
         if(densityDpi < 160 && densityDpi >120)
             mDensityScaleFactor=(float)(160.0 / densityDpi);
@@ -264,14 +261,19 @@ public class RotarySelector extends View {
 
         mBackgroundWidth = mBackground.getWidth();
         mBackgroundHeight = mBackground.getHeight();
-        mOuterRadius = (int) (mDensity * mDensityScaleFactor * OUTER_ROTARY_RADIUS_DIP);
-        mInnerRadius = (int) ((OUTER_ROTARY_RADIUS_DIP - ROTARY_STROKE_WIDTH_DIP) * mDensity * mDensityScaleFactor);
+
+        mRotaryOuterRadiusDIP = context.getResources().getInteger(R.integer.config_rotaryOuterRadiusDIP);
+        mRotaryStrokeWidthDIP = context.getResources().getInteger(R.integer.config_rotaryStrokeWidthDIP);
+        mOuterRadius = (int) (mDensity * mDensityScaleFactor * mRotaryOuterRadiusDIP);
+        mInnerRadius = (int) ((mRotaryOuterRadiusDIP - mRotaryStrokeWidthDIP) * mDensity * mDensityScaleFactor);
 
         final ViewConfiguration configuration = ViewConfiguration.get(mContext);
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity() * 2;
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+        mMaxAnimationDuration = 1000;
 
-        mMarginBottom = (int)(60 * mDensity * mDensityScaleFactor);
+        int marginBottomDIP = context.getResources().getInteger(R.integer.config_rotaryMarginBottomDIP);
+        mMarginBottom = (int)(marginBottomDIP * mDensity * mDensityScaleFactor);
 
         mLensePaint.setColor(Color.BLACK);
         mLensePaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -302,6 +304,7 @@ public class RotarySelector extends View {
         }
 
         mDateFormatString = context.getString(R.string.full_wday_month_day_no_year);
+        mVibrator = (android.os.Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
     }
 
     private Bitmap getBitmapFor(int resId) {
@@ -356,6 +359,19 @@ public class RotarySelector extends View {
     }
 
     /**
+     * Sets the left handle icon to a given drawable.
+     *
+     * The argument should refer to a Drawable object, or use 0 to remove
+     * the icon.
+     *
+     * @param icon Bitmap object.
+     */
+    public void setLeftHandleResource(Bitmap icon) {
+        mLeftHandleIcon=icon;
+        invalidate();
+    }
+
+    /**
      * Sets the right handle icon to a given resource.
      *
      * The resource should refer to a Drawable object, or use 0 to remove
@@ -382,6 +398,19 @@ public class RotarySelector extends View {
         if (resId != 0) {
             mMidHandleIcon = getBitmapFor(resId);
         }
+        invalidate();
+    }
+
+    /**
+     * Sets the middle handle icon to a given drawable.
+     *
+     * The argument should refer to a Drawable object, or use 0 to remove
+     * the icon.
+     *
+     * @param icon Bitmap object.
+     */
+    public void setMidHandleResource(Bitmap icon) {
+        mMidHandleIcon=icon;
         invalidate();
     }
 
@@ -442,21 +471,24 @@ public class RotarySelector extends View {
         // for lense mode, we are done after time and date
         if(mLenseMode){
             if(isHoriz()){
-                Time mTime = new Time();
-                mTime.setToNow();
+                Date now = new Date();
+                String timeString = DateFormat.getTimeFormat(mContext).format(now).toString();
+                String dateString = DateFormat.format(mDateFormatString, now).toString();
 
-                String mTimeString;
-                if(mTime12_24==24)
-                    mTimeString=mTime.format("%R");
-                else
-                    mTimeString=mTime.format("%l:%M %P");
-                String mDate=(String) DateFormat.format(mDateFormatString, new Date());
+                //Add offset specified in config file
+                int customTimeOffset = getContext().getResources().getInteger(R.integer.config_lenseTimeLabelOffsetDIP);
 
                 canvas.translate(0, 0);
                 mLensePaint.setTextSize(LENSE_TIME_SIZE_DIP * mDensity * mDensityScaleFactor);
-                canvas.drawText(mTimeString, mBackgroundWidth / 2 * mDensityScaleFactor, mRotaryOffsetY + mMarginBottom + LENSE_TIME_SIZE_DIP * mDensity, mLensePaint);
+                canvas.drawText(timeString,
+                                mBackgroundWidth / 2 * mDensityScaleFactor,
+                                mRotaryOffsetY + mMarginBottom + LENSE_TIME_SIZE_DIP * mDensity + customTimeOffset,
+                                mLensePaint);
                 mLensePaint.setTextSize(LENSE_DATE_SIZE_DIP * mDensity * mDensityScaleFactor);
-                canvas.drawText(mDate, mBackgroundWidth / 2 * mDensityScaleFactor, mRotaryOffsetY + mMarginBottom + LENSE_DATE_SIZE_DIP * mDensity * 3, mLensePaint);
+                canvas.drawText(dateString,
+                                mBackgroundWidth / 2 * mDensityScaleFactor,
+                                mRotaryOffsetY + mMarginBottom + LENSE_DATE_SIZE_DIP * mDensity * 3 + customTimeOffset,
+                                mLensePaint);
             }
             return;
         }
@@ -510,7 +542,7 @@ public class RotarySelector extends View {
 
         if (VISUAL_DEBUG) {
             // draw circle bounding arc drawable: good sanity check we're doing the math correctly
-            float or = OUTER_ROTARY_RADIUS_DIP * mDensity;
+            float or = mRotaryOuterRadiusDIP * mDensity;
             final int vOffset = mBackgroundWidth - height;
             final int midX = isHoriz() ? width / 2 : mBackgroundWidth / 2 - vOffset;
             if (isHoriz()) {
@@ -713,23 +745,23 @@ public class RotarySelector extends View {
                 if (mLenseMode){
                     setGrabbedState(MID_HANDLE_GRABBED);
                     invalidate();
-                    vibrate(VIBRATE_SHORT);
+                    vibrate();
                     break;
                 }
                 if (eventX < mLeftHandleX + hitWindow) {
                     mRotaryOffsetX = eventX - mLeftHandleX;
                     setGrabbedState(LEFT_HANDLE_GRABBED);
                     invalidate();
-                    vibrate(VIBRATE_SHORT);
+                    vibrate();
                 } else if (eventX > mMidHandleX - hitWindow && eventX <= mRightHandleX - hitWindow && mCustomAppDimple) {
                     setGrabbedState(MID_HANDLE_GRABBED);
                     invalidate();
-                    vibrate(VIBRATE_SHORT);
+                    vibrate();
                 } else if (eventX > mRightHandleX - hitWindow) {
                     mRotaryOffsetX = eventX - mRightHandleX;
                     setGrabbedState(RIGHT_HANDLE_GRABBED);
                     invalidate();
-                    vibrate(VIBRATE_SHORT);
+                    vibrate();
                 }
 
                 break;
@@ -851,6 +883,7 @@ public class RotarySelector extends View {
         mAnimating = true;
         mAnimationStartTime = currentAnimationTimeMillis();
         mAnimationDuration = 1000 * (endX - startX) / pixelsPerSecond;
+        mAnimationDuration = Math.min(mAnimationDuration, mMaxAnimationDuration);
         mAnimatingDeltaXStart = startX;
         mAnimatingDeltaXEnd = endX;
         setGrabbedState(NOTHING_GRABBED);
@@ -919,12 +952,13 @@ public class RotarySelector extends View {
     /**
      * Triggers haptic feedback.
      */
-    private synchronized void vibrate(long duration) {
-        if (mVibrator == null) {
-            mVibrator = (android.os.Vibrator)
-                    getContext().getSystemService(Context.VIBRATOR_SERVICE);
+    private synchronized void vibrate() {
+        ContentResolver cr = mContext.getContentResolver();
+        final boolean hapticsEnabled = Settings.System.getInt(cr, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) == 1;
+        if (hapticsEnabled) {
+            long[] hapFeedback = Settings.System.getLongArray(cr, Settings.System.HAPTIC_DOWN_ARRAY, new long[] { 0 });
+            mVibrator.vibrate(hapFeedback, -1);
         }
-        mVibrator.vibrate(duration);
     }
 
     /**
@@ -954,7 +988,7 @@ public class RotarySelector extends View {
      * Dispatches a trigger event to our listener.
      */
     private void dispatchTriggerEvent(int whichHandle) {
-        vibrate(VIBRATE_LONG);
+        vibrate();
         if (mOnDialTriggerListener != null) {
             mOnDialTriggerListener.onDialTrigger(this, whichHandle);
         }
@@ -1065,13 +1099,6 @@ public class RotarySelector extends View {
             mLenseMode=true;
             mBackground = getBitmapFor(R.drawable.lense_square_bg);
         }
-    }
-
-    /**
-     *  Sets the time format for propper display in lense style - called from LockScreen.java
-     */
-    public void setTimeFormat(int time12_24){
-        mTime12_24=time12_24;
     }
 
     // Debugging / testing code

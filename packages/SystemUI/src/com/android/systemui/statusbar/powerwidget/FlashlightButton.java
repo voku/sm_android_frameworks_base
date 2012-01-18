@@ -38,7 +38,18 @@ public class FlashlightButton extends PowerButton {
                 Settings.System.EXPANDED_FLASH_MODE, 0) == 1;
         Intent i = new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT");
         i.putExtra("bright", bright);
-        context.sendBroadcast(new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT"));
+        context.sendBroadcast(i);
+    }
+
+    @Override
+    protected boolean handleLongClick() {
+        // it may be better to make an Intent action for the Torch
+        // we may want to look at that option later
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.setClassName("net.cactii.flash2", "net.cactii.flash2.MainActivity");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        mView.getContext().startActivity(intent);
+        return true;
     }
 
     @Override

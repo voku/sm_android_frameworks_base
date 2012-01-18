@@ -47,30 +47,25 @@ import android.os.SystemClock;
 import android.os.WorkSource;
 import android.provider.Settings;
 import android.provider.Telephony.Sms.Intents;
+import android.telephony.SmsMessage;
 import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
-import android.telephony.SmsMessage;
 import android.util.Log;
 import android.util.SparseIntArray;
 
 import com.android.internal.app.IBatteryStats;
-import com.android.internal.telephony.Phone;
 import com.android.internal.location.GpsNetInitiatedHandler;
 import com.android.internal.location.GpsNetInitiatedHandler.GpsNiNotification;
-import com.android.internal.telephony.GsmAlphabet;
-import com.android.internal.telephony.SmsHeader;
-import com.android.internal.util.HexDump;
+import com.android.internal.telephony.Phone;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringBufferInputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -203,7 +198,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
     // flags to trigger NTP or XTRA data download when network becomes available
     // initialized to true so we do NTP and XTRA when the network comes up after booting
     private boolean mInjectNtpTimePending = true;
-    private boolean mDownloadXtraDataPending = false;
+    private boolean mDownloadXtraDataPending = true;
 
     // true if GPS is navigating
     private boolean mNavigating;
@@ -1461,7 +1456,8 @@ public class GpsLocationProvider implements LocationProviderInterface {
                 if (networkType == TelephonyManager.NETWORK_TYPE_UMTS
                     || networkType == TelephonyManager.NETWORK_TYPE_HSDPA
                     || networkType == TelephonyManager.NETWORK_TYPE_HSUPA
-                    || networkType == TelephonyManager.NETWORK_TYPE_HSPA) {
+                    || networkType == TelephonyManager.NETWORK_TYPE_HSPA
+                    || networkType == TelephonyManager.NETWORK_TYPE_HSPAP) {
                     type = AGPS_REF_LOCATION_TYPE_UMTS_CELLID;
                 } else {
                     type = AGPS_REF_LOCATION_TYPE_GSM_CELLID;

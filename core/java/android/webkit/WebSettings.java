@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemProperties;
 import android.util.EventLog;
 import java.lang.SecurityException;
 import java.util.Locale;
@@ -207,6 +208,7 @@ public class WebSettings {
     private boolean         mSupportZoom = true;
     private boolean         mBuiltInZoomControls = false;
     private boolean         mAllowFileAccess = true;
+    private boolean         mAllowContentAccess = true;
     private boolean         mLoadWithOverviewMode = false;
     private boolean         mUseWebViewBackgroundOverscrollBackground = true;
 
@@ -408,6 +410,9 @@ public class WebSettings {
             buffer.append(" Build/");
             buffer.append(id);
         }
+        final String modversion = SystemProperties.get("ro.modversion");
+        if (modversion != null && modversion.length() > 0)
+            buffer.append("; " + modversion.replaceAll("(.+?-.*?)-.*","$1"));
         final String base = mContext.getResources().getText(
                 com.android.internal.R.string.web_user_agent).toString();
         return String.format(base, buffer);
@@ -467,7 +472,9 @@ public class WebSettings {
     
     /**
      * Enable or disable file access within WebView. File access is enabled by
-     * default.
+     * default. Note that this enables or disables file system access only.
+     * Assets and resources are still accessible using file:///android_asset and
+     * file:///android_res.
      */
     public void setAllowFileAccess(boolean allow) {
         mAllowFileAccess = allow;
@@ -478,6 +485,24 @@ public class WebSettings {
      */
     public boolean getAllowFileAccess() {
         return mAllowFileAccess;
+    }
+
+    /**
+     * Enable or disable content url access within WebView.  Content url access
+     * allows WebView to load content from a content provider installed in the
+     * system.  The default is enabled.
+     * @hide
+     */
+    public void setAllowContentAccess(boolean allow) {
+        mAllowContentAccess = allow;
+    }
+
+    /**
+     * Returns true if this WebView supports content url access.
+     * @hide
+     */
+    public boolean getAllowContentAccess() {
+        return mAllowContentAccess;
     }
 
     /**

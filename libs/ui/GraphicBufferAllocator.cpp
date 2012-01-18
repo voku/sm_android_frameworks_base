@@ -73,6 +73,13 @@ void GraphicBufferAllocator::dump(String8& result) const
     result.append(buffer);
 }
 
+void GraphicBufferAllocator::dumpToSystemLog()
+{
+    String8 s;
+    GraphicBufferAllocator::getInstance().dump(s);
+    LOGD("%s", s.string());
+}
+
 status_t GraphicBufferAllocator::alloc(uint32_t w, uint32_t h, PixelFormat format,
         int usage, buffer_handle_t* handle, int32_t* stride)
 {
@@ -84,11 +91,7 @@ status_t GraphicBufferAllocator::alloc(uint32_t w, uint32_t h, PixelFormat forma
     // we have a h/w allocator and h/w buffer is requested
     status_t err; 
     
-    if (usage & GRALLOC_USAGE_HW_MASK) {
-        err = mAllocDev->alloc(mAllocDev, w, h, format, usage, handle, stride);
-    } else {
-        err = sw_gralloc_handle_t::alloc(w, h, format, usage, handle, stride);
-    }
+    err = mAllocDev->alloc(mAllocDev, w, h, format, usage, handle, stride);
 
     LOGW_IF(err, "alloc(%u, %u, %d, %08x, ...) failed %d (%s)",
             w, h, format, usage, err, strerror(-err));
@@ -104,10 +107,6 @@ status_t GraphicBufferAllocator::alloc(uint32_t w, uint32_t h, PixelFormat forma
         rec.usage = usage;
         rec.size = h * stride[0] * bytesPerPixel(format);
         list.add(*handle, rec);
-    } else {
-        String8 s;
-        dump(s);
-        LOGD("%s", s.string());
     }
 
     return err;

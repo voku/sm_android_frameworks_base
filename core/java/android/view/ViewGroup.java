@@ -64,7 +64,7 @@ import java.util.ArrayList;
  * @attr ref android.R.styleable#ViewGroup_addStatesFromChildren
  * @attr ref android.R.styleable#ViewGroup_descendantFocusability
  */
-public abstract class ViewGroup extends View implements ViewParent, ViewManager {
+public abstract class ViewGroup extends View implements ViewParent, ViewOpacityManager, ViewManager {
     private static final boolean DBG = false;
 
     /**
@@ -3304,7 +3304,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         boolean noneOfTheChildrenAreTransparent = true;
         for (int i = 0; i < count; i++) {
             final View child = children[i];
-            if ((child.mViewFlags & VISIBILITY_MASK) != GONE || child.getAnimation() != null) {
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE || child.getAnimation() != null) {
                 if (!child.gatherTransparentRegion(region)) {
                     noneOfTheChildrenAreTransparent = false;
                 }
@@ -3318,9 +3318,26 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     public void requestTransparentRegion(View child) {
         if (child != null) {
+            child.mTransparentRequests++;
             child.mPrivateFlags |= View.REQUEST_TRANSPARENT_REGIONS;
             if (mParent != null) {
                 mParent.requestTransparentRegion(this);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @hide
+     */
+
+    public void releaseTransparentRegion(View child) {
+        if (child != null) {
+            if ((child.mTransparentRequests > 0) && (--child.mTransparentRequests == 0)) {
+                child.mPrivateFlags &= ~View.REQUEST_TRANSPARENT_REGIONS;
+            }
+            if (mParent != null && mParent instanceof ViewOpacityManager) {
+                ((ViewOpacityManager) mParent).releaseTransparentRegion(this);
             }
         }
     }

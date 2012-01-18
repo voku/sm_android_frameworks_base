@@ -50,15 +50,15 @@ protected:
 
 private:
     enum {
-        kMaxBufferSize = 2048,
+        kMaxBufferSize = 4096,
 
         // After the initial mute, we raise the volume linearly
         // over kAutoRampDurationUs.
-        kAutoRampDurationUs = 300000,
+        kAutoRampDurationUs = 700000,
 
         // This is the initial mute duration to suppress
         // the video recording signal tone
-        kAutoRampStartUs = 700000,
+        kAutoRampStartUs = 1000000,
       };
 
     AudioRecord *mRecord;

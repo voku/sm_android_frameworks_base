@@ -110,18 +110,33 @@
     </integer-array>
 
     <!-- Defines the shutdown options shown in the reboot dialog. -->
-    <array name="shutdown_reboot_options">
-        <item>Reboot</item>
-        <item>Recovery</item>
-        <item>Bootloader</item>
+    <array name="shutdown_reboot_options" translatable="false">
+        <item>@string/reboot_reboot</item>
+        <item>@string/reboot_recovery</item>
+        <item>@string/reboot_bootloader</item>
     </array>
 
     <!-- Do not translate. Defines the shutdown actions passed to the kernel.
          The first item should be empty for regular reboot. -->
-    <string-array name="shutdown_reboot_actions">
+    <string-array name="shutdown_reboot_actions" translatable="false">
         <item></item>
         <item>recovery</item>
         <item>bootloader</item>
+    </string-array>
+
+    <!-- Defines the set of colors used for selecting a random
+          notification color. -->
+    <string-array name="notification_led_random_color_set" translatable="false">
+        <item>green</item>
+        <item>white</item>
+        <item>red</item>
+        <item>blue</item>
+        <item>yellow</item>
+        <item>cyan</item>
+        <item>#800080</item>
+        <item>#ffc0cb</item>
+        <item>#ffa500</item>
+        <item>#add8e6</item>
     </string-array>
 
 </resources>

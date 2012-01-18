@@ -2,7 +2,9 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 include frameworks/base/media/libstagefright/codecs/common/Config.mk
-
+ifeq ($(TARGET_BOARD_PLATFORM),omap4)
+LOCAL_CFLAGS += -DTARGET_OMAP4 -DARM_4K_PAGE_SIZE=4096
+endif
 LOCAL_SRC_FILES:=                         \
         AMRExtractor.cpp                  \
         AMRWriter.cpp                     \
@@ -44,13 +46,35 @@ LOCAL_SRC_FILES:=                         \
         avc_utils.cpp                     \
         string.cpp
 
+ifeq ($(OMAP_ENHANCEMENT),true)
+LOCAL_SRC_FILES += \
+    ASFExtractor.cpp
+endif
+
+ifeq ($(TARGET_BOARD_PLATFORM),omap4)
+LOCAL_SRC_FILES +=               \
+        TIVideoConfigParser.cpp  \
+        TISEIMessagesParser.cpp
+endif
 LOCAL_C_INCLUDES:= \
 	$(JNI_H_INCLUDE) \
         $(TOP)/frameworks/base/include/media/stagefright/openmax \
         $(TOP)/external/tremolo \
         $(TOP)/external/flac/include \
         $(TOP)/frameworks/base/media/libstagefright/rtsp
+ifeq ($(OMAP_ENHANCEMENT),true)
+LOCAL_C_INCLUDES += \
+        $(TOP)/hardware/ti/omap3/liboverlay
+endif
 
+ifeq ($(TARGET_BOARD_PLATFORM),omap4)
+LOCAL_C_INCLUDES +=					\
+	hardware/ti/omx/ducati/domx/system/omx_core/inc \
+	hardware/ti/omap3/camera-omap4/inc
+endif
+ifeq ($(OMAP_ENHANCEMENT),true)
+LOCAL_C_INCLUDES += $(TOP)/hardware/ti/omap3/liboverlay
+endif
 LOCAL_SHARED_LIBRARIES := \
         libbinder         \
         libmedia          \
@@ -62,6 +86,11 @@ LOCAL_SHARED_LIBRARIES := \
         libsurfaceflinger_client \
         libcamera_client  \
         libFLAC
+
+ifeq ($(TARGET_BOARD_PLATFORM),omap4)
+LOCAL_SHARED_LIBRARIES += \
+	libcamera
+endif
 
 LOCAL_STATIC_LIBRARIES := \
         libstagefright_aacdec \
@@ -113,6 +142,18 @@ endif
 ifeq ($(BOARD_CAMERA_USE_GETBUFFERINFO),true)
         LOCAL_CFLAGS += -DUSE_GETBUFFERINFO
         LOCAL_C_INCLUDES += $(TOP)/hardware/qcom/media/mm-core/omxcore/inc
+endif
+
+ifeq ($(TARGET_USE_SOFTWARE_AUDIO_AAC),true)
+	LOCAL_CFLAGS += -DUSE_SOFTWARE_AUDIO_AAC
+endif
+
+ifeq ($(TARGET_DONT_SET_AUDIO_AAC_FORMAT),true)
+        LOCAL_CFLAGS += -DDONT_SET_AUDIO_AAC_FORMAT
+endif
+
+ifeq ($(TARGET_USE_OMAP_COMPAT),true)
+        LOCAL_CFLAGS += -DOMAP_COMPAT
 endif
 
 ifeq ($(TARGET_OS)-$(TARGET_SIMULATOR),linux-true)

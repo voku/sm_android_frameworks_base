@@ -24,6 +24,7 @@ import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.net.Uri;
+import android.net.wimax.WimaxHelper;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.AttributeSet;
@@ -69,6 +70,8 @@ public class PowerWidget extends FrameLayout {
     private WidgetBroadcastReceiver mBroadcastReceiver = null;
     private WidgetSettingsObserver mObserver = null;
 
+    private HorizontalScrollView mScrollView;
+
     public PowerWidget(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -77,6 +80,8 @@ public class PowerWidget extends FrameLayout {
 
         // get an initial width
         updateButtonLayoutWidth();
+        setupWidget();
+        updateVisibility();
     }
 
     public void setupWidget() {
@@ -102,6 +107,10 @@ public class PowerWidget extends FrameLayout {
         if(buttons == null) {
             Log.i(TAG, "Default buttons being loaded");
             buttons = BUTTONS_DEFAULT;
+            // Add the WiMAX button if it's supported
+            if (WimaxHelper.isWimaxSupported(mContext)) {
+                buttons += BUTTON_DELIMITER + PowerButton.BUTTON_WIMAX;
+            }
         }
         Log.i(TAG, "Button list: " + buttons);
 
@@ -128,15 +137,16 @@ public class PowerWidget extends FrameLayout {
         // we determine if we're using a horizontal scroll view based on a threshold of button counts
         if(buttonCount > LAYOUT_SCROLL_BUTTON_THRESHOLD) {
             // we need our horizontal scroll view to wrap the linear layout
-            HorizontalScrollView hsv = new HorizontalScrollView(mContext);
+            mScrollView = new HorizontalScrollView(mContext);
             // make the fading edge the size of a button (makes it more noticible that we can scroll
-            hsv.setFadingEdgeLength(mContext.getResources().getDisplayMetrics().widthPixels / LAYOUT_SCROLL_BUTTON_THRESHOLD);
-            hsv.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
-            hsv.setOverScrollMode(View.OVER_SCROLL_NEVER);
+            mScrollView.setFadingEdgeLength(mContext.getResources().getDisplayMetrics().widthPixels / LAYOUT_SCROLL_BUTTON_THRESHOLD);
+            mScrollView.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
+            mScrollView.setOverScrollMode(View.OVER_SCROLL_NEVER);
             // set the padding on the linear layout to the size of our scrollbar, so we don't have them overlap
-            ll.setPadding(ll.getPaddingLeft(), ll.getPaddingTop(), ll.getPaddingRight(), hsv.getVerticalScrollbarWidth());
-            hsv.addView(ll, WIDGET_LAYOUT_PARAMS);
-            addView(hsv, WIDGET_LAYOUT_PARAMS);
+            ll.setPadding(ll.getPaddingLeft(), ll.getPaddingTop(), ll.getPaddingRight(), mScrollView.getVerticalScrollbarWidth());
+            mScrollView.addView(ll, WIDGET_LAYOUT_PARAMS);
+            updateScrollbar();
+            addView(mScrollView, WIDGET_LAYOUT_PARAMS);
         } else {
             // not needed, just add the linear layout
             addView(ll, WIDGET_LAYOUT_PARAMS);
@@ -147,8 +157,6 @@ public class PowerWidget extends FrameLayout {
         IntentFilter filter = PowerButton.getAllBroadcastIntentFilters();
         // we add this so we can update views and such if the settings for our widget change
         filter.addAction(Settings.SETTINGS_CHANGED);
-        // we need to re-setup our widget on boot complete to make sure it is visible if need be
-        filter.addAction(Intent.ACTION_BOOT_COMPLETED);
         // we need to detect orientation changes and update the static button width value appropriately
         filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
         // register the receiver
@@ -173,6 +181,10 @@ public class PowerWidget extends FrameLayout {
         PowerButton.setGlobalOnClickListener(listener);
     }
 
+    public void setGlobalButtonOnLongClickListener(View.OnLongClickListener listener) {
+        PowerButton.setGlobalOnLongClickListener(listener);
+    }
+
     private void setupBroadcastReceiver() {
         if(mBroadcastReceiver == null) {
             mBroadcastReceiver = new WidgetBroadcastReceiver();
@@ -195,13 +207,17 @@ public class PowerWidget extends FrameLayout {
         }
     }
 
+    private void updateScrollbar() {
+        if (mScrollView == null) return;
+        boolean hideScrollBar = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.EXPANDED_HIDE_SCROLLBAR, 0) == 1;
+        mScrollView.setHorizontalScrollBarEnabled(!hideScrollBar);
+    }
+
     // our own broadcast receiver :D
     private class WidgetBroadcastReceiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
-                setupWidget();
-                updateVisibility();
-            } else if(intent.getAction().equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
+            if(intent.getAction().equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
                 updateButtonLayoutWidth();
                 setupWidget();
             } else {
@@ -226,6 +242,16 @@ public class PowerWidget extends FrameLayout {
             // watch for display widget
             resolver.registerContentObserver(
                     Settings.System.getUriFor(Settings.System.EXPANDED_VIEW_WIDGET),
+                            false, this);
+
+            // watch for scrollbar hiding
+            resolver.registerContentObserver(
+                    Settings.System.getUriFor(Settings.System.EXPANDED_HIDE_SCROLLBAR),
+                            false, this);
+
+            // watch for haptic feedback
+            resolver.registerContentObserver(
+                    Settings.System.getUriFor(Settings.System.EXPANDED_HAPTIC_FEEDBACK),
                             false, this);
 
             // watch for changes in buttons
@@ -261,6 +287,9 @@ public class PowerWidget extends FrameLayout {
             // now check if we change visibility
             } else if(uri.equals(Settings.System.getUriFor(Settings.System.EXPANDED_VIEW_WIDGET))) {
                 updateVisibility();
+            // now check for scrollbar hiding
+            } else if(uri.equals(Settings.System.getUriFor(Settings.System.EXPANDED_HIDE_SCROLLBAR))) {
+                updateScrollbar();
             }
 
             // do whatever the individual buttons must

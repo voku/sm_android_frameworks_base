@@ -68,7 +68,7 @@ import static javax.microedition.khronos.opengles.GL10.*;
  * {@hide}
  */
 @SuppressWarnings({"EmptyCatchBlock"})
-public final class ViewRoot extends Handler implements ViewParent,
+public final class ViewRoot extends Handler implements ViewParent, ViewOpacityManager,
         View.AttachInfo.Callbacks {
     private static final String TAG = "ViewRoot";
     private static final boolean DBG = false;
@@ -176,6 +176,7 @@ public final class ViewRoot extends Handler implements ViewParent,
     private final Surface mSurface = new Surface();
 
     boolean mAdded;
+    private boolean mAttached;
     boolean mAddedTouchMode;
 
     /*package*/ int mAddNesting;
@@ -762,7 +763,10 @@ public final class ViewRoot extends Handler implements ViewParent,
             attachInfo.mKeepScreenOn = false;
             viewVisibilityChanged = false;
             mLastConfiguration.setTo(host.getResources().getConfiguration());
-            host.dispatchAttachedToWindow(attachInfo, 0);
+            if (!mAttached) {
+                host.dispatchAttachedToWindow(attachInfo, 0);
+                mAttached = true;
+            }
             //Log.i(TAG, "Screen on initialized: " + attachInfo.mKeepScreenOn);
 
         } else {
@@ -883,7 +887,7 @@ public final class ViewRoot extends Handler implements ViewParent,
             }
         }
 
-        if (params != null && (host.mPrivateFlags & View.REQUEST_TRANSPARENT_REGIONS) != 0) {
+        if ((params != null) && (host.mPrivateFlags & View.REQUEST_TRANSPARENT_REGIONS) != 0) {
             if (!PixelFormat.formatHasAlpha(params.format)) {
                 params.format = PixelFormat.TRANSLUCENT;
             }
@@ -1065,10 +1069,11 @@ public final class ViewRoot extends Handler implements ViewParent,
                         }
                     }
                     mSurfaceHolder.mSurfaceLock.lock();
-                    // Make surface invalid.
-                    //mSurfaceHolder.mSurface.copyFrom(mSurface);
-                    mSurfaceHolder.mSurface = new Surface();
-                    mSurfaceHolder.mSurfaceLock.unlock();
+                    try {
+                        mSurfaceHolder.mSurface = new Surface();
+                    } finally {
+                        mSurfaceHolder.mSurfaceLock.unlock();
+                    }
                 }
             }
             
@@ -1298,11 +1303,38 @@ public final class ViewRoot extends Handler implements ViewParent,
         // the test below should not fail unless someone is messing with us
         checkThread();
         if (mView == child) {
+            mView.mTransparentRequests++; /* Increment so we know when to release */
             mView.mPrivateFlags |= View.REQUEST_TRANSPARENT_REGIONS;
             // Need to make sure we re-evaluate the window attributes next
             // time around, to ensure the window has the correct format.
             mWindowAttributesChanged = true;
             requestLayout();
+        }
+    }
+
+    public void releaseTransparentRegion(View child) {
+        if (mView == child) {
+            if (mView.mTransparentRequests > 0) {
+                mView.mTransparentRequests--;
+                if (mView.mTransparentRequests == 0) {
+                    /* Clear transparency flag */
+                    mView.mPrivateFlags &= ~View.REQUEST_TRANSPARENT_REGIONS;
+
+                    /* Empty transparency state in view and windowmanager */
+                    mPreviousTransparentRegion.set(mTransparentRegion);
+                    mTransparentRegion.setEmpty();
+                    mView.gatherTransparentRegion(mTransparentRegion);
+                    try {
+                        sWindowSession.setTransparentRegion(mWindow, mTransparentRegion);
+                    } catch (RemoteException e) {
+                    }
+
+                    /* Invalidate current view and schedule redraw */
+                    mFullRedrawNeeded = true;
+                    mWindowAttributesChanged = true;
+                    requestLayout();
+                }
+            }
         }
     }
 
@@ -1742,8 +1774,9 @@ public final class ViewRoot extends Handler implements ViewParent,
     void dispatchDetachedFromWindow() {
         if (Config.LOGV) Log.v(TAG, "Detaching in " + this + " of " + mSurface);
 
-        if (mView != null) {
+        if (mView != null && mAttached) {
             mView.dispatchDetachedFromWindow();
+            mAttached = false;
         }
 
         mView = null;

@@ -382,6 +382,10 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
         }
 
         setState(State.DISCONNECTING);
+        // Samsung CDMA devices require this property to be set
+        // so that pppd will be killed to stop 3G data
+        if (SystemProperties.get("ro.ril.samsung_cdma").equals("true"))
+            SystemProperties.set("ril.cdma.data_ready", "false");
 
         boolean notificationDeferred = false;
         for (DataConnection conn : dataConnectionList) {
@@ -432,7 +436,8 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
         } else {
             types = mDefaultApnTypes;
         }
-        mActiveApn = new ApnSetting(0, "", "", "", "", "", "", "", "", "", "", 0, types);
+        mActiveApn = new ApnSetting(0, "", "", "", "", "", "", "", "", "", "",
+                                    0, types, "IP", "IP");
 
         Message msg = obtainMessage();
         msg.what = EVENT_DATA_SETUP_COMPLETE;
@@ -800,9 +805,6 @@ public final class CdmaDataConnectionTracker extends DataConnectionTracker {
         if (state == State.CONNECTED) {
             if (!mCdmaPhone.mSST.isConcurrentVoiceAndData()) {
                 startNetStatPoll();
-                if("sholes".equalsIgnoreCase(android.os.Build.DEVICE)) {
-                    cleanUpConnection(true, Phone.REASON_VOICE_CALL_ENDED);
-                }
                 phone.notifyDataConnection(Phone.REASON_VOICE_CALL_ENDED);
             } else {
                 // clean slate after call end.

@@ -20,7 +20,6 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.io.IOException;
 
 import android.util.Log;
@@ -30,6 +29,7 @@ import android.graphics.ImageFormat;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.text.TextUtils;
 
 /**
  * The Camera class is used to set image capture settings, start/stop preview,
@@ -183,10 +183,10 @@ public class Camera {
          * the right of the screen, the value should be 270.
          *
          * @see #setDisplayOrientation(int)
-         * @see #setRotation(int)
-         * @see #setPreviewSize(int, int)
-         * @see #setPictureSize(int, int)
-         * @see #setJpegThumbnailSize(int, int)
+         * @see Parameters#setRotation(int)
+         * @see Parameters#setPreviewSize(int, int)
+         * @see Parameters#setPictureSize(int, int)
+         * @see Parameters#setJpegThumbnailSize(int, int)
          */
         public int orientation;
     };
@@ -609,9 +609,10 @@ public class Camera {
     public interface AutoFocusCallback
     {
         /**
-         * Called when the camera auto focus completes.  If the camera does not
-         * support auto-focus and autoFocus is called, onAutoFocus will be
-         * called immediately with success.
+         * Called when the camera auto focus completes.  If the camera
+         * does not support auto-focus and autoFocus is called,
+         * onAutoFocus will be called immediately with a fake value of
+         * <code>success</code> set to <code>true</code>.
          *
          * @param success true if focus was successful, false if otherwise
          * @param camera  the Camera service object
@@ -785,12 +786,12 @@ public class Camera {
      * is, the image is reflected along the central vertical axis of the camera
      * sensor. So the users can see themselves as looking into a mirror.
      *
-     * This does not affect the order of byte array passed in {@link
+     * <p>This does not affect the order of byte array passed in {@link
      * PreviewCallback#onPreviewFrame}, JPEG pictures, or recorded videos. This
      * method is not allowed to be called during preview.
      *
-     * If you want to make the camera image show in the same orientation as
-     * the display, you can use the following code.<p>
+     * <p>If you want to make the camera image show in the same orientation as
+     * the display, you can use the following code.
      * <pre>
      * public static void setCameraDisplayOrientation(Activity activity,
      *         int cameraId, android.hardware.Camera camera) {
@@ -1055,7 +1056,7 @@ public class Camera {
         private static final String KEY_SCENE_MODE = "scene-mode";
         private static final String KEY_FLASH_MODE = "flash-mode";
         private static final String KEY_FOCUS_MODE = "focus-mode";
-        private static final String KEY_ISO_MODE = "iso";
+        private /*static final*/ String KEY_ISO_MODE = "iso";
         private static final String KEY_LENSSHADE = "lensshade";
         private static final String KEY_FOCAL_LENGTH = "focal-length";
         private static final String KEY_HORIZONTAL_VIEW_ANGLE = "horizontal-view-angle";
@@ -1351,7 +1352,7 @@ public class Camera {
         private HashMap<String, String> mMap;
 
         private Parameters() {
-            mMap = new HashMap<String, String>();
+            mMap = new HashMap<String, String>(64);
         }
 
         /**
@@ -1375,7 +1376,7 @@ public class Camera {
          *         semi-colon delimited key-value pairs
          */
         public String flatten() {
-            StringBuilder flattened = new StringBuilder();
+            StringBuilder flattened = new StringBuilder(128);
             for (String k : mMap.keySet()) {
                 flattened.append(k);
                 flattened.append("=");
@@ -1398,9 +1399,9 @@ public class Camera {
         public void unflatten(String flattened) {
             mMap.clear();
 
-            StringTokenizer tokenizer = new StringTokenizer(flattened, ";");
-            while (tokenizer.hasMoreElements()) {
-                String kv = tokenizer.nextToken();
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(';');
+            splitter.setString(flattened);
+            for (String kv : splitter) {
                 int pos = kv.indexOf('=');
                 if (pos == -1) {
                     continue;
@@ -1863,26 +1864,27 @@ public class Camera {
          * the orientation in the EXIF header will be missing or 1 (row #0 is
          * top and column #0 is left side).
          *
-         * If applications want to rotate the picture to match the orientation
+         * <p>If applications want to rotate the picture to match the orientation
          * of what users see, apps should use {@link
          * android.view.OrientationEventListener} and {@link CameraInfo}.
          * The value from OrientationEventListener is relative to the natural
          * orientation of the device. CameraInfo.orientation is the angle
-         * between camera orientation and natural device orientation. The sum or
+         * between camera orientation and natural device orientation. The sum
          * of the two is the rotation angle for back-facing camera. The
          * difference of the two is the rotation angle for front-facing camera.
          * Note that the JPEG pictures of front-facing cameras are not mirrored
          * as in preview display.
          *
-         * For example, suppose the natural orientation of the device is
+         * <p>For example, suppose the natural orientation of the device is
          * portrait. The device is rotated 270 degrees clockwise, so the device
          * orientation is 270. Suppose a back-facing camera sensor is mounted in
          * landscape and the top side of the camera sensor is aligned with the
          * right edge of the display in natural orientation. So the camera
          * orientation is 90. The rotation should be set to 0 (270 + 90).
          *
-         * The reference code is as follows.
+         * <p>The reference code is as follows.
          *
+	 * <pre>
          * public void public void onOrientationChanged(int orientation) {
          *     if (orientation == ORIENTATION_UNKNOWN) return;
          *     android.hardware.Camera.CameraInfo info =
@@ -1897,6 +1899,7 @@ public class Camera {
          *     }
          *     mParameters.setRotation(rotation);
          * }
+	 * </pre>
          *
          * @param rotation The rotation angle in degrees relative to the
          *                 orientation of the camera. Rotation can only be 0,
@@ -2756,6 +2759,15 @@ public class Camera {
          */
         public List<String> getSupportedIsoValues() {
             String str = get(KEY_ISO_MODE + SUPPORTED_VALUES_SUFFIX);
+            if (str == null && get("nv-mode-hint") != null) {
+                /* Support NV cams */
+                KEY_ISO_MODE = "nv-picture-iso";
+                str = get(KEY_ISO_MODE + SUPPORTED_VALUES_SUFFIX);
+            } else if (str == null && get("iso-mode-values") != null) {
+                /* Support OMAP cams */
+                KEY_ISO_MODE = "iso-mode";
+                str = get(KEY_ISO_MODE + SUPPORTED_VALUES_SUFFIX);
+            }
             return split(str);
         }
 
@@ -2840,11 +2852,11 @@ public class Camera {
         private ArrayList<String> split(String str) {
             if (str == null) return null;
 
-            // Use StringTokenizer because it is faster than split.
-            StringTokenizer tokenizer = new StringTokenizer(str, ",");
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+            splitter.setString(str);
             ArrayList<String> substrings = new ArrayList<String>();
-            while (tokenizer.hasMoreElements()) {
-                substrings.add(tokenizer.nextToken());
+            for (String s : splitter) {
+                substrings.add(s);
             }
             return substrings;
         }
@@ -2854,11 +2866,11 @@ public class Camera {
         private ArrayList<Integer> splitInt(String str) {
             if (str == null) return null;
 
-            StringTokenizer tokenizer = new StringTokenizer(str, ",");
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+            splitter.setString(str);
             ArrayList<Integer> substrings = new ArrayList<Integer>();
-            while (tokenizer.hasMoreElements()) {
-                String token = tokenizer.nextToken();
-                substrings.add(Integer.parseInt(token));
+            for (String s : splitter) {
+                substrings.add(Integer.parseInt(s));
             }
             if (substrings.size() == 0) return null;
             return substrings;
@@ -2867,11 +2879,11 @@ public class Camera {
         private void splitInt(String str, int[] output) {
             if (str == null) return;
 
-            StringTokenizer tokenizer = new StringTokenizer(str, ",");
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+            splitter.setString(str);
             int index = 0;
-            while (tokenizer.hasMoreElements()) {
-                String token = tokenizer.nextToken();
-                output[index++] = Integer.parseInt(token);
+            for (String s : splitter) {
+                output[index++] = Integer.parseInt(s);
             }
         }
 
@@ -2879,11 +2891,11 @@ public class Camera {
         private void splitFloat(String str, float[] output) {
             if (str == null) return;
 
-            StringTokenizer tokenizer = new StringTokenizer(str, ",");
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+            splitter.setString(str);
             int index = 0;
-            while (tokenizer.hasMoreElements()) {
-                String token = tokenizer.nextToken();
-                output[index++] = Float.parseFloat(token);
+            for (String s : splitter) {
+                output[index++] = Float.parseFloat(s);
             }
         }
 
@@ -2916,10 +2928,11 @@ public class Camera {
         private ArrayList<Size> splitSize(String str) {
             if (str == null) return null;
 
-            StringTokenizer tokenizer = new StringTokenizer(str, ",");
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+            splitter.setString(str);
             ArrayList<Size> sizeList = new ArrayList<Size>();
-            while (tokenizer.hasMoreElements()) {
-                Size size = strToSize(tokenizer.nextToken());
+            for (String s : splitter) {
+                Size size = strToSize(s);
                 if (size != null) sizeList.add(size);
             }
             if (sizeList.size() == 0) return null;
@@ -2972,10 +2985,11 @@ public class Camera {
         private ArrayList<Coordinate> splitCoordinate(String str) {
             if (str == null) return null;
 
-            StringTokenizer tokenizer = new StringTokenizer(str, ",");
+            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+            splitter.setString(str);
             ArrayList<Coordinate> coordinateList = new ArrayList<Coordinate>();
-            while (tokenizer.hasMoreElements()) {
-                Coordinate c = strToCoordinate(tokenizer.nextToken());
+            for (String s : splitter) {
+                Coordinate c = strToCoordinate(s);
                 if (c != null) coordinateList.add(c);
             }
             if (coordinateList.size() == 0) return null;

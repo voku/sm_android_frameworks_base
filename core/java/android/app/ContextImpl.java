@@ -51,6 +51,7 @@ import android.content.pm.IPackageStatsObserver;
 import android.content.pm.InstrumentationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ParceledListSlice;
 import android.content.pm.PermissionGroupInfo;
 import android.content.pm.PermissionInfo;
 import android.content.pm.ProviderInfo;
@@ -67,6 +68,8 @@ import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
+import android.hardware.usb.IUsbManager;
+import android.hardware.usb.UsbManager;
 import android.location.ILocationManager;
 import android.location.LocationManager;
 import android.media.AudioManager;
@@ -77,6 +80,9 @@ import android.net.IThrottleManager;
 import android.net.Uri;
 import android.net.wifi.IWifiManager;
 import android.net.wifi.WifiManager;
+import android.net.wimax.WimaxHelper;
+import android.net.wimax.WimaxManagerConstants;
+import android.nfc.NfcManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.DropBoxManager;
@@ -86,6 +92,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.IPowerManager;
 import android.os.Looper;
+import android.os.Parcel;
 import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
@@ -175,6 +182,7 @@ class ContextImpl extends Context {
     private static ThrottleManager sThrottleManager;
     private static WifiManager sWifiManager;
     private static LocationManager sLocationManager;
+    private static Object sWimaxManager;
     private static final HashMap<String, SharedPreferencesImpl> sSharedPrefs =
             new HashMap<String, SharedPreferencesImpl>();
 
@@ -189,12 +197,14 @@ class ContextImpl extends Context {
     private Resources.Theme mTheme = null;
     private PackageManager mPackageManager;
     private NotificationManager mNotificationManager = null;
+    private ProfileManager mProfileManager = null;
     private ActivityManager mActivityManager = null;
     private WallpaperManager mWallpaperManager = null;
     private Context mReceiverRestrictedContext = null;
     private SearchManager mSearchManager = null;
     private SensorManager mSensorManager = null;
     private StorageManager mStorageManager = null;
+    private UsbManager mUsbManager = null;
     private Vibrator mVibrator = null;
     private LayoutInflater mLayoutInflater = null;
     private StatusBarManager mStatusBarManager = null;
@@ -206,6 +216,7 @@ class ContextImpl extends Context {
     private DevicePolicyManager mDevicePolicyManager = null;
     private UiModeManager mUiModeManager = null;
     private DownloadManager mDownloadManager = null;
+    private NfcManager mNfcManager = null;
 
     private final Object mSync = new Object();
 
@@ -386,7 +397,8 @@ class ContextImpl extends Context {
             }
 
             Map map = null;
-            if (prefsFile.exists() && prefsFile.canRead()) {
+            FileStatus stat = new FileStatus();
+            if (FileUtils.getFileStatus(prefsFile.getPath(), stat) && prefsFile.canRead()) {
                 try {
                     FileInputStream str = new FileInputStream(prefsFile);
                     map = XmlUtils.readMapXml(str);
@@ -399,7 +411,7 @@ class ContextImpl extends Context {
                     Log.w(TAG, "getSharedPreferences", e);
                 }
             }
-            sp.replace(map);
+            sp.replace(map, stat);
         }
         return sp;
     }
@@ -958,6 +970,8 @@ class ContextImpl extends Context {
             return getWifiManager();
         } else if (NOTIFICATION_SERVICE.equals(name)) {
             return getNotificationManager();
+        } else if (PROFILE_SERVICE.equals(name)) {
+            return getProfileManager();
         } else if (KEYGUARD_SERVICE.equals(name)) {
             return new KeyguardManager();
         } else if (ACCESSIBILITY_SERVICE.equals(name)) {
@@ -970,6 +984,8 @@ class ContextImpl extends Context {
             return getSensorManager();
         } else if (STORAGE_SERVICE.equals(name)) {
             return getStorageManager();
+        } else if (USB_SERVICE.equals(name)) {
+            return getUsbManager();
         } else if (VIBRATOR_SERVICE.equals(name)) {
             return getVibrator();
         } else if (STATUS_BAR_SERVICE.equals(name)) {
@@ -995,6 +1011,10 @@ class ContextImpl extends Context {
             return getUiModeManager();
         } else if (DOWNLOAD_SERVICE.equals(name)) {
             return getDownloadManager();
+        } else if (NFC_SERVICE.equals(name)) {
+            return getNfcManager();
+        } else if (WimaxManagerConstants.WIMAX_SERVICE.equals(name)) {
+            return getWimaxManager();
         }
 
         return null;
@@ -1090,6 +1110,16 @@ class ContextImpl extends Context {
         return mNotificationManager;
     }
 
+    private ProfileManager getProfileManager() {
+        synchronized (mSync) {
+            if (mProfileManager == null) {
+                mProfileManager = new ProfileManager(getOuterContext(),
+                        mMainThread.getHandler());
+            }
+        }
+        return mProfileManager;
+    }
+
     private WallpaperManager getWallpaperManager() {
         synchronized (mSync) {
             if (mWallpaperManager == null) {
@@ -1162,6 +1192,17 @@ class ContextImpl extends Context {
         return mStorageManager;
     }
 
+    private UsbManager getUsbManager() {
+        synchronized (mSync) {
+            if (mUsbManager == null) {
+                IBinder b = ServiceManager.getService(USB_SERVICE);
+                IUsbManager service = IUsbManager.Stub.asInterface(b);
+                mUsbManager = new UsbManager(this, service);
+            }
+        }
+        return mUsbManager;
+    }
+
     private Vibrator getVibrator() {
         synchronized (mSync) {
             if (mVibrator == null) {
@@ -1220,6 +1261,24 @@ class ContextImpl extends Context {
             }
         }
         return mDownloadManager;
+    }
+
+    private NfcManager getNfcManager() {
+        synchronized (mSync) {
+            if (mNfcManager == null) {
+                mNfcManager = new NfcManager(this);
+            }
+        }
+        return mNfcManager;
+    }
+
+    private Object getWimaxManager() {
+        synchronized (sSync) {
+            if (sWimaxManager == null) {
+                sWimaxManager = WimaxHelper.createWimaxService(this, mMainThread.getHandler());
+            }
+        }
+        return sWimaxManager;
     }
 
     @Override
@@ -1990,15 +2049,27 @@ class ContextImpl extends Context {
             throw new NameNotFoundException("No shared userid for user:"+sharedUserName);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public List<PackageInfo> getInstalledPackages(int flags) {
             try {
-                return mPM.getInstalledPackages(flags);
+                final List<PackageInfo> packageInfos = new ArrayList<PackageInfo>();
+                PackageInfo lastItem = null;
+                ParceledListSlice<PackageInfo> slice;
+
+                do {
+                    final String lastKey = lastItem != null ? lastItem.packageName : null;
+                    slice = mPM.getInstalledPackages(flags, lastKey);
+                    lastItem = slice.populateList(packageInfos, PackageInfo.CREATOR);
+                } while (!slice.isLastSlice());
+
+                return packageInfos;
             } catch (RemoteException e) {
                 throw new RuntimeException("Package manager has died", e);
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public List<PackageInfo> getInstalledThemePackages() {
             try {
@@ -2008,10 +2079,21 @@ class ContextImpl extends Context {
             }
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public List<ApplicationInfo> getInstalledApplications(int flags) {
             try {
-                return mPM.getInstalledApplications(flags);
+                final List<ApplicationInfo> applicationInfos = new ArrayList<ApplicationInfo>();
+                ApplicationInfo lastItem = null;
+                ParceledListSlice<ApplicationInfo> slice;
+
+                do {
+                    final String lastKey = lastItem != null ? lastItem.packageName : null;
+                    slice = mPM.getInstalledApplications(flags, lastKey);
+                    lastItem = slice.populateList(applicationInfos, ApplicationInfo.CREATOR);
+                } while (!slice.isLastSlice());
+
+                return applicationInfos;
             } catch (RemoteException e) {
                 throw new RuntimeException("Package manager has died", e);
             }
@@ -2715,9 +2797,19 @@ class ContextImpl extends Context {
         }
 
         @Override
-        public void setPackageObbPath(String packageName, String path) {
+        public String[] getRevokedPermissions(String packageName) {
             try {
-                mPM.setPackageObbPath(packageName, path);
+                return mPM.getRevokedPermissions(packageName);
+            } catch (RemoteException e) {
+                // Should never happen!
+            }
+            return new String[0];
+        }
+
+        @Override
+        public void setRevokedPermissions(String packageName, String[] perms) {
+            try {
+                mPM.setRevokedPermissions(packageName, perms);
             } catch (RemoteException e) {
                 // Should never happen!
             }
@@ -2797,11 +2889,15 @@ class ContextImpl extends Context {
             }
         }
 
-        public void replace(Map newContents) {
+        /* package */ void replace(Map newContents, FileStatus stat) {
             synchronized (this) {
                 mLoaded = true;
                 if (newContents != null) {
                     mMap = newContents;
+                }
+                if (stat != null) {
+                    mStatTimestamp = stat.mtime;
+                    mStatSize = stat.size;
                 }
             }
         }

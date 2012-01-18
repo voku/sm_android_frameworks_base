@@ -89,7 +89,7 @@ public class Process {
      * Defines the UID/GID for the NFC service process.
      * @hide
      */
-    public static final int NFC_UID = 1022;
+    public static final int NFC_UID = 1025;
 
     /**
      * Defines the start of a range of UIDs (and GIDs), going from this
@@ -789,6 +789,9 @@ public class Process {
     
     /** @hide */
     public static final native int[] getPids(String path, int[] lastArray);
+
+    /** @hide */
+    public static final native int getPpid();
     
     /** @hide */
     public static final int PROC_TERM_MASK = 0xff;

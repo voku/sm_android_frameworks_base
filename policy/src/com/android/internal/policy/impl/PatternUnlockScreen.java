@@ -35,7 +35,7 @@ import com.android.internal.widget.LinearLayoutWithDefaultTouchRecepient;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.LockPatternView;
 import com.android.internal.widget.LockPatternView.Cell;
-
+import android.view.ViewGroup;
 import java.util.List;
 import java.util.Date;
 
@@ -66,9 +66,9 @@ class PatternUnlockScreen extends LinearLayoutWithDefaultTouchRecepient
     private int mTotalFailedPatternAttempts = 0;
     private CountDownTimer mCountdownTimer = null;
 
-    private final LockPatternUtils mLockPatternUtils;
-    private final KeyguardUpdateMonitor mUpdateMonitor;
-    private final KeyguardScreenCallback mCallback;
+    private LockPatternUtils mLockPatternUtils;
+    private KeyguardUpdateMonitor mUpdateMonitor;
+    private KeyguardScreenCallback mCallback;
 
     /**
      * whether there is a fallback option available when the pattern is forgotten.
@@ -185,7 +185,8 @@ class PatternUnlockScreen extends LinearLayoutWithDefaultTouchRecepient
         } else {
             inflater.inflate(R.layout.keyguard_screen_unlock_landscape, this, true);
         }
-
+        ViewGroup lockWallpaper = (ViewGroup) findViewById(R.id.pattern);
+        LockScreen.setBackground(getContext(), lockWallpaper);
         mCarrier = (TextView) findViewById(R.id.carrier);
         mDate = (TextView) findViewById(R.id.date);
 
@@ -306,13 +307,13 @@ class PatternUnlockScreen extends LinearLayoutWithDefaultTouchRecepient
         } else if (mShowingBatteryInfo && mNextAlarm == null) {
             // battery only
             if (mPluggedIn) {
-              if (mBatteryLevel >= 100) {
+              if (mUpdateMonitor.isDeviceCharged()) {
                 mStatus1.setText(getContext().getString(R.string.lockscreen_charged));
               } else {
                   mStatus1.setText(getContext().getString(R.string.lockscreen_plugged_in, mBatteryLevel));
               }
             } else {
-                mStatus1.setText(getContext().getString(R.string.lockscreen_low_battery));
+                mStatus1.setText(getContext().getString(R.string.lockscreen_low_battery, mBatteryLevel));
             }
             mStatus1.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_lock_idle_charging, 0, 0, 0);
 
@@ -493,6 +494,9 @@ class PatternUnlockScreen extends LinearLayoutWithDefaultTouchRecepient
     /** {@inheritDoc} */
     public void cleanUp() {
         mUpdateMonitor.removeCallback(this);
+        mLockPatternUtils = null;
+        mUpdateMonitor = null;
+        mCallback = null;
     }
 
     @Override

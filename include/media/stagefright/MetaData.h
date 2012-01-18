@@ -41,6 +41,10 @@ enum {
     kKeyBitRate           = 'brte',  // int32_t (bps)
     kKeyESDS              = 'esds',  // raw data
     kKeyAVCC              = 'avcc',  // raw data
+#ifdef OMAP_ENHANCEMENT
+    kKeyStreamSpecificData= 'scsd',  // raw data
+    kKeyHdr               = 'hdrd',  // raw data
+#endif
     kKeyVorbisInfo        = 'vinf',  // raw data
     kKeyVorbisBooks       = 'vboo',  // raw data
     kKeyWantsNALFragments = 'NALf',
@@ -73,11 +77,17 @@ enum {
     kKeyDiscNumber        = 'dnum',  // cstring
     kKeyDate              = 'date',  // cstring
     kKeyWriter            = 'writ',  // cstring
+    kKeyCompilation       = 'cpil',  // cstring
     kKeyTimeScale         = 'tmsl',  // int32_t
 
     // video profile and level
     kKeyVideoProfile      = 'vprf',  // int32_t
     kKeyVideoLevel        = 'vlev',  // int32_t
+#ifdef OMAP_ENHANCEMENT
+    kKeyNumRefFrames      = 'vnrf',  // int32_t
+    kKeyVideoFPS          = 'vfps',  // int32_t
+    kKeyVideoInterlaced   = 'vint',  // int32_t (bool)
+#endif
 
     // Set this key to enable authoring files in 64-bit offset
     kKey64BitFileOffset   = 'fobt',  // int32_t (bool)
@@ -101,6 +111,16 @@ enum {
     kKeyValidSamples      = 'valD',  // int32_t
 
     kKeyIsUnreadable      = 'unre',  // bool (int32_t)
+
+#if defined (OMAP_ENHANCEMENT) && defined (TARGET_OMAP4)
+    kKeyPaddedWidth       = 'pwid',   // int32_t
+    kKeyPaddedHeight      = 'phei',   // int32_t
+    kKeyOffset            = 'offs',   // int32_t
+    kKeyIsExtraData     = 'xdta',     // int32_t (bool)
+    kKeyS3dSupported     ='s3ds',    // int32_t (bool)
+    kKeySEIEncodingType  ='seit',    // int32_t
+    kKeyFrameLayout      ='frml',    // cstring
+#endif
 };
 
 enum {

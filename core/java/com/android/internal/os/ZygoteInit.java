@@ -64,7 +64,18 @@ public class ZygoteInit {
     private static final int LOG_BOOT_PROGRESS_PRELOAD_END = 3030;
 
     /** when preloading, GC after allocating this many bytes */
-    private static final int PRELOAD_GC_THRESHOLD = 50000;
+
+    /**
+     * Setting the GC threshold to half the VM heap size to prevent
+     * redundant GC which contributes to a higher boot time.
+     * Taking the VM heap size from system property; assuming vm heap size
+     * is in megabytes and thus ends with "m" - inline with rest of
+     * the framework code.
+     */
+    private static final String heapSize =
+                    SystemProperties.get("dalvik.vm.heapsize", "16m");
+    private static final int PRELOAD_GC_THRESHOLD = Integer.parseInt(
+                    heapSize.substring(0, heapSize.length()-1))*1024*1024/2;
 
     public static final String USAGE_STRING =
             " <\"true\"|\"false\" for startSystemServer>";
@@ -225,12 +236,18 @@ public class ZygoteInit {
     private static final int ROOT_UID = 0;
     private static final int ROOT_GID = 0;
 
+    private static final int EEXIST = 17;
+
     /**
      * Sets effective user ID.
      */
     private static void setEffectiveUser(int uid) {
         int errno = setreuid(ROOT_UID, uid);
-        if (errno != 0) {
+        if (errno == EEXIST) {
+            // reported if uid is already good
+            Log.d(TAG, "setreuid() error ignored, same uid.");
+        }
+        else if (errno != 0) {
             Log.e(TAG, "setreuid() failed. errno: " + errno);
         }
     }
@@ -277,9 +294,10 @@ public class ZygoteInit {
             runtime.runFinalizationSync();
             Debug.startAllocCounting();
 
+            BufferedReader br = null;
+
             try {
-                BufferedReader br
-                    = new BufferedReader(new InputStreamReader(is), 256);
+                br = new BufferedReader(new InputStreamReader(is), 256);
 
                 int count = 0;
                 String line;
@@ -324,6 +342,11 @@ public class ZygoteInit {
             } catch (IOException e) {
                 Log.e(TAG, "Error reading " + PRELOADED_CLASSES + ".", e);
             } finally {
+                try {
+                    br.close();
+                } catch (final IOException e) {
+                    Log.w(TAG, "Error closing reader: " + PRELOADED_CLASSES + ".", e);
+                }
                 // Restore default.
                 runtime.setTargetHeapUtilization(defaultUtilization);
 
@@ -513,7 +536,7 @@ public class ZygoteInit {
         String args[] = {
             "--setuid=1000",
             "--setgid=1000",
-            "--setgroups=1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1300,3001,3002,3003",
+            "--setgroups=1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1018,1300,3001,3002,3003",
             "--capabilities=130104352,130104352",
             "--runtime-init",
             "--nice-name=system_server",

@@ -786,6 +786,13 @@ public abstract class PackageManager {
 
     /**
      * Feature for {@link #getSystemAvailableFeatures} and
+     * {@link #hasSystemFeature}: The device supports connecting to USB accessories.
+     * @hide
+     */
+    public static final String FEATURE_USB_ACCESSORY = "android.hardware.usb.accessory";
+
+    /**
+     * Feature for {@link #getSystemAvailableFeatures} and
      * {@link #hasSystemFeature}: The SIP API is enabled on the device.
      */
     @SdkConstant(SdkConstantType.FEATURE)
@@ -2285,15 +2292,26 @@ public abstract class PackageManager {
             String packageName, IPackageMoveObserver observer, int flags);
 
     /**
-     * Sets the Opaque Binary Blob (OBB) file location.
+     * Returns the revoked permissions for given package.
      * <p>
-     * NOTE: The existence or format of this file is not currently checked, but
-     * it may be in the future.
-     * 
-     * @param packageName Name of the package with which to associate the .obb
-     *            file
-     * @param path Path on the filesystem to the .obb file
+     * NOTE: If the package has a shared uid then the revoked permissions for that
+     * 			  uid will be returned.
+     *
+     * @param packageName Name of the package which revoked permissions are needed
      * @hide
      */
-    public abstract void setPackageObbPath(String packageName, String path);
+    public abstract String[] getRevokedPermissions(String packageName);
+
+    /**
+     * Sets the revoked permissions for given package.
+     * <p>
+     * NOTE: If the package has a shared uid then this method will revoke the
+     * 			  permissions for that shared uid.
+     *
+     * @param packageName Name of the package which revoked permissions are needed
+     * @param the revoked permissions.
+     * @hide
+     */
+    public abstract void setRevokedPermissions(String packageName, String[] perms);
+
 }

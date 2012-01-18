@@ -143,7 +143,7 @@ public abstract class Context {
      * tied to the lifetime of the process rather than the current component.
      *
      * <p>Consider for example how this interacts with
-     * {@ #registerReceiver(BroadcastReceiver, IntentFilter)}:
+     * {@link #registerReceiver(BroadcastReceiver, IntentFilter)}:
      * <ul>
      * <li> <p>If used from an Activity context, the receiver is being registered
      * within that activity.  This means that you are expected to unregister
@@ -1334,6 +1334,16 @@ public abstract class Context {
 
     /**
      * Use with {@link #getSystemService} to retrieve a
+     * {@link android.app.ProfileManager} for setting
+     * notification profiles.
+     *
+     * @see #getSystemService
+     * @see android.app.ProfileManager
+     */
+    public static final String PROFILE_SERVICE = "profile";
+
+    /**
+     * Use with {@link #getSystemService} to retrieve a
      * {@link android.view.accessibility.AccessibilityManager} for giving the user
      * feedback for UI events through the registered event listeners.
      *
@@ -1551,12 +1561,31 @@ public abstract class Context {
 
     /**
      * Use with {@link #getSystemService} to retrieve a
+     * {@link android.nfc.NfcManager} for using NFC.
+     *
+     * @see #getSystemService
+     */
+    public static final String NFC_SERVICE = "nfc";
+
+    /**
+     * Use with {@link #getSystemService} to retrieve a
      * {@link android.net.sip.SipManager} for accessing the SIP related service.
      *
      * @see #getSystemService
      */
     /** @hide */
     public static final String SIP_SERVICE = "sip";
+
+    /**
+     * Use with {@link #getSystemService} to retrieve a {@link
+     * android.hardware.usb.UsbManager} for access to USB devices (as a USB host)
+     * and for controlling this device's behavior as a USB device.
+     *
+     * @see #getSystemService
+     * @see android.harware.usb.UsbManager
+     * @hide
+     */
+    public static final String USB_SERVICE = "usb";
 
     /**
      * Determine whether the given permission is allowed for a particular

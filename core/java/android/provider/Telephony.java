@@ -541,7 +541,7 @@ public final class Telephony {
              * values:</p>
              *
              * <ul>
-             *   <li><em>pdus</em> - An Object[] od byte[]s containing the PDUs
+             *   <li><em>pdus</em> - An Object[] of byte[]s containing the PDUs
              *   that make up the message.</li>
              * </ul>
              *
@@ -576,6 +576,46 @@ public final class Telephony {
                     "android.provider.Telephony.WAP_PUSH_RECEIVED";
 
             /**
+             * Broadcast Action: A new Cell Broadcast message has been received
+             * by the device. The intent will have the following extra
+             * values:</p>
+             *
+             * <ul>
+             *   <li><em>pdus</em> - An Object[] of byte[]s containing the PDUs
+             *   that make up the message.</li>
+             * </ul>
+             *
+             * <p>The extra values can be extracted using
+             * {@link #getMessagesFromIntent(Intent)}.</p>
+             *
+             * <p>If a BroadcastReceiver encounters an error while processing
+             * this intent it should set the result code appropriately.</p>
+             */
+            @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
+            public static final String SMS_CB_RECEIVED_ACTION =
+                    "android.provider.Telephony.SMS_CB_RECEIVED";
+
+            /**
+             * Broadcast Action: A new Emergency Broadcast message has been received
+             * by the device. The intent will have the following extra
+             * values:</p>
+             *
+             * <ul>
+             *   <li><em>pdus</em> - An Object[] of byte[]s containing the PDUs
+             *   that make up the message.</li>
+             * </ul>
+             *
+             * <p>The extra values can be extracted using
+             * {@link #getMessagesFromIntent(Intent)}.</p>
+             *
+             * <p>If a BroadcastReceiver encounters an error while processing
+             * this intent it should set the result code appropriately.</p>
+             */
+            @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
+            public static final String SMS_EMERGENCY_CB_RECEIVED_ACTION =
+                    "android.provider.Telephony.SMS_EMERGENCY_CB_RECEIVED";
+
+            /**
              * Broadcast Action: The SIM storage for SMS messages is full.  If
              * space is not freed, messages targeted for the SIM (class 2) may
              * not be saved.
@@ -608,7 +648,7 @@ public final class Telephony {
              * @param intent the intent to read from
              * @return an array of SmsMessages for the PDUs
              */
-            public static final SmsMessage[] getMessagesFromIntent(
+            public static SmsMessage[] getMessagesFromIntent(
                     Intent intent) {
                 Object[] messages = (Object[]) intent.getSerializableExtra("pdus");
                 byte[][] pduObjs = new byte[messages.length][];
@@ -1711,6 +1751,21 @@ public final class Telephony {
         public static final String AUTH_TYPE = "authtype";
 
         public static final String TYPE = "type";
+
+        /**
+         * The protocol to be used to connect to this APN.
+         *
+         * One of the PDP_type values in TS 27.007 section 10.1.1.
+         * For example, "IP", "IPV6", "IPV4V6", or "PPP".
+         */
+        public static final String PROTOCOL = "protocol";
+
+        /**
+          * The protocol to be used to connect to this APN when roaming.
+          *
+          * The syntax is the same as protocol.
+          */
+        public static final String ROAMING_PROTOCOL = "roaming_protocol";
 
         public static final String CURRENT = "current";
     }

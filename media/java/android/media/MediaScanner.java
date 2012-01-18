@@ -45,6 +45,7 @@ import android.text.TextUtils;
 import android.util.Config;
 import android.util.Log;
 import android.util.Xml;
+import android.os.SystemProperties;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -388,7 +389,7 @@ public class MediaScanner
     private class MyMediaScannerClient implements MediaScannerClient {
 
         private String mArtist;
-        private String mAlbumArtist;    // use this if mArtist is missing
+        private String mAlbumArtist;
         private String mAlbum;
         private String mTitle;
         private String mComposer;
@@ -402,6 +403,7 @@ public class MediaScanner
         private long mLastModified;
         private long mFileSize;
         private String mWriter;
+        private int mCompilation;
 
         public FileCacheEntry beginFile(String path, String mimeType, long lastModified, long fileSize) {
 
@@ -486,6 +488,7 @@ public class MediaScanner
             mPath = path;
             mLastModified = lastModified;
             mWriter = null;
+            mCompilation = 0;
 
             return entry;
         }
@@ -596,6 +599,8 @@ public class MediaScanner
                 mDuration = parseSubstring(value, 0, 0);
             } else if (name.equalsIgnoreCase("writer") || name.startsWith("writer;")) {
                 mWriter = value.trim();
+            } else if (name.equalsIgnoreCase("compilation")) {
+                mCompilation = parseSubstring(value, 0, 0);
             }
         }
 
@@ -637,7 +642,7 @@ public class MediaScanner
                 map.put(Audio.Media.ARTIST, (mArtist != null && mArtist.length() > 0) ?
                         mArtist : MediaStore.UNKNOWN_STRING);
                 map.put(Audio.Media.ALBUM_ARTIST, (mAlbumArtist != null &&
-                        mAlbumArtist.length() > 0) ? mAlbumArtist : null);
+                        mAlbumArtist.length() > 0) ? mAlbumArtist : MediaStore.UNKNOWN_STRING);
                 map.put(Audio.Media.ALBUM, (mAlbum != null && mAlbum.length() > 0) ?
                         mAlbum : MediaStore.UNKNOWN_STRING);
                 map.put(Audio.Media.COMPOSER, mComposer);
@@ -646,6 +651,7 @@ public class MediaScanner
                 }
                 map.put(Audio.Media.TRACK, mTrack);
                 map.put(Audio.Media.DURATION, mDuration);
+                map.put(Audio.Media.COMPILATION, mCompilation);
             }
             return map;
         }
@@ -673,6 +679,11 @@ public class MediaScanner
              // use album artist if artist is missing
             if (mArtist == null || mArtist.length() == 0) {
                 mArtist = mAlbumArtist;
+            }
+
+             // use artist if album artist is missing
+            if (mAlbumArtist == null || mAlbumArtist.length() == 0) {
+                mAlbumArtist = mArtist;
             }
 
             ContentValues values = toValues();
@@ -725,7 +736,9 @@ public class MediaScanner
                 values.put(Audio.Media.IS_ALARM, alarms);
                 values.put(Audio.Media.IS_MUSIC, music);
                 values.put(Audio.Media.IS_PODCAST, podcasts);
-            } else if (mFileType == MediaFile.FILE_TYPE_JPEG) {
+            } else if ((mFileType == MediaFile.FILE_TYPE_JPEG) ||
+                       ((SystemProperties.OMAP_ENHANCEMENT) && (mFileType == MediaFile.FILE_TYPE_JPS)) ||
+                       ((SystemProperties.OMAP_ENHANCEMENT) && (mFileType == MediaFile.FILE_TYPE_MPO))) {
                 ExifInterface exif = null;
                 try {
                     exif = new ExifInterface(entry.mPath);

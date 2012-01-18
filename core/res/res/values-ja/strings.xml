@@ -138,6 +138,9 @@
     <string name="recent_tasks_title" msgid="3691764623638127888">"新着"</string>
     <string name="no_recent_tasks" msgid="279702952298056674">"最近使ったアプリケーションはありません。"</string>
     <string name="global_actions" msgid="2406416831541615258">"携帯電話オプション"</string>
+    <string name="global_action_home">"ホーム"</string>
+    <string name="global_action_menu">"メニュー"</string>
+    <string name="global_action_back">"戻る"</string>
     <string name="global_action_lock" msgid="2844945191792119712">"画面ロック"</string>
     <string name="global_action_power_off" msgid="4471879440839879722">"電源を切る"</string>
     <string name="global_action_reboot">"再起動する"</string>
@@ -184,6 +187,8 @@
     <string name="permdesc_receiveSms" msgid="6298292335965966117">"SMSメッセージの受信と処理をアプリケーションに許可します。悪意のあるアプリケーションがメッセージを監視したり、表示せずに削除する恐れがあります。"</string>
     <string name="permlab_receiveMms" msgid="8894700916188083287">"MMSの受信"</string>
     <string name="permdesc_receiveMms" msgid="4563346832000174373">"MMSメッセージの受信と処理をアプリケーションに許可します。悪意のあるアプリケーションがメッセージを監視したり、表示せずに削除する恐れがあります。"</string>
+    <string name="permlab_receiveEmergencyBroadcast" msgid="1803477660846288089">"緊急放送の受信"</string>
+    <string name="permdesc_receiveEmergencyBroadcast" msgid="7118393393716546131">"緊急放送メッセージの取得と処理をアプリケーションに許可します。これはシステムアプリケーションのみ利用できる権限です。"</string>
     <string name="permlab_sendSms" msgid="5600830612147671529">"SMSメッセージの送信"</string>
     <string name="permdesc_sendSms" msgid="1946540351763502120">"SMSメッセージの送信をアプリケーションに許可します。悪意のあるアプリケーションが確認なしでメッセージを送信し、料金が発生する恐れがあります。"</string>
     <string name="permlab_readSms" msgid="4085333708122372256">"SMSの読み取り"</string>
@@ -271,7 +276,7 @@
     <string name="permlab_readLogs" msgid="6615778543198967614">"機密ログデータの読み取り"</string>
     <string name="permdesc_readLogs" msgid="8896449437464867766">"システムの各種ログファイルの読み取りをアプリケーションに許可します。許可すると端末の使用状況に関する全般的な情報が読み取られます。この情報には個人情報や機密情報が含まれる場合があります。"</string>
     <string name="permlab_diagnostic" msgid="8076743953908000342">"diagが所有するリソースの読み書き"</string>
-    <string name="permdesc_diagnostic" msgid="3121238373951637049">"diagグループが所有するリソース（例:/dev内のファイル）への読み書きをアプリケーションに許可します。システムの安定性とセキュリティに影響する恐れがあります。メーカー/オペレーターによるハードウェア固有の診断以外には使用しないでください。"</string>
+    <string name="permdesc_diagnostic" msgid="3121238373951637049">"diagグループが所有するリソース（例:/dev内のファイル）への読み書きをアプリケーションに許可します。システムの安定性とセキュリティに影響する恐れがあります。メーカー/通信事業者によるハードウェア固有の診断以外には使用しないでください。"</string>
     <string name="permlab_changeComponentState" msgid="79425198834329406">"アプリケーションのコンポーネントを有効/無効にする"</string>
     <string name="permdesc_changeComponentState" msgid="4569107043246700630">"別アプリケーションのコンポーネントの有効/無効を変更することをアプリケーションに許可します。これにより悪意のあるアプリケーションが、携帯電話の重要な機能を無効にする恐れがあります。アプリケーションコンポーネントが利用できない、整合性が取れない、または不安定な状態になる恐れがあるので、許可には注意が必要です。"</string>
     <string name="permlab_setPreferredApplications" msgid="3393305202145172005">"優先アプリケーションの設定"</string>
@@ -336,8 +341,8 @@
     <string name="permdesc_vibrate" msgid="2886677177257789187">"バイブレーションの制御をアプリケーションに許可します。"</string>
     <string name="permlab_flashlight" msgid="2155920810121984215">"ライトのコントロール"</string>
     <string name="permdesc_flashlight" msgid="6433045942283802309">"ライトの制御をアプリケーションに許可します。"</string>
-    <string name="permlab_accessUsb" msgid="7362327818655760496">"USBデバイスへのアクセス"</string>
-    <string name="permdesc_accessUsb" msgid="2414271762914049292">"USBデバイスへのアクセスをアプリケーションに許可します。"</string>
+    <string name="permlab_manageUsb" msgid="1113453430645402723">"USBデバイスの設定と許可の管理"</string>
+    <string name="permdesc_manageUsb" msgid="6148489202092166164">"USBデバイスの設定と許可の管理をアプリケーションに許可します。"</string>
     <string name="permlab_hardware_test" msgid="4148290860400659146">"ハードウェアのテスト"</string>
     <string name="permdesc_hardware_test" msgid="3668894686500081699">"ハードウェアのテストのためにさまざまな周辺機器を制御することをアプリケーションに許可します。"</string>
     <string name="permlab_callPhone" msgid="3925836347681847954">"電話番号発信"</string>
@@ -353,13 +358,13 @@
     <string name="permlab_bindGadget" msgid="776905339015863471">"ウィジェットの選択"</string>
     <string name="permdesc_bindGadget" msgid="2098697834497452046">"どのアプリケーションがどのウィジェットを使用できるかシステムに指定することをこのアプリケーションに許可します。これにより、アプリケーション間で個人データにアクセスできるようになります。通常のアプリケーションでは使用しません。"</string>
     <string name="permlab_modifyPhoneState" msgid="8423923777659292228">"端末ステータスの変更"</string>
-    <string name="permdesc_modifyPhoneState" msgid="3302284561346956587">"端末の電話機能のコントロールをアプリケーションに許可します。アプリケーションは、ネットワークの切り替え、携帯電話の無線通信のオン/オフなどを通知せずに行うことができます。"</string>
+    <string name="permdesc_modifyPhoneState" msgid="3302284561346956587">"端末の電話機能のコントロールをアプリケーションに許可します。アプリケーションは、ネットワークの切り替え、携帯電話の無線通信のON/OFFなどを通知せずに行うことができます。"</string>
     <string name="permlab_readPhoneState" msgid="2326172951448691631">"携帯のステータスとIDの読み取り"</string>
     <string name="permdesc_readPhoneState" msgid="188877305147626781">"端末の電話機能へのアクセスをアプリケーションに許可します。この権限が許可されたアプリケーションでは、この携帯の電話番号やシリアル番号、通話中かどうか、通話相手の電話番号などを特定できます。"</string>
     <string name="permlab_wakeLock" msgid="573480187941496130">"端末のスリープを無効にする"</string>
     <string name="permdesc_wakeLock" msgid="7584036471227467099">"端末のスリープを無効にすることをアプリケーションに許可します。"</string>
     <string name="permlab_devicePower" msgid="4928622470980943206">"電源のON/OFF"</string>
-    <string name="permdesc_devicePower" msgid="4577331933252444818">"携帯電話の電源のオン/オフをアプリケーションに許可します。"</string>
+    <string name="permdesc_devicePower" msgid="4577331933252444818">"携帯電話の電源のON/OFFをアプリケーションに許可します。"</string>
     <string name="permlab_factoryTest" msgid="3715225492696416187">"出荷時試験モードでの実行"</string>
     <string name="permdesc_factoryTest" msgid="8136644990319244802">"携帯電話のハードウェアへのアクセスを完全に許可して、低レベルのメーカーテストとして実行します。メーカーのテストモードで携帯電話を使用するときのみ利用できます。"</string>
     <string name="permlab_setWallpaper" msgid="6627192333373465143">"壁紙の設定"</string>
@@ -400,6 +405,10 @@
     <string name="permdesc_changeWifiState" msgid="2950383153656873267">"Wi-Fiアクセスポイントへの接続や接続の切断、設定されたWi-Fiネットワークの変更をアプリケーションに許可します。"</string>
     <string name="permlab_changeWifiMulticastState" msgid="1368253871483254784">"Wi-Fiマルチキャストの受信を許可する"</string>
     <string name="permdesc_changeWifiMulticastState" msgid="8199464507656067553">"端末を直接の宛先とはしていないパケットの受信をアプリケーションに許可します。近隣で提供中のサービスを検出したい場合に便利です。マルチキャスト以外のモードよりも電力を消費します。"</string>
+    <string name="permlab_accessWimaxState" msgid="2800410363171809280">"WiMAX状態の表示"</string>
+    <string name="permdesc_accessWimaxState" msgid="8298035866227524023">"WiMAX状態に関する情報の表示をアプリケーションに許可します。"</string>
+    <string name="permlab_changeWimaxState" msgid="340465839241528618">"WiMAX状態の変更"</string>
+    <string name="permdesc_changeWimaxState" msgid="474918005058989421">"WiMAXネットワークへの接続と接続解除をアプリケーションに許可します。"</string>
     <string name="permlab_bluetoothAdmin" msgid="1092209628459341292">"Bluetoothの管理"</string>
     <string name="permdesc_bluetoothAdmin" msgid="7256289774667054555">"このBluetooth端末の設定、およびリモート端末を検出してペアに設定することをアプリケーションに許可します。"</string>
     <string name="permlab_bluetooth" msgid="8361038707857018732">"Bluetooth接続の作成"</string>
@@ -540,7 +549,7 @@
     <string name="contact_status_update_attribution" msgid="5112589886094402795">"<xliff:g id="SOURCE">%1$s</xliff:g>経由"</string>
     <string name="contact_status_update_attribution_with_date" msgid="5945386376369979909">"<xliff:g id="DATE">%1$s</xliff:g>、更新元: <xliff:g id="SOURCE">%2$s</xliff:g>"</string>
     <string name="keyguard_password_enter_pin_code" msgid="3731488827218876115">"PINコードを入力"</string>
-    <string name="keyguard_password_enter_password_code" msgid="9138158344813213754">"ロックを解除するにはパスワードを入力"</string>
+    <string name="keyguard_password_enter_password_code" msgid="9138158344813213754">"パスワードを入力"</string>
     <string name="keyguard_password_wrong_pin_code" msgid="1295984114338107718">"PINコードが正しくありません。"</string>
     <string name="keyguard_label_text" msgid="861796461028298424">"MENU、0キーでロック解除"</string>
     <string name="emergency_call_dialog_number_for_display" msgid="696192103195090970">"緊急通報番号"</string>
@@ -548,15 +557,15 @@
     <string name="lockscreen_screen_locked" msgid="7288443074806832904">"画面ロック中"</string>
     <string name="lockscreen_instructions_when_pattern_enabled" msgid="46154051614126049">"MENUキーでロック解除(または緊急通報)"</string>
     <string name="lockscreen_instructions_when_pattern_disabled" msgid="686260028797158364">"MENUキーでロック解除"</string>
-    <string name="lockscreen_pattern_instructions" msgid="7478703254964810302">"ロックを解除するパターンを入力"</string>
+    <string name="lockscreen_pattern_instructions" msgid="7478703254964810302">"パターンを入力"</string>
     <string name="lockscreen_emergency_call" msgid="5347633784401285225">"緊急通報"</string>
     <string name="lockscreen_return_to_call" msgid="5244259785500040021">"通話に戻る"</string>
     <string name="lockscreen_pattern_correct" msgid="9039008650362261237">"一致しました"</string>
     <string name="lockscreen_pattern_wrong" msgid="4817583279053112312">"やり直してください"</string>
     <string name="lockscreen_plugged_in" msgid="613343852842944435">"充電中（<xliff:g id="NUMBER">%d</xliff:g><xliff:g id="PERCENT">%%</xliff:g>）"</string>
-    <string name="lockscreen_charged" msgid="4938930459620989972">"充電完了。"</string>
+    <string name="lockscreen_charged" msgid="4938930459620989972">"充電完了"</string>
     <string name="lockscreen_battery_short" msgid="3617549178603354656">"<xliff:g id="NUMBER">%d</xliff:g><xliff:g id="PERCENT">%%</xliff:g>"</string>
-    <string name="lockscreen_low_battery" msgid="1482873981919249740">"充電してください。"</string>
+    <string name="lockscreen_low_battery" msgid="1482873981919249740">"充電してください"</string>
     <string name="lockscreen_missing_sim_message_short" msgid="7381499217732227295">"SIMカードが挿入されていません"</string>
     <string name="lockscreen_missing_sim_message" msgid="2186920585695169078">"SIMカードが挿入されていません"</string>
     <string name="lockscreen_missing_sim_instructions" msgid="8874620818937719067">"SIMカードを挿入してください。"</string>
@@ -734,6 +743,7 @@
     <string name="alwaysUse" msgid="4583018368000610438">"常にこの操作で使用する"</string>
     <string name="clearDefaultHintMsg" msgid="4815455344600932173">"ホームの[設定]&gt;[アプリケーション]&gt;[アプリケーションの管理]でデフォルト設定をクリアします。"</string>
     <string name="chooseActivity" msgid="1009246475582238425">"操作の選択"</string>
+    <string name="chooseUsbActivity" msgid="7892597146032121735">"USBデバイス用アプリケーションを選択"</string>
     <string name="noApplications" msgid="1691104391758345586">"この操作を実行できるアプリケーションはありません。"</string>
     <string name="aerr_title" msgid="653922989522758100">"エラー"</string>
     <string name="aerr_application" msgid="4683614104336409186">"<xliff:g id="APPLICATION">%1$s</xliff:g>（<xliff:g id="PROCESS">%2$s</xliff:g>）が予期せず停止しました。やり直してください。"</string>
@@ -884,7 +894,7 @@
     <string name="reset" msgid="2448168080964209908">"リセット"</string>
     <string name="submit" msgid="1602335572089911941">"送信"</string>
     <string name="description_star" msgid="2654319874908576133">"お気に入り"</string>
-    <string name="car_mode_disable_notification_title" msgid="3164768212003864316">"運転モードを有効にする"</string>
+    <string name="car_mode_disable_notification_title" msgid="3164768212003864316">"運転モードになっています"</string>
     <string name="car_mode_disable_notification_message" msgid="668663626721675614">"運転モードを終了するには選択してください。"</string>
     <string name="tethered_notification_title" msgid="3146694234398202601">"テザリングまたはアクセスポイントが有効です"</string>
     <string name="tethered_notification_message" msgid="3067108323903048927">"タップして設定する"</string>
@@ -906,11 +916,14 @@
     <string name="media_shared" product="default" msgid="5706130568133540435">"SDカードは現在パソコンで使用中です。"</string>
     <string name="media_unknown_state" msgid="729192782197290385">"外部メディアの状態は不明です。"</string>
     <!-- CM extra -->
+    <string name="global_action_screenshot">"スクリーンショット"</string>
     <string name="reboot_system">"再起動する"</string>
+    <string name="reboot_reboot">"再起動"</string>
+    <string name="reboot_recovery">"リカバリ"</string>
+    <string name="reboot_bootloader">"ブートローダ"</string>
     <string name="reboot_progress">"再起動中..."</string>
     <string name="reboot_confirm">"携帯電話を再起動します。"</string>
     <string name="lockscreen_phone_label">"電話"</string>
-    <string name="lockscreen_messaging_label">"メッセージ"</string>
     <string name="app_killed_message">"アプリケーションを終了しました"</string>
     <string name="lockscreen_discharging">放電中 (<xliff:g id="number">%d</xliff:g><xliff:g id="percent">%%</xliff:g>)</string>
     <!-- Phone goggles -->
@@ -920,5 +933,45 @@
         <item quantity="one">残り %d 秒</item>
         <item quantity="other">残り %d 秒</item>
     </plurals>
+
+    <string name="wildcardProfile">他</string>
+    <string name="global_action_choose_profile">プロファイル選択</string>
+
+    <!-- Names of default profiles. -->
+    <string name="profileNameDefault">デフォルト</string>
+    <string name="profileNameWork">仕事</string>
+    <string name="profileNameHome">ホーム</string>
+    <string name="profileNameSilent">サイレント</string>
+    <string name="profileNameNight">夜間</string>
+
+    <!-- Names of application groups. -->
+    <string name="profileGroupPhone">電話</string>
+    <string name="profileGroupCalendar">カレンダー</string>
+    <string name="profileGroupGmail">Gmail</string>
+    <string name="profileGroupEmail">Email</string>
+    <string name="profileGroupSMS">SMS</string>
+
+    <!-- Item on EditText context menu. This action is used to copy all text in the edit field. -->
+    <string name="copyAll">全てコピー</string>
+
+    <!-- Title of the alert when an application is not responding. -->
+    <string name="aerr_revoked_application">アプリケーション <xliff:g id="application">%1$s</xliff:g>
+        (プロセス <xliff:g id="process">%2$s</xliff:g>) は予期せず終了しました。\n警告!\nこのアプリケーションは一つ以上の権限が取り消されているため、不安定です。必要な権限を与えてから再度お試しください。</string>
+    <!-- Text of the alert that is displayed when an application has crashed. -->
+    <string name="aerr_revoked_process">プロセス <xliff:g id="process">%1$s</xliff:g> は
+        予期せず終了しました。\n警告!\nこのプロセスは一つ以上の権限が取り消されているため、不安定です。必要な権限を与えてから再度お試しください。</string>
+
+    <!-- Button allowing the user reset the revoked permissions for application which has encountered an error. -->
+    <string name="reset_perms">権限をリセット</string>
+
+    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_preventpower">電源キーの制御</string>
+    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_preventpower">アプリケーションが電源キーの挙動を変更するのを許可する</string>
+
+    <!-- Title of an application permission that lets an application view/edit revoked permissions. -->
+    <string name="permlab_revokePermissions">取り消された権限を閲覧/編集する。通常のアプリケーションでは不要です。</string>
+    <!-- Description of an application permission that lets lets an application view/edit revoked permissions. -->
+    <string name="permdesc_revokePermissions">取り消された権限を読み書きする。通常のアプリケーションでは不要です。</string>
 
 </resources>

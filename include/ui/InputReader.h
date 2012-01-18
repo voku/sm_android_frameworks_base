@@ -103,6 +103,12 @@ public:
      */
     virtual bool filterJumpyTouchEvents() = 0;
 
+    /* Gets the amount of time to disable virtual keys after the screen is touched
+     * in order to filter out accidental virtual key presses due to swiping gestures
+     * or taps near the edge of the display.  May be 0 to disable the feature.
+     */
+    virtual nsecs_t getVirtualKeyQuietTime() = 0;
+
     /* Gets the configured virtual key definitions for an input device. */
     virtual void getVirtualKeyDefinitions(const String8& deviceName,
             Vector<VirtualKeyDefinition>& outVirtualKeyDefinitions) = 0;
@@ -176,6 +182,10 @@ public:
 
     virtual void updateGlobalMetaState() = 0;
     virtual int32_t getGlobalMetaState() = 0;
+
+    virtual void disableVirtualKeysUntil(nsecs_t time) = 0;
+    virtual bool shouldDropVirtualKey(nsecs_t now,
+            InputDevice* device, int32_t keyCode, int32_t scanCode) = 0;
 
     virtual InputReaderPolicyInterface* getPolicy() = 0;
     virtual InputDispatcherInterface* getDispatcher() = 0;
@@ -263,6 +273,11 @@ private:
 
     InputConfiguration mInputConfiguration;
     void updateInputConfiguration();
+
+    nsecs_t mDisableVirtualKeysTimeout;
+    virtual void disableVirtualKeysUntil(nsecs_t time);
+    virtual bool shouldDropVirtualKey(nsecs_t now,
+            InputDevice* device, int32_t keyCode, int32_t scanCode);
 
     // state queries
     typedef int32_t (InputDevice::*GetStateFunc)(uint32_t sourceMask, int32_t code);
@@ -390,7 +405,7 @@ private:
 class KeyboardInputMapper : public InputMapper {
 public:
     KeyboardInputMapper(InputDevice* device, int32_t associatedDisplayId, uint32_t sources,
-            int32_t keyboardType);
+            int32_t keyboardType, bool bluetooth = false);
     virtual ~KeyboardInputMapper();
 
     virtual uint32_t getSources();
@@ -417,6 +432,7 @@ private:
     int32_t mAssociatedDisplayId;
     uint32_t mSources;
     int32_t mKeyboardType;
+    bool mBluetooth;
 
     struct LockedState {
         Vector<KeyDown> keyDowns; // keys that are down
@@ -489,6 +505,68 @@ private:
     void sync(nsecs_t when);
 };
 
+class MouseInputMapper : public InputMapper {
+public:
+    MouseInputMapper(InputDevice* device, int32_t associatedDisplayId);
+    virtual ~MouseInputMapper();
+
+    virtual uint32_t getSources();
+    virtual void populateDeviceInfo(InputDeviceInfo* deviceInfo);
+    virtual void dump(String8& dump);
+    virtual void reset();
+    virtual void process(const RawEvent* rawEvent);
+
+    virtual int32_t getScanCodeState(uint32_t sourceMask, int32_t scanCode);
+
+private:
+    Mutex mLock;
+
+    int32_t mAssociatedDisplayId;
+
+    struct Accumulator {
+        enum {
+            FIELD_BTN_MOUSE = 1,
+            FIELD_REL_X = 2,
+            FIELD_REL_Y = 4,
+            FIELD_BTN_RIGHT = 8,
+            FIELD_BTN_MIDDLE = 16, 
+            FIELD_BTN_SIDE = 32, 
+            FIELD_BTN_EXTRA = 64, 
+            FIELD_BTN_FORWARD = 128, 
+            FIELD_BTN_BACK = 256,
+	    FIELD_REL_WHEEL = 512,
+        };
+
+        uint32_t fields;
+
+        bool btnMouse;
+        bool btnRight;
+        bool btnMiddle; 
+	bool btnSide;
+	bool btnExtra;
+	bool btnForward;
+	bool btnBack;
+	bool btnScrollUp;
+	bool btnScrollDown;
+        int32_t relX;
+        int32_t relY;
+        int32_t absX;
+        int32_t absY;
+
+        inline void clear() {
+            fields = 0;
+        }
+    } mAccumulator;
+
+    struct LockedState {
+        bool down;
+        nsecs_t downTime;
+    } mLocked;
+
+    void initializeLocked();
+
+    void sync(nsecs_t when);
+};
 
 class TouchInputMapper : public InputMapper {
 public:
@@ -585,6 +663,7 @@ protected:
         bool useBadTouchFilter;
         bool useJumpyTouchFilter;
         bool useAveragingTouchFilter;
+        nsecs_t virtualKeyQuietTime;
     } mParameters;
 
     // Immutable calibration parameters in parsed form.
@@ -810,6 +889,7 @@ private:
     void dispatchTouch(nsecs_t when, uint32_t policyFlags, TouchData* touch,
             BitSet32 idBits, uint32_t changedId, uint32_t pointerCount,
             int32_t motionEventAction);
+    void detectGestures(nsecs_t when);
 
     bool isPointInsideSurfaceLocked(int32_t x, int32_t y);
     const VirtualKey* findVirtualKeyHitLocked(int32_t x, int32_t y);

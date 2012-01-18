@@ -697,13 +697,11 @@ public abstract class PhoneBase extends Handler implements Phone {
     }
 
     public void setTTYMode(int ttyMode, Message onComplete) {
-        // This function should be overridden by the class CDMAPhone. Not implemented in GSMPhone.
-        logUnexpectedCdmaMethodCall("setTTYMode");
+        mCM.setTTYMode(ttyMode, onComplete);
     }
 
     public void queryTTYMode(Message onComplete) {
-        // This function should be overridden by the class CDMAPhone. Not implemented in GSMPhone.
-        logUnexpectedCdmaMethodCall("queryTTYMode");
+        mCM.queryTTYMode(onComplete);
     }
 
     public void enableEnhancedVoicePrivacy(boolean enable, Message onComplete) {
@@ -994,6 +992,11 @@ public abstract class PhoneBase extends Handler implements Phone {
      */
     protected void notifyNewRingingConnectionP(Connection cn) {
         AsyncResult ar = new AsyncResult(null, cn, null);
+        if (SystemProperties.getBoolean(
+                "ro.telephony.call_ring.absent", false)) {
+            sendMessageDelayed(
+                    obtainMessage(EVENT_CALL_RING_CONTINUE, mCallRingContinueToken, 0), mCallRingDelay);
+        }
         mNewRingingConnectionRegistrants.notifyRegistrants(ar);
     }
 

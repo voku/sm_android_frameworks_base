@@ -87,12 +87,17 @@ public class KeyguardViewManager implements KeyguardWindowController {
         }
     }
 
+    enum ShowMode {
+        LockScreen, UnlockScreen, KeepCurrentState
+    }
+
     /**
      * Show the keyguard.  Will handle creating and attaching to the view manager
      * lazily.
      */
-    public synchronized void show() {
-        if (DEBUG) Log.d(TAG, "show(); mKeyguardView==" + mKeyguardView);
+    public synchronized void show(ShowMode showMode) {
+        if (DEBUG)
+            Log.d(TAG, "show(); mKeyguardView==" + mKeyguardView + "; showMode==" + showMode.name());
 
         if (mKeyguardHost == null) {
             if (DEBUG) Log.d(TAG, "keyguard host is null, creating it...");
@@ -112,7 +117,6 @@ public class KeyguardViewManager implements KeyguardWindowController {
                     stretch, stretch, WindowManager.LayoutParams.TYPE_KEYGUARD,
                     flags, PixelFormat.TRANSLUCENT);
             lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
-            lp.windowAnimations = com.android.internal.R.style.Animation_LockScreen;
             lp.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR;
             lp.setTitle("Keyguard");
             mWindowLayoutParams = lp;
@@ -135,6 +139,13 @@ public class KeyguardViewManager implements KeyguardWindowController {
             if (mScreenOn) {
                 mKeyguardView.onScreenTurnedOn();
             }
+        }
+
+        // If we have been explicitly given a keyguard display mode, invoke it.
+        if (showMode == ShowMode.LockScreen) {
+            mKeyguardView.onLockedButNotSecured(true);
+        } else if (showMode == ShowMode.UnlockScreen) {
+            mKeyguardView.onLockedButNotSecured(false);
         }
 
         mKeyguardHost.setVisibility(View.VISIBLE);
@@ -183,7 +194,7 @@ public class KeyguardViewManager implements KeyguardWindowController {
 
     public synchronized void verifyUnlock() {
         if (DEBUG) Log.d(TAG, "verifyUnlock()");
-        show();
+        show(ShowMode.KeepCurrentState);
         mKeyguardView.verifyUnlock();
     }
 
@@ -223,8 +234,8 @@ public class KeyguardViewManager implements KeyguardWindowController {
                 mKeyguardHost.postDelayed(new Runnable() {
                     public void run() {
                         synchronized (KeyguardViewManager.this) {
-                            mKeyguardHost.removeView(lastView);
                             lastView.cleanUp();
+                            mKeyguardHost.removeView(lastView);
                         }
                     }
                 }, 500);

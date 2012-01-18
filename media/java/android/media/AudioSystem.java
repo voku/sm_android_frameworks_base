@@ -108,7 +108,8 @@ public class AudioSystem
     public static final int MODE_NORMAL             = 0;
     public static final int MODE_RINGTONE           = 1;
     public static final int MODE_IN_CALL            = 2;
-    public static final int NUM_MODES               = 3;
+    public static final int MODE_IN_COMMUNICATION   = 3;
+    public static final int NUM_MODES               = 4;
 
 
     /* Routing bits for setRouting/getRouting API */
@@ -259,6 +260,10 @@ public class AudioSystem
     public static final int DEVICe_IN_FM_RX = 0x1000000;
     public static final int DEVICe_IN_FM_RXA2DP = 0x2000000;
     public static final int DEVICE_IN_DEFAULT = 0x80000000;
+    // For OMAP
+    public static final int DEVICE_OUT_FM_TRANSMIT = 0x800;
+    public static final int DEVICE_IN_FM_ANALOG = 0x1000000;
+    public static final int DEVICE_OUT_LOW_POWER = 0x1000;
 
     // device states
     public static final int DEVICE_STATE_UNAVAILABLE = 0;

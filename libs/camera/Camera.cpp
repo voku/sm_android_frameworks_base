@@ -132,6 +132,10 @@ sp<Camera> Camera::connect(int cameraId)
     return c;
 }
 
+extern "C" sp<Camera> _ZN7android6Camera7connectEv () {
+    return Camera::connect(0);
+}
+
 void Camera::disconnect()
 {
     LOGV("disconnect");
@@ -201,6 +205,16 @@ status_t Camera::getBufferInfo(sp<IMemory>& Frame, size_t *alignedSize)
     sp <ICamera> c = mCamera;
     if (c == 0) return NO_INIT;
     return c->getBufferInfo(Frame, alignedSize);
+}
+#endif
+
+#ifdef CAF_CAMERA_GB_REL
+void Camera::encodeData()
+{
+    LOGV("encodeData");
+    sp <ICamera> c = mCamera;
+    if (c == 0) return;
+    c->encodeData();
 }
 #endif
 
@@ -301,6 +315,18 @@ status_t Camera::setParameters(const String8& params)
     return c->setParameters(params);
 }
 
+
+#ifdef MOTO_CUSTOM_PARAMETERS
+// set preview/capture custom parameters - key/value pairs
+status_t Camera::setCustomParameters(const String8& params)
+{
+    LOGV("setCustomParameters");
+    sp <ICamera> c = mCamera;
+    if (c == 0) return NO_INIT;
+    return c->setCustomParameters(params);
+}
+#endif
+
 // get preview/capture parameters - key/value pairs
 String8 Camera::getParameters() const
 {
@@ -310,6 +336,18 @@ String8 Camera::getParameters() const
     if (c != 0) params = mCamera->getParameters();
     return params;
 }
+
+#ifdef MOTO_CUSTOM_PARAMETERS
+// get preview/capture parameters - key/value pairs
+String8 Camera::getCustomParameters() const
+{
+    LOGV("getCustomParameters");
+    String8 params;
+    sp <ICamera> c = mCamera;
+    if (c != 0) params = mCamera->getCustomParameters();
+    return params;
+}
+#endif
 
 // send command to camera driver
 status_t Camera::sendCommand(int32_t cmd, int32_t arg1, int32_t arg2)
@@ -361,7 +399,12 @@ void Camera::dataCallback(int32_t msgType, const sp<IMemory>& dataPtr)
 }
 
 // callback from camera service when timestamped frame is ready
+#ifdef OMAP_ENHANCEMENT
+void Camera::dataCallbackTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr,
+        uint32_t offset, uint32_t stride)
+#else
 void Camera::dataCallbackTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr)
+#endif
 {
     sp<CameraListener> listener;
     {
@@ -369,7 +412,14 @@ void Camera::dataCallbackTimestamp(nsecs_t timestamp, int32_t msgType, const sp<
         listener = mListener;
     }
     if (listener != NULL) {
+#ifdef OMAP_ENHANCEMENT
+        listener->postDataTimestamp(timestamp, msgType, dataPtr, offset, stride);
+#else
         listener->postDataTimestamp(timestamp, msgType, dataPtr);
+#endif
+    } else {
+        LOGW("No listener was set. Drop a recording frame.");
+        releaseRecordingFrame(dataPtr);
     }
 }
 

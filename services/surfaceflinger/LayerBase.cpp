@@ -43,6 +43,7 @@
 #define RENDER_EFFECT_N1_CALIBRATED_N 7
 #define RENDER_EFFECT_N1_CALIBRATED_R 8
 #define RENDER_EFFECT_N1_CALIBRATED_C 9
+#define RENDER_EFFECT_RED 10
 
 namespace android {
 
@@ -60,6 +61,9 @@ LayerBase::LayerBase(SurfaceFlinger* flinger, DisplayID display)
       mTransactionFlags(0),
       mPremultipliedAlpha(true), mName("unnamed"), mDebug(false),
       mInvalidate(0)
+#ifdef AVOID_DRAW_TEXTURE
+      ,mTransformed(false)
+#endif
 {
     const DisplayHardware& hw(flinger->graphicPlane(0).displayHardware());
     mFlags = hw.getFlags();
@@ -225,14 +229,10 @@ uint32_t LayerBase::doTransaction(uint32_t flags)
         flags |= eVisibleRegion;
         this->contentDirty = true;
 
-        mNeedsFiltering = false;
-        if (!(mFlags & DisplayHardware::SLOW_CONFIG)) {
-            // we may use linear filtering, if the matrix scales us
-            const uint8_t type = temp.transform.getType();
-            if (!temp.transform.preserveRects() || (type >= Transform::SCALE)) {
-                mNeedsFiltering = true;
-            }
-        }
+        // we may use linear filtering, if the matrix scales us
+        const uint8_t type = temp.transform.getType();
+        mNeedsFiltering = (!temp.transform.preserveRects() ||
+                (type >= Transform::SCALE));
     }
 
     // Commit the transaction
@@ -270,6 +270,9 @@ void LayerBase::validateVisibility(const Transform& planeTransform)
     // cache a few things...
     mOrientation = tr.getOrientation();
     mTransformedBounds = tr.makeBounds(w, h);
+#ifdef AVOID_DRAW_TEXTURE
+    mTransformed = transformed;
+#endif
     mLeft = tr.tx();
     mTop  = tr.ty();
 }
@@ -284,10 +287,6 @@ void LayerBase::unlockPageFlip(
     if ((android_atomic_and(~1, &mInvalidate)&1) == 1) {
         outDirtyRegion.orSelf(visibleRegionScreen);
     }
-}
-
-void LayerBase::finishPageFlip()
-{
 }
 
 void LayerBase::invalidate()
@@ -417,7 +416,7 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
         const GGLfixed alpha = (s.alpha << 16)/255;
         switch (renderEffect) {
             case RENDER_EFFECT_NIGHT:
-                glColor4x(alpha, 0, 0, alpha);
+                glColor4x(alpha, alpha*0.6204, alpha*0.3018, alpha);
                 break;
             case RENDER_EFFECT_TERMINAL:
                 glColor4x(0, alpha, 0, alpha);
@@ -442,6 +441,9 @@ void LayerBase::drawWithOpenGL(const Region& clip, const Texture& texture) const
                 break;
             case RENDER_EFFECT_N1_CALIBRATED_C:
                 glColor4x(alpha*renderColorR/1000, alpha*renderColorG/1000, alpha*(renderColorB+30)/1000, alpha);
+                break;
+            case RENDER_EFFECT_RED:
+                glColor4x(alpha, 0, 0, alpha);
                 break;
         }
         glEnable(GL_BLEND);
@@ -646,10 +648,7 @@ LayerBaseClient::Surface::~Surface()
      */
 
     // destroy client resources
-    sp<LayerBaseClient> layer = getOwner();
-    if (layer != 0) {
-        mFlinger->destroySurface(layer);
-    }
+    mFlinger->destroySurface(mOwner);
 }
 
 sp<LayerBaseClient> LayerBaseClient::Surface::getOwner() const {
@@ -708,6 +707,26 @@ sp<OverlayRef> LayerBaseClient::Surface::createOverlay(
 {
     return NULL;
 };
+
+#ifdef OMAP_ENHANCEMENT
+sp<OverlayRef> LayerBaseClient::Surface::createOverlay(
+        uint32_t w, uint32_t h, int32_t format, int32_t orientation, int isS3D)
+{
+    return NULL;
+};
+
+
+void LayerBaseClient::Surface::setDisplayId(int displayId)
+{
+    return;
+}
+
+int LayerBaseClient::Surface::requestOverlayClone(bool enable)
+{
+    return (-1);
+}
+
+#endif
 
 // ---------------------------------------------------------------------------
 

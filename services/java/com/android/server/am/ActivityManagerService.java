@@ -970,6 +970,14 @@ public final class ActivityManagerService extends ActivityManagerNative
         //public Handler() {
         //    if (localLOGV) Slog.v(TAG, "Handler started!");
         //}
+        private boolean isRevokeEnabled() {
+            int defalut = mContext.getResources().getBoolean(
+                    com.android.internal.R.bool.config_enablePermissionsManagement) ? 1 : 0;
+            int res = android.provider.Settings.Secure.getInt(mContext.getContentResolver(),
+                    android.provider.Settings.Secure.ENABLE_PERMISSIONS_MANAGEMENT,
+                    defalut);
+            return res == 1;
+        }
 
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -983,7 +991,22 @@ public final class ActivityManagerService extends ActivityManagerNative
                     }
                     AppErrorResult res = (AppErrorResult) data.get("result");
                     if (!mSleeping && !mShuttingDown) {
-                        Dialog d = new AppErrorDialog(mContext, res, proc);
+                        boolean hasRevoked = false;
+                        if (isRevokeEnabled()) {
+                            for (String s: proc.pkgList) {
+                                try {
+                                    String[] perms = AppGlobals.getPackageManager().getRevokedPermissions(s);
+                                    if (perms != null && perms.length > 0) {
+                                        hasRevoked = true;
+                                        break;
+                                    }
+                                }
+                                catch (RemoteException e) {
+                                    // just ignore this.
+                                }
+                            }
+                        }
+                        Dialog d = new AppErrorDialog(mContext, res, proc, hasRevoked);
                         d.show();
                         proc.crashDialog = d;
                     } else {
@@ -4707,7 +4730,6 @@ public final class ActivityManagerService extends ActivityManagerNative
             if (localLOGV) Slog.v(
                 TAG, "getTasks: max=" + maxNum + ", flags=" + flags
                 + ", receiver=" + receiver);
-	    /** This could be bad? Possibly, Might look into better way to do it: Pedlar
             if (checkCallingPermission(android.Manifest.permission.GET_TASKS)
                     != PackageManager.PERMISSION_GRANTED) {
                 if (receiver != null) {
@@ -4724,7 +4746,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                         + " requires " + android.Manifest.permission.GET_TASKS;
                 Slog.w(TAG, msg);
                 throw new SecurityException(msg);
-            } **/
+            }
 
             int pos = mMainStack.mHistory.size()-1;
             ActivityRecord next =
@@ -4836,8 +4858,8 @@ public final class ActivityManagerService extends ActivityManagerNative
     public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum,
             int flags) {
         synchronized (this) {
-            //enforceCallingPermission(android.Manifest.permission.GET_TASKS,
-            //        "getRecentTasks()");
+            enforceCallingPermission(android.Manifest.permission.GET_TASKS,
+                    "getRecentTasks()");
 
             IPackageManager pm = AppGlobals.getPackageManager();
             
@@ -6681,8 +6703,9 @@ public final class ActivityManagerService extends ActivityManagerNative
 
         addErrorToDropBox("wtf", r, null, null, tag, null, null, crashInfo);
 
-        if (Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.WTF_IS_FATAL, 0) != 0) {
+        if (r != null && r.pid != Process.myPid() &&
+                Settings.Secure.getInt(mContext.getContentResolver(),
+                        Settings.Secure.WTF_IS_FATAL, 0) != 0) {
             crashApplication(r, crashInfo);
             return true;
         } else {
@@ -6720,17 +6743,24 @@ public final class ActivityManagerService extends ActivityManagerNative
      * to append various headers to the dropbox log text.
      */
     private void appendDropBoxProcessHeaders(ProcessRecord process, StringBuilder sb) {
+        // Watchdog thread ends up invoking this function (with
+        // a null ProcessRecord) to add the stack file to dropbox.
+        // Do not acquire a lock on this (am) in such cases, as it
+        // could cause a potential deadlock, if and when watchdog
+        // is invoked due to unavailability of lock on am and it
+        // would prevent watchdog from killing system_server.
+        if (process == null) {
+            sb.append("Process: system_server\n");
+            return;
+        }
         // Note: ProcessRecord 'process' is guarded by the service
         // instance.  (notably process.pkgList, which could otherwise change
         // concurrently during execution of this method)
         synchronized (this) {
-            if (process == null || process.pid == MY_PID) {
+            if (process.pid == MY_PID) {
                 sb.append("Process: system_server\n");
             } else {
                 sb.append("Process: ").append(process.processName).append("\n");
-            }
-            if (process == null) {
-                return;
             }
             int flags = process.info.flags;
             IPackageManager pm = AppGlobals.getPackageManager();
@@ -6934,6 +6964,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         int res = result.get();
 
         Intent appErrorIntent = null;
+        Intent appSettingsIntent = null;
         synchronized (this) {
             if (r != null) {
                 mProcessCrashTimes.put(r.info.processName, r.info.uid,
@@ -6942,6 +6973,21 @@ public final class ActivityManagerService extends ActivityManagerNative
             if (res == AppErrorDialog.FORCE_QUIT_AND_REPORT) {
                 appErrorIntent = createAppErrorIntentLocked(r, timeMillis, crashInfo);
             }
+            else if (res == AppErrorDialog.FORCE_QUIT_AND_RESET_PERMS) {
+                for (String pkg: r.pkgList) {
+                    long oldId = Binder.clearCallingIdentity();
+                    try {
+                        AppGlobals.getPackageManager().setRevokedPermissions(pkg, new String[0]);
+                    } catch (RemoteException e) {
+                    }
+                    Binder.restoreCallingIdentity(oldId);
+                }
+            }
+            else if (res == AppErrorDialog.FORCE_QUIT_AND_OPEN_APP_SETTINGS) {
+                appSettingsIntent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + r.info.packageName));
+                appSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
         }
 
         if (appErrorIntent != null) {
@@ -6949,6 +6995,13 @@ public final class ActivityManagerService extends ActivityManagerNative
                 mContext.startActivity(appErrorIntent);
             } catch (ActivityNotFoundException e) {
                 Slog.w(TAG, "bug report receiver dissappeared", e);
+            }
+        }
+        if (appSettingsIntent != null) {
+            try {
+                mContext.startActivity(appSettingsIntent);
+            } catch (ActivityNotFoundException e) {
+                Slog.w(TAG, "could not launch application settings", e);
             }
         }
     }
@@ -8706,7 +8759,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 ServiceRecord.StartItem si = r.pendingStarts.remove(0);
                 if (DEBUG_SERVICE) Slog.v(TAG, "Sending arguments to: "
                         + r + " " + r.intent + " args=" + si.intent);
-                if (si.intent == null) {
+                if (si.intent == null && N > 1) {
                     // If somehow we got a dummy start at the front, then
                     // just drop it here.
                     continue;
@@ -9257,7 +9310,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 // r.record is null if findServiceLocked() failed the caller permission check
                 if (r.record == null) {
                     throw new SecurityException(
-                            "Permission Denial: Accessing service " + r.record.name
+                            "Permission Denial: Accessing service "
                             + " from pid=" + Binder.getCallingPid()
                             + ", uid=" + Binder.getCallingUid()
                             + " requires " + r.permission);
@@ -10486,38 +10539,9 @@ public final class ActivityManagerService extends ActivityManagerNative
             Intent intent, String resolvedType, IIntentReceiver resultTo,
             int resultCode, String resultData, Bundle map,
             String requiredPermission, boolean serialized, boolean sticky) {
-
-// fix based on vflashbirdv //
-
-        if (intent != null && intent.hasFileDescriptors() == true) {
-            throw new IllegalArgumentException("File descriptors passed in Intent");
-        }
-
         synchronized(this) {
-
-            int flags = intent.getFlags();
-
-            if (!mProcessesReady) {
-                 // if the caller really truly claims to know what they're doing, go
-                // ahead and allow the broadcast without launching any receivers
-                if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT) != 0) {
-                    intent = new Intent(intent);
-                    intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
-                } else if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY) == 0) {
-                    Slog.e(TAG, "Attempt to launch receivers of broadcast intent " + intent
-                            + " before boot completion");
-//                throw new IllegalStateException("Cannot broadcast before boot completed");
-                      return BROADCAST_SUCCESS;
-                }
-            }
-
-            if ((flags&Intent.FLAG_RECEIVER_BOOT_UPGRADE) != 0) {
-                 throw new IllegalArgumentException(
-                        "Can't use FLAG_RECEIVER_BOOT_UPGRADE here");
-            }
-
-// fix based on vflashbirdv //
-
+            intent = verifyBroadcastLocked(intent);
+            
             final ProcessRecord callerApp = getRecordForAppLocked(caller);
             final int callingPid = Binder.getCallingPid();
             final int callingUid = Binder.getCallingUid();

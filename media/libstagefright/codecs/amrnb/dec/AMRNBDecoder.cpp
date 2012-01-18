@@ -122,7 +122,8 @@ status_t AMRNBDecoder::read(
         CHECK(seekTimeUs >= 0);
 
         mNumSamplesOutput = 0;
-
+        //Reset decoder in case of seek to 0
+        Speech_Decode_Frame_reset(mState);
         if (mInputBuffer) {
             mInputBuffer->release();
             mInputBuffer = NULL;
@@ -161,6 +162,11 @@ status_t AMRNBDecoder::read(
           static_cast<int16_t *>(buffer->data()),
           MIME_IETF);
 
+    if (numBytesRead == -1 ) {
+        buffer->release();
+        buffer = NULL;
+        return ERROR_MALFORMED;
+    }
     ++numBytesRead;  // Include the frame type header byte.
 
     buffer->set_range(0, kNumSamplesPerFrame * sizeof(int16_t));

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- 
 /* //device/apps/common/assets/res/any/strings.xml
 **
@@ -17,9 +17,9 @@
 ** limitations under the License.
 */
  -->
-
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
     <string name="byteShort" msgid="8340973892742019101">"B"</string>
     <string name="kilobyteShort" msgid="5973789783504771878">"KB"</string>
     <string name="megabyteShort" msgid="6355851576770428922">"MB"</string>
@@ -35,6 +35,20 @@
     <string name="defaultMsisdnAlphaTag" msgid="2850889754919584674">"MSISDN1"</string>
     <string name="mmiError" msgid="5154499457739052907">"Problem z połączeniem lub błędny kod MMI."</string>
     <string name="mmiFdnError" msgid="5224398216385316471">"Operacja jest ograniczona wyłącznie do numerów ustalonych."</string>
+
+    <!-- Profiles -->
+    <string name="profileNameDefault">Domyślny</string>
+    <string name="profileNameWork">Praca</string>
+    <string name="profileNameHome">Dom</string>
+    <string name="profileNameSilent">Cichy</string>
+    <string name="profileNameNight">Noc</string>
+    <string name="profileGroupPhone">Telefon</string>
+    <string name="profileGroupCalendar">Kalendarz</string>
+    <string name="profileGroupGmail">Gmail</string>
+    <string name="profileGroupEmail">Email</string>
+    <string name="profileGroupSMS">SMS</string>
+    <string name="wildcardProfile">Inne</string>
+
     <string name="serviceEnabled" msgid="8147278346414714315">"Usługa była włączona."</string>
     <string name="serviceEnabledFor" msgid="6856228140453471041">"Usługa została włączona dla:"</string>
     <string name="serviceDisabled" msgid="1937553226592516411">"Usługa została wyłączona."</string>
@@ -50,7 +64,7 @@
     <string name="needPuk2" msgid="4526033371987193070">"Wprowadź kod PUK2, aby odblokować kartę SIM."</string>
     <string name="ClipMmi" msgid="6952821216480289285">"Identyfikator rozmówcy przy połączeniach przychodzących"</string>
     <string name="ClirMmi" msgid="7784673673446833091">"Identyfikator rozmówcy przy połączeniach wychodzących"</string>
-    <string name="CfMmi" msgid="5123218989141573515">"Przekierowania połączeń"</string>
+    <string name="CfMmi" msgid="5123218989141573515">"Przekazywanie połączeń"</string>
     <string name="CwMmi" msgid="9129678056795016867">"Połączenia oczekujące"</string>
     <string name="BaMmi" msgid="455193067926770581">"Blokada dzwonienia"</string>
     <string name="PwdMmi" msgid="7043715687905254199">"Zmiana hasła"</string>
@@ -133,13 +147,22 @@
     <string name="turn_off_radio" msgid="8198784949987062346">"Wyłącz połączenia bezprzewodowe"</string>
     <string name="screen_lock" msgid="799094655496098153">"Blokada ekranu"</string>
     <string name="power_off" msgid="4266614107412865048">"Wyłącz"</string>
+    <string name="reboot_system">Uruchom ponownie</string>
+    <string name="reboot_reboot">Uruchom ponownie</string>
     <string name="shutdown_progress" msgid="2281079257329981203">"Wyłączanie..."</string>
-    <string name="shutdown_confirm" msgid="649792175242821353">"Telefon zostanie wyłączony"</string>
+    <string name="reboot_progress">Ponowne uruchamianie…</string>
+    <string name="shutdown_confirm" msgid="649792175242821353">"Telefon zostanie wyłączony."</string>
+    <string name="reboot_confirm">Telefon zostanie uruchomiony ponownie.</string>
     <string name="recent_tasks_title" msgid="3691764623638127888">"Najnowsze"</string>
     <string name="no_recent_tasks" msgid="279702952298056674">"Brak ostatnio używanych aplikacji."</string>
     <string name="global_actions" msgid="2406416831541615258">"Opcje telefonu"</string>
+    <string name="global_action_home">Ekran główny</string>
+    <string name="global_action_menu">Menu</string>
+    <string name="global_action_back">Powrót</string>
     <string name="global_action_lock" msgid="2844945191792119712">"Blokada ekranu"</string>
     <string name="global_action_power_off" msgid="4471879440839879722">"Wyłącz"</string>
+    <string name="global_action_reboot">Uruchom ponownie</string>
+    <string name="global_action_choose_profile">Wybierz profil</string>
     <string name="global_action_toggle_silent_mode" msgid="8219525344246810925">"Tryb cichy"</string>
     <string name="global_action_silent_mode_on_status" msgid="3289841937003758806">"Dźwięk jest wyłączony"</string>
     <string name="global_action_silent_mode_off_status" msgid="1506046579177066419">"Dźwięk jest włączony"</string>
@@ -183,6 +206,8 @@
     <string name="permdesc_receiveSms" msgid="6298292335965966117">"Pozwala aplikacjom na odbieranie i przetwarzanie wiadomości SMS. Szkodliwe aplikacje mogą monitorować wiadomości lub usuwać je bez wyświetlania ich użytkownikowi."</string>
     <string name="permlab_receiveMms" msgid="8894700916188083287">"odbieranie wiadomości MMS"</string>
     <string name="permdesc_receiveMms" msgid="4563346832000174373">"Pozwala aplikacji na odbieranie i przetwarzanie wiadomości MMS. Szkodliwe aplikacje mogą monitorować wiadomości lub usuwać je bez pokazywania ich użytkownikowi."</string>
+    <string name="permlab_receiveEmergencyBroadcast" msgid="1803477660846288089">"odbiór emisji alarmowych"</string>
+    <string name="permdesc_receiveEmergencyBroadcast" msgid="7118393393716546131">"Umożliwia aplikacji odbiór i przetwarzanie wiadomości pochodzących z emisji alarmowych. To pozwolenie jest dostępne tylko dla aplikacji systemowych."</string>
     <string name="permlab_sendSms" msgid="5600830612147671529">"wysyłanie wiadomości SMS"</string>
     <string name="permdesc_sendSms" msgid="1946540351763502120">"Pozwól aplikacjom na wysyłanie wiadomości SMS. Szkodliwe aplikacje mogą generować koszty, wysyłając wiadomości bez wiedzy użytkownika."</string>
     <string name="permlab_readSms" msgid="4085333708122372256">"czytanie wiadomości SMS lub MMS"</string>
@@ -241,8 +266,8 @@
     <string name="permdesc_injectEvents" msgid="3946098050410874715">"Pozwala aplikacjom na dostarczanie własnych zdarzeń wprowadzania danych (naciśnięcie klawisza itp.) do innych aplikacji. Szkodliwe aplikacje mogą to wykorzystać do przejęcia kontroli nad telefonem."</string>
     <string name="permlab_readInputState" msgid="469428900041249234">"zapamiętywanie wpisywanych znaków oraz wykonywanych czynności"</string>
     <string name="permdesc_readInputState" msgid="5132879321450325445">"Pozwala aplikacjom na śledzenie naciskanych klawiszy, nawet podczas pracy z innym programem (na przykład podczas wpisywania hasła). Nigdy nie powinno być potrzebne normalnym aplikacjom."</string>
-    <string name="permlab_bindInputMethod" msgid="3360064620230515776">"tworzenie powiązania z metodą wejściową"</string>
-    <string name="permdesc_bindInputMethod" msgid="3734838321027317228">"Pozwala na tworzenie powiązania z interfejsem najwyższego poziomu metody wejściowej. To uprawnienie nie powinno być nigdy wymagane przez zwykłe aplikacje."</string>
+    <string name="permlab_bindInputMethod" msgid="3360064620230515776">"powiązanie ze sposobem wprowadzania tekstu"</string>
+    <string name="permdesc_bindInputMethod" msgid="3734838321027317228">"Pozwala na powiązanie wybranego sposobu wprowadzania tekstu z interfejsem najwyższego poziomu. To uprawnienie nie powinno być nigdy wymagane przez zwykłe aplikacje."</string>
     <string name="permlab_bindWallpaper" msgid="8716400279937856462">"powiązanie z tapetą"</string>
     <string name="permdesc_bindWallpaper" msgid="5287754520361915347">"Umożliwia posiadaczowi powiązać interfejs najwyższego poziomu dla tapety. Nie powinno być nigdy potrzebne w przypadku zwykłych aplikacji."</string>
     <string name="permlab_bindDeviceAdmin" msgid="8704986163711455010">"interakcja z administratorem urządzenia"</string>
@@ -335,8 +360,8 @@
     <string name="permdesc_vibrate" msgid="2886677177257789187">"Pozwala aplikacjom na kontrolowanie wibracji."</string>
     <string name="permlab_flashlight" msgid="2155920810121984215">"kontrolowanie latarki"</string>
     <string name="permdesc_flashlight" msgid="6433045942283802309">"Pozwala aplikacji kontrolować latarkę."</string>
-    <string name="permlab_accessUsb" msgid="7362327818655760496">"dostęp do urządzeń USB"</string>
-    <string name="permdesc_accessUsb" msgid="2414271762914049292">"Zezwala aplikacji na dostęp do urządzeń USB."</string>
+    <string name="permlab_manageUsb" msgid="1113453430645402723">"zarządzanie ustawieniami i uprawnieniami urządzeń USB"</string>
+    <string name="permdesc_manageUsb" msgid="6148489202092166164">"Umożliwia aplikacji zarządzanie ustawieniami i uprawnieniami urządzeń USB."</string>
     <string name="permlab_hardware_test" msgid="4148290860400659146">"testowanie sprzętu"</string>
     <string name="permdesc_hardware_test" msgid="3668894686500081699">"Pozwala aplikacji na kontrolowanie różnych urządzeń peryferyjnych w celu testowania sprzętu."</string>
     <string name="permlab_callPhone" msgid="3925836347681847954">"bezpośrednie wybieranie numerów telefonów"</string>
@@ -399,6 +424,10 @@
     <string name="permdesc_changeWifiState" msgid="2950383153656873267">"Pozwala aplikacji na łączenie i rozłączanie z punktami dostępowymi Wi-Fi oraz na dokonywanie zmian skonfigurowanych sieci Wi-Fi."</string>
     <string name="permlab_changeWifiMulticastState" msgid="1368253871483254784">"zezwolenie na odbiór grupowych połączeń Wi-Fi"</string>
     <string name="permdesc_changeWifiMulticastState" msgid="8199464507656067553">"Umożliwia aplikacji odbieranie pakietów nieskierowanych bezpośrednio do Twojego urządzenia. Może to być przydatne przy wykrywaniu usług oferowanych w okolicy. Powoduje większe zapotrzebowanie na energię niż w trybie innym niż grupowy."</string>
+    <string name="permlab_accessWimaxState" msgid="2800410363171809280">"wyświetlanie stanu WiMAX"</string>
+    <string name="permdesc_accessWimaxState" msgid="8298035866227524023">"Zezwala aplikacji na dostęp do informacji o stanie połączenia WiMAX."</string>
+    <string name="permlab_changeWimaxState" msgid="340465839241528618">"zmiana stanu WiMAX"</string>
+    <string name="permdesc_changeWimaxState" msgid="474918005058989421">"Zezwala aplikacji na łączenie się i rozłączanie z siecią WiMAX."</string>
     <string name="permlab_bluetoothAdmin" msgid="1092209628459341292">"administrowanie Bluetooth"</string>
     <string name="permdesc_bluetoothAdmin" msgid="7256289774667054555">"Pozwala aplikacji na konfigurowanie lokalnego telefonu Bluetooth, wyszukiwanie urządzeń zdalnych i łączenie się z nimi."</string>
     <string name="permlab_bluetooth" msgid="8361038707857018732">"tworzenie połączeń Bluetooth"</string>
@@ -553,6 +582,7 @@
     <string name="lockscreen_pattern_correct" msgid="9039008650362261237">"Poprawnie!"</string>
     <string name="lockscreen_pattern_wrong" msgid="4817583279053112312">"Niestety, spróbuj ponownie"</string>
     <string name="lockscreen_plugged_in" msgid="613343852842944435">"Ładowanie (<xliff:g id="NUMBER">%d</xliff:g><xliff:g id="PERCENT">%%</xliff:g>)"</string>
+    <string name="lockscreen_discharging">Bateria (<xliff:g id="number">%d</xliff:g><xliff:g id="percent">%%</xliff:g>)</string>
     <string name="lockscreen_charged" msgid="4938930459620989972">"Naładowany."</string>
     <string name="lockscreen_battery_short" msgid="3617549178603354656">"<xliff:g id="NUMBER">%d</xliff:g><xliff:g id="PERCENT">%%</xliff:g>"</string>
     <string name="lockscreen_low_battery" msgid="1482873981919249740">"Podłącz ładowarkę."</string>
@@ -580,6 +610,7 @@
     <string name="lockscreen_unlock_label" msgid="737440483220667054">"Odblokuj"</string>
     <string name="lockscreen_sound_on_label" msgid="9068877576513425970">"Włącz dźwięk"</string>
     <string name="lockscreen_sound_off_label" msgid="996822825154319026">"Wyłącz dźwięk"</string>
+    <string name="lockscreen_phone_label">Telefon</string>
     <string name="password_keyboard_label_symbol_key" msgid="992280756256536042">"?123"</string>
     <string name="password_keyboard_label_alpha_key" msgid="8001096175167485649">"ABC"</string>
     <string name="password_keyboard_label_alt_key" msgid="1284820942620288678">"ALT"</string>
@@ -618,39 +649,47 @@
     <string name="beforeOneMonthDurationPast" msgid="909134546836499826">"Ponad 1 miesiąc temu"</string>
   <plurals name="num_seconds_ago">
     <item quantity="one" msgid="4869870056547896011">"sekundę temu"</item>
+    <item quantity="few"><xliff:g id="COUNT">%d</xliff:g> sekundy temu</item>
     <item quantity="other" msgid="3903706804349556379">"<xliff:g id="COUNT">%d</xliff:g> sekund temu"</item>
   </plurals>
   <plurals name="num_minutes_ago">
-    <item quantity="one" msgid="3306787433088810191">"1 minutę temu"</item>
+    <item quantity="one" msgid="3306787433088810191">"minutę temu"</item>
+    <item quantity="few"><xliff:g id="COUNT">%d</xliff:g> minuty temu</item>
     <item quantity="other" msgid="2176942008915455116">"<xliff:g id="COUNT">%d</xliff:g> minut temu"</item>
   </plurals>
   <plurals name="num_hours_ago">
     <item quantity="one" msgid="9150797944610821849">"godzinę temu"</item>
+    <item quantity="few"><xliff:g id="COUNT">%d</xliff:g> godziny temu</item>
     <item quantity="other" msgid="2467273239587587569">"<xliff:g id="COUNT">%d</xliff:g> godzin temu"</item>
   </plurals>
   <plurals name="last_num_days">
-    <item quantity="other" msgid="3069992808164318268">"Ostatnie dni (<xliff:g id="COUNT">%d</xliff:g>)"</item>
+    <item quantity="other" msgid="3069992808164318268">"Ostatnie (<xliff:g id="COUNT">%d</xliff:g>) dni"</item>
   </plurals>
     <string name="last_month" msgid="3959346739979055432">"Ostatni miesiąc"</string>
     <string name="older" msgid="5211975022815554840">"Starsze"</string>
   <plurals name="num_days_ago">
     <item quantity="one" msgid="861358534398115820">"wczoraj"</item>
+    <item quantity="two">Przedwczoraj</item>
     <item quantity="other" msgid="2479586466153314633">"<xliff:g id="COUNT">%d</xliff:g> dni temu"</item>
   </plurals>
   <plurals name="in_num_seconds">
     <item quantity="one" msgid="2729745560954905102">"za sekundę"</item>
+    <item quantity="few">za <xliff:g id="COUNT">%d</xliff:g> sekundy</item>
     <item quantity="other" msgid="1241926116443974687">"za <xliff:g id="COUNT">%d</xliff:g> sekund"</item>
   </plurals>
   <plurals name="in_num_minutes">
     <item quantity="one" msgid="8793095251325200395">"za minutę"</item>
+    <item quantity="few">za <xliff:g id="COUNT">%d</xliff:g> minuty</item>
     <item quantity="other" msgid="3330713936399448749">"za <xliff:g id="COUNT">%d</xliff:g> minut"</item>
   </plurals>
   <plurals name="in_num_hours">
     <item quantity="one" msgid="7164353342477769999">"za godzinę"</item>
+    <item quantity="few">za <xliff:g id="COUNT">%d</xliff:g> godziny</item>
     <item quantity="other" msgid="547290677353727389">"za <xliff:g id="COUNT">%d</xliff:g> godzin"</item>
   </plurals>
   <plurals name="in_num_days">
     <item quantity="one" msgid="5413088743009839518">"jutro"</item>
+    <item quantity="two">pojutrze</item>
     <item quantity="other" msgid="5109449375100953247">"za <xliff:g id="COUNT">%d</xliff:g> dni"</item>
   </plurals>
   <plurals name="abbrev_num_seconds_ago">
@@ -667,6 +706,7 @@
   </plurals>
   <plurals name="abbrev_num_days_ago">
     <item quantity="one" msgid="8463161711492680309">"wczoraj"</item>
+    <item quantity="two">przedwczoraj</item>
     <item quantity="other" msgid="3453342639616481191">"<xliff:g id="COUNT">%d</xliff:g> dni temu"</item>
   </plurals>
   <plurals name="abbrev_in_num_seconds">
@@ -712,12 +752,13 @@
     <string name="elapsed_time_short_format_mm_ss" msgid="4431555943828711473">"<xliff:g id="MINUTES">%1$02d</xliff:g>:<xliff:g id="SECONDS">%2$02d</xliff:g>"</string>
     <string name="elapsed_time_short_format_h_mm_ss" msgid="1846071997616654124">"<xliff:g id="HOURS">%1$d</xliff:g>:<xliff:g id="MINUTES">%2$02d</xliff:g>:<xliff:g id="SECONDS">%3$02d</xliff:g>"</string>
     <string name="selectAll" msgid="6876518925844129331">"Zaznacz wszystko"</string>
+    <string name="copyAll">Kopiuj wszystko</string>
     <string name="selectText" msgid="4862359311088898878">"Zaznacz wyraz"</string>
     <string name="cut" msgid="3092569408438626261">"Wytnij"</string>
     <string name="copy" msgid="2681946229533511987">"Kopiuj"</string>
     <string name="paste" msgid="5629880836805036433">"Wklej"</string>
     <string name="copyUrl" msgid="2538211579596067402">"Kopiuj adres URL"</string>
-    <string name="inputMethod" msgid="1653630062304567879">"Metoda wprowadzania"</string>
+    <string name="inputMethod" msgid="1653630062304567879">"Sposób wprowadzania tekstu"</string>
     <string name="addToDictionary" msgid="8793624991686948709">"Dodaj termin „<xliff:g id="WORD">%s</xliff:g>” do słownika"</string>
     <string name="editTextMenuTitle" msgid="1672989176958581452">"Edytuj tekst"</string>
     <string name="low_internal_storage_view_title" msgid="1399732408701697546">"Mało miejsca"</string>
@@ -733,10 +774,13 @@
     <string name="alwaysUse" msgid="4583018368000610438">"Używaj domyślnie dla tej czynności."</string>
     <string name="clearDefaultHintMsg" msgid="4815455344600932173">"Wyczyść domyślne w: Ustawienia strony głównej &gt; Aplikacje &gt; Zarządzaj aplikacjami."</string>
     <string name="chooseActivity" msgid="1009246475582238425">"Wybierz czynność"</string>
+    <string name="chooseUsbActivity" msgid="7892597146032121735">"Wybierz aplikację dla urządzenia USB"</string>
     <string name="noApplications" msgid="1691104391758345586">"Żadna z aplikacji nie może wykonać tej czynności."</string>
     <string name="aerr_title" msgid="653922989522758100">"Przepraszamy!"</string>
     <string name="aerr_application" msgid="4683614104336409186">"Aplikacja <xliff:g id="APPLICATION">%1$s</xliff:g> (proces <xliff:g id="PROCESS">%2$s</xliff:g>) została niespodziewanie zatrzymana. Spróbuj ponownie."</string>
     <string name="aerr_process" msgid="1551785535966089511">"Proces <xliff:g id="PROCESS">%1$s</xliff:g> został niespodziewanie zatrzymany. Spróbuj ponownie."</string>
+    <string name="aerr_revoked_application">Aplikacja: <xliff:g id="application">%1$s</xliff:g> została niespodziewanie zatrzymana.\nUWAGA!\nCofnięto jedno lub więcej uprawnień tej aplikacji, co może prowadzić do jej nieprawidłowego działania. Przyznaj jej brakujące uprawnienia i spróbuj ponownie.</string>
+    <string name="aerr_revoked_process">Proces: <xliff:g id="process">%1$s</xliff:g> został niespodziewanie zatrzymany.\nUWAGA!\nCofnięto jedno lub więcej uprawnień tego procesu, co może prowadzić do jego nieprawidłowego działania. Przyznaj mu brakujące uprawnienia i spróbuj ponownie.</string>
     <string name="anr_title" msgid="3100070910664756057">"Przepraszamy!"</string>
     <string name="anr_activity_application" msgid="3538242413112507636">"Działanie <xliff:g id="ACTIVITY">%1$s</xliff:g> (w aplikacji <xliff:g id="APPLICATION">%2$s</xliff:g>) nie odpowiada."</string>
     <string name="anr_activity_process" msgid="5420826626009561014">"Działanie <xliff:g id="ACTIVITY">%1$s</xliff:g> (w procesie <xliff:g id="PROCESS">%2$s</xliff:g>) nie odpowiada."</string>
@@ -744,6 +788,7 @@
     <string name="anr_process" msgid="1246866008169975783">"Proces <xliff:g id="PROCESS">%1$s</xliff:g> nie odpowiada."</string>
     <string name="force_close" msgid="3653416315450806396">"Wymuś zamknięcie"</string>
     <string name="report" msgid="4060218260984795706">"Zgłoś"</string>
+    <string name="reset_perms">Resetuj uprawnienia</string>
     <string name="wait" msgid="7147118217226317732">"Czekaj"</string>
     <string name="launch_warning_title" msgid="8323761616052121936">"Aplikacja przekierowana"</string>
     <string name="launch_warning_replace" msgid="6202498949970281412">"Aplikacja <xliff:g id="APP_NAME">%1$s</xliff:g> jest uruchomiona."</string>
@@ -819,7 +864,7 @@
     <string name="extmedia_format_button_format" msgid="4131064560127478695">"Formatuj"</string>
     <string name="adb_active_notification_title" msgid="6729044778949189918">"Podłączono moduł debugowania USB"</string>
     <string name="adb_active_notification_message" msgid="8470296818270110396">"Wybierz, aby wyłączyć debugowanie USB."</string>
-    <string name="select_input_method" msgid="6865512749462072765">"Wybierz metodę wprowadzania"</string>
+    <string name="select_input_method" msgid="6865512749462072765">"Wybierz sposób wprowadzania tekstu"</string>
     <string name="fast_scroll_alphabet" msgid="5433275485499039199">" AĄBCĆDEĘFGHIJKLŁMNŃOÓPQRSŚTUVWXYZŹŻ"</string>
     <string name="fast_scroll_numeric_alphabet" msgid="4030170524595123610">" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"</string>
     <string name="candidates_style" msgid="4333913089637062257"><u>"kandydaci"</u></string>
@@ -870,7 +915,7 @@
     <string name="deny" msgid="2081879885755434506">"Odmów"</string>
     <string name="permission_request_notification_title" msgid="5390555465778213840">"Żądane pozwolenie"</string>
     <string name="permission_request_notification_with_subtitle" msgid="4325409589686688000">"Prośba o pozwolenie"\n"dotyczące konta <xliff:g id="ACCOUNT">%s</xliff:g>"</string>
-    <string name="input_method_binding_label" msgid="1283557179944992649">"Metoda wprowadzania"</string>
+    <string name="input_method_binding_label" msgid="1283557179944992649">"Sposób wprowadzania tekstu"</string>
     <string name="sync_binding_label" msgid="3687969138375092423">"Synchronizacja"</string>
     <string name="accessibility_binding_label" msgid="4148120742096474641">"Ułatwienia dostępu"</string>
     <string name="wallpaper_binding_label" msgid="1240087844304687662">"Tapeta"</string>
@@ -879,13 +924,14 @@
     <string name="l2tp_vpn_description" msgid="3750692169378923304">"Protokół L2TP"</string>
     <string name="l2tp_ipsec_psk_vpn_description" msgid="3945043564008303239">"Sieć VPN L2TP/IPSec z kluczem PSK"</string>
     <string name="l2tp_ipsec_crt_vpn_description" msgid="5382714073103653577">"Sieć VPN L2TP/IPSec z certyfikatem"</string>
+    <string name="openvpn_vpn_description">OpenVPN SSL VPN</string>
     <string name="upload_file" msgid="2897957172366730416">"Wybierz plik"</string>
     <string name="reset" msgid="2448168080964209908">"Resetuj"</string>
     <string name="submit" msgid="1602335572089911941">"Prześlij"</string>
     <string name="description_star" msgid="2654319874908576133">"ulubione"</string>
     <string name="car_mode_disable_notification_title" msgid="3164768212003864316">"Tryb samochodowy włączony"</string>
     <string name="car_mode_disable_notification_message" msgid="668663626721675614">"Wybierz, aby zakończyć tryb samochodowy."</string>
-    <string name="tethered_notification_title" msgid="3146694234398202601">"Jest aktywne powiązanie lub punkt dostępu"</string>
+    <string name="tethered_notification_title" msgid="3146694234398202601">"Aktywny tethering lub punkt dostępu"</string>
     <string name="tethered_notification_message" msgid="3067108323903048927">"Dotknij, aby skonfigurować"</string>
     <string name="throttle_warning_notification_title" msgid="4890894267454867276">"Wysoki poziom użycia danych"</string>
     <string name="throttle_warning_notification_message" msgid="2609734763845705708">"Dotknij, aby zobaczyć statystyki przesyłu danych"</string>
@@ -915,4 +961,8 @@
         <item quantity="one">Pozostała %d sekunda</item>
         <item quantity="other">Pozostało %d sekund</item>
     </plurals>
+
+    <string name="permlab_revokePermissions">Pozwala przeglądać i edytować cofnięte uprawnienia. Nie do użytku przez zwykłe aplikacje.</string>
+    <string name="permdesc_revokePermissions">Pozwala czytać i zapisywać cofnięte uprawnienia. Nie do użytku przez zwykłe aplikacje.</string>
+
 </resources>

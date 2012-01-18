@@ -48,7 +48,7 @@ AudioSource::AudioSource(
     mRecord = new AudioRecord(
                 inputSource, sampleRate, AudioSystem::PCM_16_BIT,
                 channels > 1? AudioSystem::CHANNEL_IN_STEREO: AudioSystem::CHANNEL_IN_MONO,
-                4 * kMaxBufferSize / sizeof(int16_t), /* Enable ping-pong buffers */
+                4 * kMaxBufferSize / (sizeof(int16_t) * channels), /* Enable ping-pong buffers */
                 flags);
 
     mInitCheck = mRecord->initCheck();
@@ -287,9 +287,10 @@ status_t AudioSource::read(
         }
 
         ssize_t n = mRecord->read(buffer->data(), buffer->size());
-        if (n < 0) {
+        if (n <= 0) {
+            LOGE("Read from AudioRecord returns: %ld", n);
             buffer->release();
-            return (status_t)n;
+            return UNKNOWN_ERROR;
         }
 
         int64_t recordDurationUs = (1000000LL * n >> 1) / sampleRate;

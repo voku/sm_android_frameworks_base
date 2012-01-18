@@ -1635,6 +1635,11 @@ public class View implements Drawable.Callback, KeyEvent.Callback, Accessibility
     int mWindowAttachCount;
 
     /**
+     * Count of how many transparency requests have been made on this view
+     */
+    int mTransparentRequests = 0;
+
+    /**
      * The layout parameters associated with this view and used by the parent
      * {@link android.view.ViewGroup} to determine how this view should be
      * laid out.
@@ -9154,7 +9159,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback, Accessibility
          *
          * @param v The view that was clicked and held.
          *
-         * return True if the callback consumed the long click, false otherwise
+         * @return true if the callback consumed the long click, false otherwise.
          */
         boolean onLongClick(View v);
     }

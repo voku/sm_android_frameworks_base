@@ -30,6 +30,7 @@
 
 #define LOG_TAG "AudioGroup"
 #include <cutils/atomic.h>
+#include <cutils/properties.h>
 #include <utils/Log.h>
 #include <utils/Errors.h>
 #include <utils/RefBase.h>
@@ -62,6 +63,14 @@ int gRandom = -1;
 // The first 80ms is the place where samples get mixed. The rest 432ms is the
 // real jitter buffer. For a stream at 8000Hz it takes 8192 bytes. These numbers
 // are chosen by experiments and each of them can be adjusted as needed.
+
+// Originally a stream does not send packets when it is receive-only or there is
+// nothing to mix. However, this causes some problems with certain firewalls and
+// proxies. A firewall might remove a port mapping when there is no outgoing
+// packet for a preiod of time, and a proxy might wait for incoming packets from
+// both sides before start forwarding. To solve these problems, we send out a
+// silence packet on the stream for every second. It should be good enough to
+// keep the stream alive with relatively low resources.
 
 // Other notes:
 // + We use elapsedRealtime() to get the time. Since we use 32bit variables
@@ -110,7 +119,7 @@ private:
     int mSampleRate;
     int mSampleCount;
     int mInterval;
-    int mLogThrottle;
+    int mKeepAlive;
 
     int16_t *mBuffer;
     int mBufferMask;
@@ -262,12 +271,8 @@ void AudioStream::encode(int tick, AudioStream *chain)
     ++mSequence;
     mTimestamp += mSampleCount;
 
-    if (mMode == RECEIVE_ONLY) {
-        return;
-    }
-
     // If there is an ongoing DTMF event, send it now.
-    if (mDtmfEvent != -1) {
+    if (mMode != RECEIVE_ONLY && mDtmfEvent != -1) {
         int duration = mTimestamp - mDtmfStart;
         // Make sure duration is reasonable.
         if (duration >= 0 && duration < mSampleRate * 100) {
@@ -289,43 +294,55 @@ void AudioStream::encode(int tick, AudioStream *chain)
         mDtmfEvent = -1;
     }
 
-    // It is time to mix streams.
-    bool mixed = false;
     int32_t buffer[mSampleCount + 3];
-    memset(buffer, 0, sizeof(buffer));
-    while (chain) {
-        if (chain != this &&
-            chain->mix(buffer, tick - mInterval, tick, mSampleRate)) {
-            mixed = true;
+    int16_t samples[mSampleCount];
+    if (mMode == RECEIVE_ONLY) {
+        if ((mTick ^ mKeepAlive) >> 10 == 0) {
+            return;
         }
-        chain = chain->mNext;
-    }
-    if (!mixed) {
-        if ((mTick ^ mLogThrottle) >> 10) {
-            mLogThrottle = mTick;
+        mKeepAlive = mTick;
+        memset(samples, 0, sizeof(samples));
+    } else {
+        // Mix all other streams.
+        bool mixed = false;
+        memset(buffer, 0, sizeof(buffer));
+        while (chain) {
+            if (chain != this &&
+                chain->mix(buffer, tick - mInterval, tick, mSampleRate)) {
+                mixed = true;
+            }
+            chain = chain->mNext;
+        }
+
+        if (mixed) {
+            // Saturate into 16 bits.
+            for (int i = 0; i < mSampleCount; ++i) {
+                int32_t sample = buffer[i];
+                if (sample < -32768) {
+                    sample = -32768;
+                }
+                if (sample > 32767) {
+                    sample = 32767;
+                }
+                samples[i] = sample;
+            }
+        } else {
+            if ((mTick ^ mKeepAlive) >> 10 == 0) {
+                return;
+            }
+            mKeepAlive = mTick;
+            memset(samples, 0, sizeof(samples));
             LOGV("stream[%d] no data", mSocket);
         }
-        return;
     }
 
-    // Cook the packet and send it out.
-    int16_t samples[mSampleCount];
-    for (int i = 0; i < mSampleCount; ++i) {
-        int32_t sample = buffer[i];
-        if (sample < -32768) {
-            sample = -32768;
-        }
-        if (sample > 32767) {
-            sample = 32767;
-        }
-        samples[i] = sample;
-    }
     if (!mCodec) {
         // Special case for device stream.
         send(mSocket, samples, sizeof(samples), MSG_DONTWAIT);
         return;
     }
 
+    // Cook the packet and send it out.
     buffer[0] = htonl(mCodecMagic | mSequence);
     buffer[1] = htonl(mTimestamp);
     buffer[2] = mSsrc;
@@ -467,7 +484,7 @@ public:
         ON_HOLD = 0,
         MUTED = 1,
         NORMAL = 2,
-        EC_ENABLED = 3,
+        ECHO_SUPPRESSION = 3,
         LAST_MODE = 3,
     };
 
@@ -602,6 +619,18 @@ bool AudioGroup::setMode(int mode)
 {
     if (mode < 0 || mode > LAST_MODE) {
         return false;
+    }
+    //FIXME: temporary code to overcome echo and mic gain issues on herring board.
+    // Must be modified/removed when proper support for voice processing query and control
+    // is included in audio framework
+    char value[PROPERTY_VALUE_MAX];
+    property_get("ro.product.board", value, "");
+    if (mode == NORMAL && !strcmp(value, "herring")) {
+        mode = ECHO_SUPPRESSION;
+    }
+    if (mode == ECHO_SUPPRESSION && AudioSystem::getParameters(
+        0, String8("ec_supported")) == "ec_supported=yes") {
+        mode = NORMAL;
     }
     if (mMode == mode) {
         return true;
@@ -759,8 +788,8 @@ bool AudioGroup::DeviceThread::threadLoop()
     AudioTrack track;
     AudioRecord record;
     if (track.set(AudioSystem::VOICE_CALL, sampleRate, AudioSystem::PCM_16_BIT,
-        AudioSystem::CHANNEL_OUT_MONO, output) != NO_ERROR ||
-        record.set(AUDIO_SOURCE_MIC, sampleRate, AudioSystem::PCM_16_BIT,
+        AudioSystem::CHANNEL_OUT_MONO, output) != NO_ERROR || record.set(
+        AUDIO_SOURCE_VOICE_COMMUNICATION, sampleRate, AudioSystem::PCM_16_BIT,
         AudioSystem::CHANNEL_IN_MONO, input) != NO_ERROR) {
         LOGE("cannot initialize audio device");
         return false;
@@ -883,7 +912,7 @@ void add(JNIEnv *env, jobject thiz, jint mode,
     int codecType = -1;
     char codecName[16];
     int sampleRate = -1;
-    sscanf(codecSpec, "%d %[^/]%*c%d", &codecType, codecName, &sampleRate);
+    sscanf(codecSpec, "%d %15[^/]%*c%d", &codecType, codecName, &sampleRate);
     codec = newAudioCodec(codecName);
     int sampleCount = (codec ? codec->set(sampleRate, codecSpec) : -1);
     env->ReleaseStringUTFChars(jCodecSpec, codecSpec);

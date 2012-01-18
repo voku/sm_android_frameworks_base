@@ -52,7 +52,9 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.WorkSource;
+import android.os.SystemProperties;
 import android.provider.Settings.SettingNotFoundException;
 import android.provider.Settings;
 import android.util.EventLog;
@@ -246,7 +248,7 @@ class PowerManagerService extends IPowerManager.Stub
     private int mScreenBrightnessOverride = -1;
     private int mButtonBrightnessOverride = -1;
     private boolean mUseSoftwareAutoBrightness;
-    private boolean mAutoBrightessEnabled;
+    private boolean mAutoBrightessEnabled = true;
     private int[] mAutoBrightnessLevels;
     private int[] mLcdBacklightValues;
     private int[] mButtonBacklightValues;
@@ -482,10 +484,16 @@ class PowerManagerService extends IPowerManager.Stub
         }
 
         public void update(Observable o, Object arg) {
+
             synchronized (mLocks) {
                 // STAY_ON_WHILE_PLUGGED_IN, default to when plugged into AC
-                mStayOnConditions = getInt(STAY_ON_WHILE_PLUGGED_IN,
+                if (SystemProperties.getBoolean("ro.pm.awake_on_usb", false)) {
+                    mStayOnConditions = BatteryManager.BATTERY_PLUGGED_AC |
+                        BatteryManager.BATTERY_PLUGGED_USB;
+                } else {
+                    mStayOnConditions = getInt(STAY_ON_WHILE_PLUGGED_IN,
                         BatteryManager.BATTERY_PLUGGED_AC);
+                }
                 updateWakeLockLocked();
 
                 // SCREEN_OFF_TIMEOUT, default to 15 seconds
@@ -507,22 +515,23 @@ class PowerManagerService extends IPowerManager.Stub
                 // recalculate everything
                 setScreenOffTimeoutsLocked();
 
-                mElectronBeamAnimationOn = Settings.System.getInt(mContext.getContentResolver(),
-                            ELECTRON_BEAM_ANIMATION_ON,
-                            mContext.getResources().getBoolean(
-                                    com.android.internal.R.bool.config_enableScreenOnAnimation) ? 1 : 0) == 1;
-                mElectronBeamAnimationOff = Settings.System.getInt(mContext.getContentResolver(),
-                            ELECTRON_BEAM_ANIMATION_OFF,
-                            mContext.getResources().getBoolean(
-                                    com.android.internal.R.bool.config_enableScreenOffAnimation) ? 1 : 0) == 1;
+                if (mContext.getResources().getBoolean(
+                           com.android.internal.R.bool.config_enableScreenAnimation)) {
+                    mElectronBeamAnimationOn = Settings.System.getInt(mContext.getContentResolver(),
+                                ELECTRON_BEAM_ANIMATION_ON,
+                                mContext.getResources().getBoolean(
+                                        com.android.internal.R.bool.config_enableScreenOnAnimation) ? 1 : 0) == 1;
+                    mElectronBeamAnimationOff = Settings.System.getInt(mContext.getContentResolver(),
+                                ELECTRON_BEAM_ANIMATION_OFF,
+                                mContext.getResources().getBoolean(
+                                        com.android.internal.R.bool.config_enableScreenOffAnimation) ? 1 : 0) == 1;
+                }
 
-                final float windowScale = getFloat(WINDOW_ANIMATION_SCALE, 1.0f);
-                final float transitionScale = getFloat(TRANSITION_ANIMATION_SCALE, 1.0f);
                 mAnimationSetting = 0;
-                if (windowScale > 0.5f && mElectronBeamAnimationOff) {
+                if (mElectronBeamAnimationOff) {
                     mAnimationSetting |= ANIM_SETTING_OFF;
                 }
-                if (transitionScale > 0.5f && mElectronBeamAnimationOn) {
+                if (mElectronBeamAnimationOn) {
                     mAnimationSetting |= ANIM_SETTING_ON;
                 }
             }
@@ -1688,6 +1697,13 @@ class PowerManagerService extends IPowerManager.Stub
                     lightFilterStop();
                     resetLastLightValues();
                 }
+                else if (!mAutoBrightessEnabled && SystemProperties.getBoolean(
+                    "ro.hardware.respect_als", false)) {
+                    /* Force a light sensor reset since we enabled it
+                       when the screen came on */
+                    mAutoBrightessEnabled = true;
+                    setScreenBrightnessMode(Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+                }
             }
         }
         return err;
@@ -1997,12 +2013,25 @@ class PowerManagerService extends IPowerManager.Stub
         }
         if (onMask != 0) {
             int brightness = getPreferredBrightness();
+            int buttonBrightness = brightness;
+
+            if (mButtonBrightnessOverride >= 0) {
+                buttonBrightness = mButtonBrightnessOverride;
+            }
+
             if ((newState & BATTERY_LOW_BIT) != 0 &&
                     brightness > Power.BRIGHTNESS_LOW_BATTERY) {
                 brightness = Power.BRIGHTNESS_LOW_BATTERY;
+                buttonBrightness = brightness;
             }
-            if (mSpew) Slog.i(TAG, "Setting brightess on " + brightness + ": " + onMask);
-            setLightBrightness(onMask, brightness);
+
+            if (mSpew) {
+                Slog.i(TAG, "Setting brightess on " + brightness +
+                        "/" + buttonBrightness + ": " + onMask);
+            }
+
+            setLightBrightness(onMask & SCREEN_BRIGHT_BIT, brightness);
+            setLightBrightness(onMask & (BUTTON_BRIGHT_BIT | KEYBOARD_BRIGHT_BIT), buttonBrightness);
         }
     }
 
@@ -2118,11 +2147,12 @@ class PowerManagerService extends IPowerManager.Stub
         }
 
         public void run() {
-            if (mAnimateScreenLights ||
-                    (!mAnimateScreenLights && Settings.System.getInt(mContext.getContentResolver(),
-                            ELECTRON_BEAM_ANIMATION_OFF,
-                            mContext.getResources().getBoolean(
-                                    com.android.internal.R.bool.config_enableScreenOffAnimation) ? 1 : 0) == 0)) {
+            // Check for the electron beam for fully on/off transitions.
+            // Otherwise, allow it to fade the brightness as normal.
+            final boolean electrifying = animating &&
+                ((mElectronBeamAnimationOff && targetValue == Power.BRIGHTNESS_OFF) ||
+                 (mElectronBeamAnimationOn && (int)curValue == Power.BRIGHTNESS_OFF));
+            if (mAnimateScreenLights && !electrifying) {
                 synchronized (mLocks) {
                     long now = SystemClock.uptimeMillis();
                     boolean more = mScreenBrightness.stepLocked();
@@ -2132,9 +2162,7 @@ class PowerManagerService extends IPowerManager.Stub
                 }
             } else {
                 synchronized (mLocks) {
-                    // we're turning off
-                    final boolean animate = animating && targetValue == Power.BRIGHTNESS_OFF;
-                    if (animate) {
+                    if (electrifying) {
                         // It's pretty scary to hold mLocks for this long, and we should
                         // redesign this, but it works for now.
                         nativeStartSurfaceFlingerAnimation(
@@ -2573,6 +2601,7 @@ class PowerManagerService extends IPowerManager.Stub
             return;
         }
 
+
         // do not allow light sensor value to decrease unless
         // user has actively permitted it
         if (mLightDecrease) {
@@ -2803,6 +2832,7 @@ class PowerManagerService extends IPowerManager.Stub
         boolean enabled = (mode == SCREEN_BRIGHTNESS_MODE_AUTOMATIC);
         if (mUseSoftwareAutoBrightness && mAutoBrightessEnabled != enabled) {
             mAutoBrightessEnabled = enabled;
+            enableLightSensor(mAutoBrightessEnabled);
             if (isScreenOn()) {
                 // force recompute of backlight values
                 if (mLightSensorValue >= 0) {

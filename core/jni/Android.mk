@@ -104,6 +104,7 @@ LOCAL_SRC_FILES:= \
 	android_graphics_PixelFormat.cpp \
 	android/graphics/Picture.cpp \
 	android/graphics/PorterDuff.cpp \
+	android/graphics/BitmapRegionDecoder.cpp \
 	android/graphics/Rasterizer.cpp \
 	android/graphics/Region.cpp \
 	android/graphics/Shader.cpp \
@@ -144,7 +145,31 @@ LOCAL_SRC_FILES:= \
     android_content_res_Configuration.cpp
 
 ifeq ($(BOARD_HAVE_FM_RADIO),true)
-	LOCAL_SRC_FILES += android_hardware_fm.cpp
+    ## There's a difference. BOARD_HAVE_FM_RADIO enabled the runtime
+    ## without modifying the audiosystem (which HAVE_FM_RADIO does)
+    LOCAL_CFLAGS += -DBOARD_HAVE_FM_RADIO
+    ifeq ($(BOARD_FM_DEVICE),)
+        BOARD_FM_DEVICE := $(BOARD_WLAN_DEVICE)
+    endif
+
+    ifeq ($(BOARD_FM_DEVICE),si4709)
+        LOCAL_SRC_FILES += android_hardware_fm_si4709.cpp
+    endif
+    ifeq ($(BOARD_FM_DEVICE),si4708)
+        LOCAL_SRC_FILES += android_hardware_fm_si4708.cpp
+    endif
+    ifeq ($(BOARD_FM_DEVICE),bcm4329)
+        LOCAL_SRC_FILES += android_hardware_fm_bcm4325.cpp
+    endif
+    ifeq ($(BOARD_FM_DEVICE),bcm4325)
+        LOCAL_SRC_FILES += android_hardware_fm_bcm4325.cpp
+    endif
+    ifeq ($(BOARD_FM_DEVICE),wl1251)
+        LOCAL_SRC_FILES += android_hardware_fm_wl1271.cpp
+    endif
+    ifeq ($(BOARD_FM_DEVICE),wl1271)
+        LOCAL_SRC_FILES += android_hardware_fm_wl1271.cpp
+    endif
 endif
 
 LOCAL_C_INCLUDES += \
@@ -201,6 +226,8 @@ LOCAL_SHARED_LIBRARIES := \
 	libjpeg \
 	libnfc_ndef
 
+LOCAL_STATIC_LIBRARIES := libreboot
+
 ifeq ($(BOARD_HAVE_BLUETOOTH),true)
 LOCAL_C_INCLUDES += \
 	external/dbus \
@@ -230,6 +257,10 @@ ifeq ($(WITH_MALLOC_LEAK_CHECK),true)
 endif
 
 LOCAL_MODULE:= libandroid_runtime
+
+ifneq ($(BOARD_MOBILEDATA_INTERFACE_NAME),)
+        LOCAL_CFLAGS += -DMOBILE_IFACE_NAME='$(BOARD_MOBILEDATA_INTERFACE_NAME)'
+endif
 
 include $(BUILD_SHARED_LIBRARY)
 

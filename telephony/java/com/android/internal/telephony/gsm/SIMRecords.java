@@ -19,7 +19,6 @@ package com.android.internal.telephony.gsm;
 import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OPERATOR_ALPHA;
 import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OPERATOR_ISO_COUNTRY;
 import static com.android.internal.telephony.TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC;
-import android.content.Context;
 import android.os.AsyncResult;
 import android.os.Message;
 import android.os.SystemProperties;
@@ -37,6 +36,7 @@ import com.android.internal.telephony.IccVmNotSupportedException;
 import com.android.internal.telephony.MccTable;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 
 /**
@@ -55,6 +55,8 @@ public final class SIMRecords extends IccRecords {
 
 
     SpnOverride mSpnOverride;
+
+    Locale mCurrentLocale = null;
 
     // ***** Cached SIM State; cleared on channel close
 
@@ -216,6 +218,9 @@ public final class SIMRecords extends IccRecords {
         pnnHomeName = null;
 
         adnCache.reset();
+
+        spn = null;
+        mCurrentLocale = null;
 
         phone.setSystemProperty(PROPERTY_ICC_OPERATOR_NUMERIC, null);
         phone.setSystemProperty(PROPERTY_ICC_OPERATOR_ALPHA, null);
@@ -510,12 +515,6 @@ public final class SIMRecords extends IccRecords {
                 }
 
                 imsi = (String) ar.result;
-
-                // Samsung RIL sends first 8 digits of IMSI at first time and
-                // first 8 digits + complete 15 digets (23 total) each next
-                // requiest (ex. 12345678 and 12345678123456780011223).
-                // So we always have to use first 8 digits only:
-                imsi = imsi.substring(0, 8);
 
                 // IMSI (MCC+MNC+MSIN) is at least 6 digits, but not more
                 // than 15 (and usually 15).
@@ -1238,11 +1237,30 @@ public final class SIMRecords extends IccRecords {
                 SimCard.INTENT_VALUE_ICC_LOADED, null);
     }
 
+    public String getServiceProviderName() {
+        setSpnFromConfig(getSIMOperatorNumeric());
+        return super.getServiceProviderName();
+    }
+
     //***** Private methods
 
     private void setSpnFromConfig(String carrier) {
-        if (mSpnOverride.containsCarrier(carrier)) {
-            spn = mSpnOverride.getSpn(carrier);
+        if (carrier == null) return;
+
+        Locale locale = phone.getContext().getResources().getConfiguration().locale;
+        locale = new Locale(locale.getLanguage(), locale.getCountry());
+
+        if ((mCurrentLocale == null || !mCurrentLocale.equals(locale))) {
+            if (mSpnOverride.containsCarrier(carrier) &&
+                    (spn = mSpnOverride.getSpn(carrier, locale)) == null &&
+                    (spn = mSpnOverride.getSpn(carrier)) == null &&
+                    "".equals(spn = SystemProperties.get(PROPERTY_ICC_OPERATOR_ALPHA))) {
+                spn = null;
+            }
+            if (spn != null && "".equals(spn)) {
+                spn = null;
+            }
+            mCurrentLocale = locale;
         }
     }
 
@@ -1358,19 +1376,25 @@ public final class SIMRecords extends IccRecords {
      */
     protected int getDisplayRule(String plmn) {
         int rule;
-        if (spn == null || spnDisplayCondition == -1) {
-            // EF_SPN was not found on the SIM, or not yet loaded.  Just show ONS.
+        if (spn == null || spnDisplayCondition == -1 || plmn == null) {
+            // EF_SPN was not found on the SIM, or not yet loaded, or
+            // currently not registered to any PLMN. Just show ONS or
+            // the "(No service)" string.
             rule = SPN_RULE_SHOW_PLMN;
         } else if (isOnMatchingPlmn(plmn)) {
+            // registered PLMN is either HPLMN or a PLMN in the EF_SPDI list.
             rule = SPN_RULE_SHOW_SPN;
             if ((spnDisplayCondition & 0x01) == 0x01) {
-                // ONS required when registered to HPLMN or PLMN in EF_SPDI
+                // b1=0: ONS is not required
+                // b1=1: ONS is required
                 rule |= SPN_RULE_SHOW_PLMN;
             }
         } else {
+            // registered PLMN is neither HPLMN nor a PLMN in the EF_SPDI list.
             rule = SPN_RULE_SHOW_PLMN;
             if ((spnDisplayCondition & 0x02) == 0x00) {
-                // SPN required if not registered to HPLMN or PLMN in EF_SPDI
+                // b2=0: SPN is required
+                // b2=1: SPN is not required
                 rule |= SPN_RULE_SHOW_SPN;
             }
         }
@@ -1430,6 +1454,7 @@ public final class SIMRecords extends IccRecords {
         switch(spnState){
             case INIT:
                 spn = null;
+                mCurrentLocale = null;
 
                 phone.getIccFileHandler().loadEFTransparent( EF_SPN,
                         obtainMessage(EVENT_GET_SPN_DONE));

@@ -91,6 +91,9 @@ OMX::CallbackDispatcher::~CallbackDispatcher() {
         mQueueChanged.signal();
     }
 
+    // Don't call join on myself
+    CHECK(mThread != pthread_self());
+
     void *dummy;
     pthread_join(mThread, &dummy);
 }
@@ -260,9 +263,12 @@ status_t OMX::freeNode(node_id node) {
 
     status_t err = instance->freeNode(mMaster);
 
-    index = mDispatchers.indexOfKey(node);
-    CHECK(index >= 0);
-    mDispatchers.removeItemsAt(index);
+    {
+        Mutex::Autolock autoLock(mLock);
+        index = mDispatchers.indexOfKey(node);
+        CHECK(index >= 0);
+        mDispatchers.removeItemsAt(index);
+    }
 
     return err;
 }
@@ -299,6 +305,15 @@ status_t OMX::setConfig(
     return findInstance(node)->setConfig(
             index, params, size);
 }
+
+#if defined(OMAP_ENHANCEMENT) && defined(TARGET_OMAP4)
+status_t OMX::useBuffer(
+        node_id node, OMX_U32 port_index, const sp<IMemory> &params,
+        buffer_id *buffer, size_t size) {
+    return findInstance(node)->useBuffer(
+            port_index, params, buffer, size);
+}
+#endif
 
 status_t OMX::useBuffer(
         node_id node, OMX_U32 port_index, const sp<IMemory> &params,
@@ -386,6 +401,7 @@ OMX_ERRORTYPE OMX::OnFillBufferDone(
     LOGV("OnFillBufferDone buffer=%p", pBuffer);
 
     omx_message msg;
+    long offset = 0;
     msg.type = omx_message::FILL_BUFFER_DONE;
     msg.node = node;
     msg.u.extended_buffer_data.buffer = pBuffer;
@@ -396,8 +412,28 @@ OMX_ERRORTYPE OMX::OnFillBufferDone(
     msg.u.extended_buffer_data.platform_private = pBuffer->pPlatformPrivate;
     msg.u.extended_buffer_data.data_ptr = pBuffer->pBuffer;
 
-    findDispatcher(node)->post(msg);
+#ifdef TARGET_7X30
+    PLATFORM_PRIVATE_LIST *pPlatfromList = (PLATFORM_PRIVATE_LIST *)pBuffer->pPlatformPrivate;
+    PLATFORM_PRIVATE_ENTRY *pPlatformEntry;
+    PLATFORM_PRIVATE_PMEM_INFO *pPMEMInfo;
 
+    if(pPlatfromList) {
+      for(size_t i=0; i<pPlatfromList->nEntries; i++) {
+	if(pPlatfromList->entryList->type == PLATFORM_PRIVATE_PMEM)
+	  {
+	    pPlatformEntry = (PLATFORM_PRIVATE_ENTRY *)pPlatfromList->entryList;
+	    pPMEMInfo = (PLATFORM_PRIVATE_PMEM_INFO *)pPlatformEntry->entry;
+	    if(pPMEMInfo) {
+	      offset = pPMEMInfo->offset;
+	    }
+	    break;
+	  }
+      }
+    }
+    msg.u.extended_buffer_data.pmem_offset = offset;
+#endif
+
+    findDispatcher(node)->post(msg);
     return OMX_ErrorNone;
 }
 
@@ -456,6 +492,27 @@ struct SharedVideoRenderer : public VideoRenderer {
             const void *data, size_t size, void *platformPrivate) {
         return mObj->render(data, size, platformPrivate);
     }
+
+#ifdef OMAP_ENHANCEMENT
+    virtual Vector< sp<IMemory> > getBuffers() {
+        return mObj->getBuffers();
+    }
+
+    virtual bool setCallback(release_rendered_buffer_callback cb, void *cookie) {
+        return mObj->setCallback(cb, cookie);
+    }
+
+    virtual void set_s3d_frame_layout(uint32_t s3d_mode, uint32_t s3d_fmt, uint32_t s3d_order, uint32_t s3d_subsampling) {
+    mObj->set_s3d_frame_layout(s3d_mode, s3d_fmt, s3d_order, s3d_subsampling);
+     }
+
+    virtual void resizeRenderer(void* resize_params) {
+          mObj->resizeRenderer(resize_params);
+    }
+virtual void requestRendererClone(bool enable) {
+    mObj->requestRendererClone(enable);
+}
+#endif
 
 private:
     void *mLibHandle;
@@ -536,10 +593,97 @@ sp<IOMXRenderer> OMX::createRenderer(
                 surface,
                 displayWidth, displayHeight,
                 encodedWidth, encodedHeight);
+
+        if (((SoftwareRenderer *)impl)->initCheck() != OK) {
+            delete impl;
+            impl = NULL;
+
+            return NULL;
+        }
     }
 
     return new OMXRenderer(impl);
 }
+
+#ifdef OMAP_ENHANCEMENT
+sp<IOMXRenderer> OMX::createRenderer(
+        const sp<ISurface> &surface,
+        const char *componentName,
+        OMX_COLOR_FORMATTYPE colorFormat,
+        size_t encodedWidth, size_t encodedHeight,
+        size_t displayWidth, size_t displayHeight,
+        int32_t rotationDegrees,
+        int isS3D, int numOfOpBuffers) {
+    Mutex::Autolock autoLock(mLock);
+    VideoRenderer *impl = NULL;
+    void *libHandle = dlopen("libstagefrighthw.so", RTLD_NOW);
+
+    if (libHandle) {
+        typedef VideoRenderer *(*CreateRendererWithRotationFunc)(
+                const sp<ISurface> &surface,
+                const char *componentName,
+                OMX_COLOR_FORMATTYPE colorFormat,
+                size_t displayWidth, size_t displayHeight,
+                size_t decodedWidth, size_t decodedHeight,
+                int32_t rotationDegrees,
+                int isS3D, int numOfOpBuffers);
+
+        typedef VideoRenderer *(*CreateRendererFunc)(
+                const sp<ISurface> &surface,
+                const char *componentName,
+                OMX_COLOR_FORMATTYPE colorFormat,
+                size_t displayWidth, size_t displayHeight,
+                size_t decodedWidth, size_t decodedHeight,
+                int isS3D, int numOfOpBuffers);
+
+        CreateRendererWithRotationFunc funcWithRotation =
+            (CreateRendererWithRotationFunc)dlsym(
+                    libHandle,
+                    "_Z26createRendererWithRotationRKN7android2spINS_8"
+                    "ISurfaceEEEPKc20OMX_COLOR_FORMATTYPEjjjjiii");
+
+        if (funcWithRotation) {
+            impl = (*funcWithRotation)(
+                    surface, componentName, colorFormat,
+                    displayWidth, displayHeight, encodedWidth, encodedHeight,
+                    rotationDegrees,
+                    isS3D, numOfOpBuffers);
+        } else {
+            CreateRendererFunc func =
+                (CreateRendererFunc)dlsym(
+                        libHandle,
+                        "_Z14createRendererRKN7android2spINS_8ISurfaceEEEPKc20"
+                        "OMX_COLOR_FORMATTYPEjjjjii");
+            if (func) {
+                impl = (*func)(surface, componentName, colorFormat,
+                        displayWidth, displayHeight, encodedWidth, encodedHeight,
+                        isS3D, numOfOpBuffers);
+            }
+        }
+
+        if (impl) {
+            impl = new SharedVideoRenderer(libHandle, impl);
+            libHandle = NULL;
+        }
+
+        if (libHandle) {
+            dlclose(libHandle);
+            libHandle = NULL;
+        }
+    }
+
+    if (!impl) {
+        LOGE("Using software renderer.");
+        impl = new SoftwareRenderer(
+                colorFormat,
+                surface,
+                displayWidth, displayHeight,
+                encodedWidth, encodedHeight);
+    }
+
+    return new OMXRenderer(impl);
+}
+#endif
 
 OMXRenderer::OMXRenderer(VideoRenderer *impl)
     : mImpl(impl) {
@@ -558,6 +702,29 @@ void OMXRenderer::render(IOMX::buffer_id buffer) {
             header->nFilledLen,
             header->pPlatformPrivate);
 }
+
+#ifdef OMAP_ENHANCEMENT
+Vector< sp<IMemory> > OMXRenderer::getBuffers() {
+    return mImpl->getBuffers();
+}
+
+bool OMXRenderer::setCallback(release_rendered_buffer_callback cb, void *cookie) {
+    return mImpl->setCallback(cb, cookie);
+}
+
+void OMXRenderer::set_s3d_frame_layout(uint32_t s3d_mode, uint32_t s3d_fmt, uint32_t s3d_order, uint32_t s3d_subsampling) {
+    mImpl->set_s3d_frame_layout(s3d_mode, s3d_fmt, s3d_order, s3d_subsampling);
+}
+
+void OMXRenderer::resizeRenderer(void* resize_params) {
+    mImpl->resizeRenderer(resize_params);
+}
+
+void OMXRenderer::requestRendererClone(bool enable) {
+    mImpl->requestRendererClone(enable);
+}
+
+#endif
 
 }  // namespace android
 

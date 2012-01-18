@@ -63,11 +63,12 @@ public class ResolverActivity extends AlertActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         onCreate(savedInstanceState, new Intent(getIntent()),
                 getResources().getText(com.android.internal.R.string.whichApplication),
-                null, true);
+                null, null, true);
     }
 
     protected void onCreate(Bundle savedInstanceState, Intent intent,
-            CharSequence title, Intent[] initialIntents, boolean alwaysUseOption) {
+            CharSequence title, Intent[] initialIntents, List<ResolveInfo> rList,
+            boolean alwaysUseOption, boolean alwaysChoose) {
         super.onCreate(savedInstanceState);
         mPm = getPackageManager();
         intent.setComponent(null);
@@ -88,10 +89,11 @@ public class ResolverActivity extends AlertActivity implements
                                                         com.android.internal.R.id.clearDefaultHint);
             mClearDefaultHint.setVisibility(View.GONE);
         }
-        mAdapter = new ResolveListAdapter(this, intent, initialIntents);
-        if (mAdapter.getCount() > 1) {
+        mAdapter = new ResolveListAdapter(this, intent, initialIntents, rList);
+        int count = mAdapter.getCount();
+        if (count > 1 || (count == 1 && alwaysChoose)) {
             ap.mAdapter = mAdapter;
-        } else if (mAdapter.getCount() == 1) {
+        } else if (count == 1) {
             startActivity(mAdapter.intentForPosition(0));
             finish();
             return;
@@ -102,11 +104,22 @@ public class ResolverActivity extends AlertActivity implements
         setupAlert();
     }
 
+    protected void onCreate(Bundle savedInstanceState, Intent intent,
+            CharSequence title, Intent[] initialIntents, List<ResolveInfo> rList,
+            boolean alwaysUseOption) {
+        onCreate(savedInstanceState, intent, title, initialIntents, rList, alwaysUseOption, false);
+      }
+
     public void onClick(DialogInterface dialog, int which) {
         ResolveInfo ri = mAdapter.resolveInfoForPosition(which);
         Intent intent = mAdapter.intentForPosition(which);
+        boolean alwaysCheck = (mAlwaysCheck != null && mAlwaysCheck.isChecked());
+        onIntentSelected(ri, intent, alwaysCheck);
+        finish();
+    }
 
-        if ((mAlwaysCheck != null) && mAlwaysCheck.isChecked()) {
+    protected void onIntentSelected(ResolveInfo ri, Intent intent, boolean alwaysCheck) {
+        if (alwaysCheck) {
             // Build a reasonable intent filter, based on what matched.
             IntentFilter filter = new IntentFilter();
 
@@ -189,7 +202,6 @@ public class ResolverActivity extends AlertActivity implements
         if (intent != null) {
             startActivity(intent);
         }
-        finish();
     }
 
     private final class DisplayResolveInfo {
@@ -215,14 +227,16 @@ public class ResolverActivity extends AlertActivity implements
         private List<DisplayResolveInfo> mList;
 
         public ResolveListAdapter(Context context, Intent intent,
-                Intent[] initialIntents) {
+                Intent[] initialIntents, List<ResolveInfo> rList) {
             mIntent = new Intent(intent);
             mIntent.setComponent(null);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-            List<ResolveInfo> rList = mPm.queryIntentActivities(
-                    intent, PackageManager.MATCH_DEFAULT_ONLY
-                    | (mAlwaysCheck != null ? PackageManager.GET_RESOLVED_FILTER : 0));
+            if (rList == null) {
+                rList = mPm.queryIntentActivities(
+                        intent, PackageManager.MATCH_DEFAULT_ONLY
+                        | (mAlwaysCheck != null ? PackageManager.GET_RESOLVED_FILTER : 0));
+            }
             int N;
             if ((rList != null) && ((N = rList.size()) > 0)) {
                 // Only display the first matches that are either of equal

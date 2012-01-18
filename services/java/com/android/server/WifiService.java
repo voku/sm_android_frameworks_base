@@ -53,6 +53,7 @@ import android.net.NetworkStateTracker;
 import android.net.DhcpInfo;
 import android.net.NetworkUtils;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -69,6 +70,17 @@ import android.provider.Settings;
 import android.util.Slog;
 import android.text.TextUtils;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -77,9 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.io.FileDescriptor;
-import java.io.PrintWriter;
-import java.net.UnknownHostException;
+import java.util.UUID;
 
 import com.android.internal.app.IBatteryStats;
 import android.app.backup.IBackupManager;
@@ -95,7 +105,7 @@ import com.android.internal.R;
  */
 public class WifiService extends IWifiManager.Stub {
     private static final String TAG = "WifiService";
-    private static final boolean DBG = true;
+    private static final boolean DBG = SystemProperties.getBoolean("wifi.debug", false);
     private static final Pattern scanResultPattern = Pattern.compile("\t+");
     private final WifiStateTracker mWifiStateTracker;
     /* TODO: fetch a configurable interface */
@@ -176,6 +186,10 @@ public class WifiService extends IWifiManager.Stub {
     private static final int MESSAGE_SET_CHANNELS       = 8;
     private static final int MESSAGE_ENABLE_NETWORKS    = 9;
     private static final int MESSAGE_START_SCAN         = 10;
+    private static final int MESSAGE_REPORT_WORKSOURCE  = 11;
+    private static final int MESSAGE_ENABLE_RSSI_POLLING = 12;
+    private static final int MESSAGE_WRITE_WIFI_AP_CONFIG = 13;
+    private static final int MESSAGE_READ_WIFI_AP_CONFIG = 14;
 
 
     private final  WifiHandler mWifiHandler;
@@ -217,6 +231,13 @@ public class WifiService extends IWifiManager.Stub {
 
     private static final String ACTION_DEVICE_IDLE =
             "com.android.server.WifiManager.action.DEVICE_IDLE";
+
+    private static final String WIFIAP_CONFIG_FILE = Environment.getDataDirectory() +
+            "/misc/wifi/softap.conf";
+
+    private static final int WIFIAP_CONFIG_VERSION = 1;
+    private WifiConfiguration mWifiApConfig = new WifiConfiguration();
+    private final Object mWifiApConfigLock = new Object();
 
     WifiService(Context context, WifiStateTracker tracker) {
         mContext = context;
@@ -281,6 +302,9 @@ public class WifiService extends IWifiManager.Stub {
 
                 }
             },new IntentFilter(ConnectivityManager.ACTION_TETHER_STATE_CHANGED));
+
+        //Initiate a read of Wifi Ap configuration
+        Message.obtain(mWifiHandler, MESSAGE_READ_WIFI_AP_CONFIG).sendToTarget();
     }
 
     /**
@@ -634,37 +658,102 @@ public class WifiService extends IWifiManager.Stub {
 
     public WifiConfiguration getWifiApConfiguration() {
         enforceAccessPermission();
-        final ContentResolver cr = mContext.getContentResolver();
-        WifiConfiguration wifiConfig = new WifiConfiguration();
-        int authType;
-        try {
-            wifiConfig.SSID = Settings.Secure.getString(cr, Settings.Secure.WIFI_AP_SSID);
-            if (wifiConfig.SSID == null)
-                return null;
-            authType = Settings.Secure.getInt(cr, Settings.Secure.WIFI_AP_SECURITY);
-            wifiConfig.allowedKeyManagement.set(authType);
-            wifiConfig.preSharedKey = Settings.Secure.getString(cr, Settings.Secure.WIFI_AP_PASSWD);
-            return wifiConfig;
-        } catch (Settings.SettingNotFoundException e) {
-            Slog.e(TAG,"AP settings not found, returning");
-            return null;
+        synchronized (mWifiApConfigLock) {
+            WifiConfiguration config = new WifiConfiguration();
+            config.SSID = mWifiApConfig.SSID;
+            if (mWifiApConfig.allowedKeyManagement.get(KeyMgmt.WPA_PSK)) {
+                config.allowedKeyManagement.set(KeyMgmt.WPA_PSK);
+                config.preSharedKey = mWifiApConfig.preSharedKey;
+            } else {
+                config.allowedKeyManagement.set(KeyMgmt.NONE);
+            }
+            return config;
         }
     }
 
     public void setWifiApConfiguration(WifiConfiguration wifiConfig) {
         enforceChangePermission();
-        final ContentResolver cr = mContext.getContentResolver();
-        boolean isWpa;
         if (wifiConfig == null)
             return;
-        Settings.Secure.putString(cr, Settings.Secure.WIFI_AP_SSID, wifiConfig.SSID);
-        isWpa = wifiConfig.allowedKeyManagement.get(KeyMgmt.WPA_PSK);
-        Settings.Secure.putInt(cr,
-                               Settings.Secure.WIFI_AP_SECURITY,
-                               isWpa ? KeyMgmt.WPA_PSK : KeyMgmt.NONE);
-        if (isWpa)
-            Settings.Secure.putString(cr, Settings.Secure.WIFI_AP_PASSWD, wifiConfig.preSharedKey);
+        Message.obtain(mWifiHandler, MESSAGE_WRITE_WIFI_AP_CONFIG, wifiConfig).sendToTarget();
     }
+
+    /* Generate a default WPA2 based configuration with a random password.
+
+       We are changing the Wifi Ap configuration storage from secure settings to a
+       flat file accessible only by the system. A WPA2 based default configuration
+       will keep the device secure after the update */
+    private void setDefaultWifiApConfiguration() {
+        synchronized (mWifiApConfigLock) {
+            mWifiApConfig.SSID = mContext.getString(R.string.wifi_tether_configure_ssid_default);
+            mWifiApConfig.allowedKeyManagement.set(KeyMgmt.WPA_PSK);
+            String randomUUID = UUID.randomUUID().toString();
+            //first 12 chars from xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+            mWifiApConfig.preSharedKey = randomUUID.substring(0, 8) + randomUUID.substring(9,13);
+        }
+    }
+
+    private void writeWifiApConfigBlocked(WifiConfiguration wifiConfig) {
+        DataOutputStream out = null;
+        try {
+            out = new DataOutputStream(new BufferedOutputStream(
+                        new FileOutputStream(WIFIAP_CONFIG_FILE)));
+
+            out.writeInt(WIFIAP_CONFIG_VERSION);
+            out.writeUTF(wifiConfig.SSID);
+            if(wifiConfig.allowedKeyManagement.get(KeyMgmt.WPA_PSK)) {
+                out.writeInt(KeyMgmt.WPA_PSK);
+                out.writeUTF(wifiConfig.preSharedKey);
+            } else {
+                out.writeInt(KeyMgmt.NONE);
+            }
+            synchronized (mWifiApConfigLock) {
+                mWifiApConfig = wifiConfig;
+            }
+        } catch (IOException e) {
+            Slog.e(TAG, "Error writing hotspot configuration" + e);
+        } finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {}
+            }
+        }
+    }
+
+    private void readWifiApConfigBlocked() {
+        DataInputStream in = null;
+        try {
+            WifiConfiguration config = new WifiConfiguration();
+            in = new DataInputStream(new BufferedInputStream(new FileInputStream(
+                            WIFIAP_CONFIG_FILE)));
+
+            int version = in.readInt();
+            if (version != 1) {
+                Slog.e(TAG, "Bad version on hotspot configuration file, set defaults");
+                setDefaultWifiApConfiguration();
+                return;
+            }
+            config.SSID = in.readUTF();
+            int authType = in.readInt();
+            config.allowedKeyManagement.set(authType);
+            if (authType != KeyMgmt.NONE) {
+                config.preSharedKey = in.readUTF();
+            }
+            synchronized (mWifiApConfigLock) {
+                mWifiApConfig = config;
+            }
+        } catch (IOException ignore) {
+            setDefaultWifiApConfiguration();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {}
+            }
+        }
+    }
+
 
     /**
      * Enables/disables Wi-Fi AP synchronously. The driver is loaded
@@ -693,7 +782,7 @@ public class WifiService extends IWifiManager.Stub {
                     setWifiApConfiguration(wifiConfig);
                     return true;
                 } catch(Exception e) {
-                    Slog.e(TAG, "Exception in nwService during AP restart");
+                    Slog.e(TAG, "Exception in nwService during AP restart", e);
                     try {
                         nwService.stopAccessPoint();
                     } catch (Exception ee) {
@@ -721,11 +810,7 @@ public class WifiService extends IWifiManager.Stub {
         if (enable) {
 
             /* Use default config if there is no existing config */
-            if (wifiConfig == null && ((wifiConfig = getWifiApConfiguration()) == null)) {
-                wifiConfig = new WifiConfiguration();
-                wifiConfig.SSID = mContext.getString(R.string.wifi_tether_configure_ssid_default);
-                wifiConfig.allowedKeyManagement.set(KeyMgmt.NONE);
-            }
+            if (wifiConfig == null) wifiConfig = getWifiApConfiguration();
 
             if (SystemProperties.getBoolean("wifi.hotspot.ti", false)) {
                 if (!mWifiStateTracker.loadHotspotDriver()) {
@@ -750,7 +835,7 @@ public class WifiService extends IWifiManager.Stub {
                                                SOFTAP_IFACE);
                 }
             } catch(Exception e) {
-                Slog.e(TAG, "Exception in startAccessPoint()");
+                Slog.e(TAG, "Exception in startAccessPoint()", e);
                 setWifiApEnabledState(WIFI_AP_STATE_FAILED, uid, DriverAction.DRIVER_UNLOAD);
                 return false;
             }
@@ -762,7 +847,7 @@ public class WifiService extends IWifiManager.Stub {
             try {
                 nwService.stopAccessPoint();
             } catch(Exception e) {
-                Slog.e(TAG, "Exception in stopAccessPoint()");
+                Slog.e(TAG, "Exception in stopAccessPoint()", e);
                 setWifiApEnabledState(WIFI_AP_STATE_FAILED, uid, DriverAction.DRIVER_UNLOAD);
                 return false;
             }
@@ -1046,6 +1131,15 @@ public class WifiService extends IWifiManager.Stub {
 
         for (WifiConfiguration.EnterpriseField field :
                 config.enterpriseFields) {
+            /*
+             * Skip reading the password field, as the actual value isn't returned
+             * anyway, and the returned '*' might cause confusion when saving the
+             * config again, as '*' might actually be a valid password.
+             */
+            if (field == config.password) {
+                continue;
+            }
+
             value = mWifiStateTracker.getNetworkVariable(netId,
                     field.varName());
             if (!TextUtils.isEmpty(value)) {
@@ -1486,7 +1580,7 @@ public class WifiService extends IWifiManager.Stub {
                     if (scanResult != null) {
                         scanList.add(scanResult);
                     } else if (DBG) {
-                        Slog.w(TAG, "misformatted scan result for: " + line);
+                        Slog.d(TAG, "misformatted scan result for: " + line);
                     }
                 }
                 lineBeg = lineEnd + 1;
@@ -1754,8 +1848,8 @@ public class WifiService extends IWifiManager.Stub {
                 mScreenOff = false;
                 // Once the screen is on, we are not keeping WIFI running
                 // because of any locks so clear that tracking immediately.
-                reportStartWorkSource();
-                mWifiStateTracker.enableRssiPolling(true);
+                sendReportWorkSourceMessage();
+                sendEnableRssiPollingMessage(true);
                 /* DHCP or other temporary failures in the past can prevent
                  * a disabled network from being connected to, enable on screen on
                  */
@@ -1767,7 +1861,7 @@ public class WifiService extends IWifiManager.Stub {
                     Slog.d(TAG, "ACTION_SCREEN_OFF");
                 }
                 mScreenOff = true;
-                mWifiStateTracker.enableRssiPolling(false);
+                sendEnableRssiPollingMessage(false);
                 /*
                  * Set a timer to put Wi-Fi to sleep, but only if the screen is off
                  * AND the "stay on while plugged in" setting doesn't match the
@@ -1805,7 +1899,7 @@ public class WifiService extends IWifiManager.Stub {
                     Slog.d(TAG, "got ACTION_DEVICE_IDLE");
                 }
                 mDeviceIdle = true;
-                reportStartWorkSource();
+                sendReportWorkSourceMessage();
             } else if (action.equals(Intent.ACTION_BATTERY_CHANGED)) {
                 /*
                  * Set a timer to put Wi-Fi to sleep, but only if the screen is off
@@ -1911,12 +2005,25 @@ public class WifiService extends IWifiManager.Stub {
         Message.obtain(mWifiHandler, MESSAGE_ENABLE_NETWORKS).sendToTarget();
     }
 
+    private void sendReportWorkSourceMessage() {
+        Message.obtain(mWifiHandler, MESSAGE_REPORT_WORKSOURCE).sendToTarget();
+    }
+
+    private void sendEnableRssiPollingMessage(boolean enable) {
+        Message.obtain(mWifiHandler, MESSAGE_ENABLE_RSSI_POLLING, enable ? 1 : 0, 0).sendToTarget();
+    }
+
+
     private void reportStartWorkSource() {
         synchronized (mWifiStateTracker) {
             mTmpWorkSource.clear();
             if (mDeviceIdle) {
-                for (int i=0; i<mLocks.mList.size(); i++) {
-                    mTmpWorkSource.add(mLocks.mList.get(i).mWorkSource);
+                try {
+                    for (int i=0; i<mLocks.mList.size(); i++) {
+                        mTmpWorkSource.add(mLocks.mList.get(i).mWorkSource);
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    //Oh well, it's gone
                 }
             }
             mWifiStateTracker.updateBatteryWorkSourceLocked(mTmpWorkSource);
@@ -2110,6 +2217,18 @@ public class WifiService extends IWifiManager.Stub {
                             break;
                     }
                     mWifiStateTracker.scan(forceActive);
+                    break;
+                case MESSAGE_REPORT_WORKSOURCE:
+                    reportStartWorkSource();
+                    break;
+                case MESSAGE_ENABLE_RSSI_POLLING:
+                    mWifiStateTracker.enableRssiPolling(msg.arg1 == 1);
+                    break;
+                case MESSAGE_WRITE_WIFI_AP_CONFIG:
+                    writeWifiApConfigBlocked((WifiConfiguration) msg.obj);
+                    break;
+                case MESSAGE_READ_WIFI_AP_CONFIG:
+                    readWifiApConfigBlocked();
                     break;
             }
         }
@@ -2335,7 +2454,7 @@ public class WifiService extends IWifiManager.Stub {
 
             // Be aggressive about adding new locks into the accounted state...
             // we want to over-report rather than under-report.
-            reportStartWorkSource();
+            sendReportWorkSourceMessage();
 
             updateWifiState();
             return true;

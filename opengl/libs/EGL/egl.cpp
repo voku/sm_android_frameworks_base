@@ -40,6 +40,8 @@
 #include <utils/KeyedVector.h>
 #include <utils/String8.h>
 
+#include <ui/egl/android_natives.h>
+
 #include "hooks.h"
 #include "egl_impl.h"
 #include "Loader.h"
@@ -50,7 +52,6 @@
 // There's also an extra subtlety with the EGLimage entry points in GL, which
 // can't work properly if they're called directly (they have to go through
 // a wrapper).
-#define ENABLE_VENDOR_EXTENSIONS
 
 #define MAKE_CONFIG(_impl, _index)  ((EGLConfig)(((_impl)<<24) | (_index)))
 #define setError(_e, _r) setErrorEtc(__FUNCTION__, __LINE__, _e, _r)
@@ -75,6 +76,7 @@ static char const * const gExtensionString  =
 #endif
         "EGL_ANDROID_image_native_buffer "
         "EGL_ANDROID_swap_rectangle "
+        "EGL_ANDROID_get_render_buffer "
         ;
 
 // ----------------------------------------------------------------------------
@@ -210,15 +212,16 @@ struct egl_surface_t : public egl_object_t
 {
     typedef egl_object_t::LocalRef<egl_surface_t, EGLSurface> Ref;
 
-    egl_surface_t(EGLDisplay dpy, EGLSurface surface, EGLConfig config,
-            int impl, egl_connection_t const* cnx) 
-    : dpy(dpy), surface(surface), config(config), impl(impl), cnx(cnx) {
+    egl_surface_t(EGLDisplay dpy, EGLConfig config, EGLNativeWindowType win,
+            EGLSurface surface, int impl, egl_connection_t const* cnx)
+    : dpy(dpy), surface(surface), config(config), win(win), impl(impl), cnx(cnx) {
     }
     ~egl_surface_t() {
     }
     EGLDisplay                  dpy;
     EGLSurface                  surface;
     EGLConfig                   config;
+    sp<ANativeWindow>           win;
     int                         impl;
     egl_connection_t const*     cnx;
 };
@@ -229,8 +232,8 @@ struct egl_context_t : public egl_object_t
     
     egl_context_t(EGLDisplay dpy, EGLContext context, EGLConfig config,
             int impl, egl_connection_t const* cnx, int version) 
-    : dpy(dpy), context(context), read(0), draw(0), impl(impl), cnx(cnx),
-      version(version)
+    : dpy(dpy), context(context), config(config), read(0), draw(0), impl(impl),
+      cnx(cnx), version(version)
     {
     }
     EGLDisplay                  dpy;
@@ -425,6 +428,8 @@ static const extention_map_t gExtentionMap[] = {
             (__eglMustCastToProperFunctionPointerType)NULL },
     { "glEGLImageTargetRenderbufferStorageOES",
             (__eglMustCastToProperFunctionPointerType)NULL },
+    { "eglGetRenderBufferANDROID",
+            (__eglMustCastToProperFunctionPointerType)&eglGetRenderBufferANDROID },
 };
 
 extern const __eglMustCastToProperFunctionPointerType gExtensionForwarders[MAX_NUMBER_OF_GL_EXTENSIONS];
@@ -825,7 +830,7 @@ EGLBoolean eglTerminate(EGLDisplay dpy)
     dp->refs--;
     dp->numTotalConfigs = 0;
     delete [] dp->configs;
-    clearTLS();
+
     return res;
 }
 
@@ -999,11 +1004,22 @@ EGLSurface eglCreateWindowSurface(  EGLDisplay dpy, EGLConfig config,
     egl_display_t const* dp = 0;
     egl_connection_t* cnx = validate_display_config(dpy, config, dp);
     if (cnx) {
+        EGLDisplay iDpy = dp->disp[ dp->configs[intptr_t(config)].impl ].dpy;
+        EGLConfig iConfig = dp->configs[intptr_t(config)].config;
+        EGLint format;
+
+        // set the native window's buffers format to match this config
+        if (cnx->egl.eglGetConfigAttrib(iDpy,
+                iConfig, EGL_NATIVE_VISUAL_ID, &format)) {
+            if (format != 0) {
+                native_window_set_buffers_geometry(window, 0, 0, format);
+            }
+        }
+
         EGLSurface surface = cnx->egl.eglCreateWindowSurface(
-                dp->disp[ dp->configs[intptr_t(config)].impl ].dpy,
-                dp->configs[intptr_t(config)].config, window, attrib_list);
+                iDpy, iConfig, window, attrib_list);
         if (surface != EGL_NO_SURFACE) {
-            egl_surface_t* s = new egl_surface_t(dpy, surface, config,
+            egl_surface_t* s = new egl_surface_t(dpy, config, window, surface,
                     dp->configs[intptr_t(config)].impl, cnx);
             return s;
         }
@@ -1022,7 +1038,7 @@ EGLSurface eglCreatePixmapSurface(  EGLDisplay dpy, EGLConfig config,
                 dp->disp[ dp->configs[intptr_t(config)].impl ].dpy,
                 dp->configs[intptr_t(config)].config, pixmap, attrib_list);
         if (surface != EGL_NO_SURFACE) {
-            egl_surface_t* s = new egl_surface_t(dpy, surface, config,
+            egl_surface_t* s = new egl_surface_t(dpy, config, NULL, surface,
                     dp->configs[intptr_t(config)].impl, cnx);
             return s;
         }
@@ -1040,7 +1056,7 @@ EGLSurface eglCreatePbufferSurface( EGLDisplay dpy, EGLConfig config,
                 dp->disp[ dp->configs[intptr_t(config)].impl ].dpy,
                 dp->configs[intptr_t(config)].config, attrib_list);
         if (surface != EGL_NO_SURFACE) {
-            egl_surface_t* s = new egl_surface_t(dpy, surface, config,
+            egl_surface_t* s = new egl_surface_t(dpy, config, NULL, surface,
                     dp->configs[intptr_t(config)].impl, cnx);
             return s;
         }
@@ -1061,6 +1077,9 @@ EGLBoolean eglDestroySurface(EGLDisplay dpy, EGLSurface surface)
     EGLBoolean result = s->cnx->egl.eglDestroySurface(
             dp->disp[s->impl].dpy, s->surface);
     if (result == EGL_TRUE) {
+        if (s->win != NULL) {
+            native_window_set_buffers_geometry(s->win.get(), 0, 0, 0);
+        }
         _s.terminate();
     }
     return result;
@@ -1148,6 +1167,27 @@ EGLBoolean eglDestroyContext(EGLDisplay dpy, EGLContext ctx)
     return result;
 }
 
+static void loseCurrent(egl_context_t * cur_c)
+{
+    if (cur_c) {
+        egl_surface_t * cur_r = get_surface(cur_c->read);
+        egl_surface_t * cur_d = get_surface(cur_c->draw);
+
+        // by construction, these are either 0 or valid (possibly terminated)
+        // it should be impossible for these to be invalid
+        ContextRef _cur_c(cur_c);
+        SurfaceRef _cur_r(cur_r);
+        SurfaceRef _cur_d(cur_d);
+
+        cur_c->read = NULL;
+        cur_c->draw = NULL;
+
+        _cur_c.release();
+        _cur_r.release();
+        _cur_d.release();
+    }
+}
+
 EGLBoolean eglMakeCurrent(  EGLDisplay dpy, EGLSurface draw,
                             EGLSurface read, EGLContext ctx)
 {
@@ -1176,13 +1216,9 @@ EGLBoolean eglMakeCurrent(  EGLDisplay dpy, EGLSurface draw,
 
     // these are the current objects structs
     egl_context_t * cur_c = get_context(getContext());
-    egl_surface_t * cur_r = NULL;
-    egl_surface_t * cur_d = NULL;
     
     if (ctx != EGL_NO_CONTEXT) {
         c = get_context(ctx);
-        cur_r = get_surface(c->read);
-        cur_d = get_surface(c->draw);
         impl_ctx = c->context;
     } else {
         // no context given, use the implementation of the current context
@@ -1228,30 +1264,21 @@ EGLBoolean eglMakeCurrent(  EGLDisplay dpy, EGLSurface draw,
     }
 
     if (result == EGL_TRUE) {
-        // by construction, these are either 0 or valid (possibly terminated)
-        // it should be impossible for these to be invalid
-        ContextRef _cur_c(cur_c);
-        SurfaceRef _cur_r(cur_r);
-        SurfaceRef _cur_d(cur_d);
 
-        // cur_c has to be valid here (but could be terminated)
+        loseCurrent(cur_c);
+
         if (ctx != EGL_NO_CONTEXT) {
             setGlThreadSpecific(c->cnx->hooks[c->version]);
             setContext(ctx);
             _c.acquire();
+            _r.acquire();
+            _d.acquire();
+            c->read = read;
+            c->draw = draw;
         } else {
             setGlThreadSpecific(&gHooksNoContext);
             setContext(EGL_NO_CONTEXT);
         }
-        _cur_c.release();
-
-        _r.acquire();
-        _cur_r.release();
-        if (c) c->read = read;
-
-        _d.acquire();
-        _cur_d.release();
-        if (c) c->draw = draw;
     }
     return result;
 }
@@ -1683,6 +1710,9 @@ EGLenum eglQueryAPI(void)
 
 EGLBoolean eglReleaseThread(void)
 {
+    // If there is context bound to the thread, release it
+    loseCurrent(get_context(getContext()));
+
     for (int i=0 ; i<IMPL_NUM_IMPLEMENTATIONS ; i++) {
         egl_connection_t* const cnx = &gEGLImpl[i];
         if (cnx->dso) {
@@ -1877,4 +1907,20 @@ EGLBoolean eglSetSwapRectangleANDROID(EGLDisplay dpy, EGLSurface draw,
                 dp->disp[s->impl].dpy, s->surface, left, top, width, height);
     }
     return setError(EGL_BAD_DISPLAY, NULL);
+}
+
+EGLClientBuffer eglGetRenderBufferANDROID(EGLDisplay dpy, EGLSurface draw)
+{
+    SurfaceRef _s(draw);
+    if (!_s.get()) return setError(EGL_BAD_SURFACE, (EGLClientBuffer*)0);
+
+    if (!validate_display_surface(dpy, draw))
+        return 0;
+    egl_display_t const * const dp = get_display(dpy);
+    egl_surface_t const * const s = get_surface(draw);
+    if (s->cnx->egl.eglGetRenderBufferANDROID) {
+        return s->cnx->egl.eglGetRenderBufferANDROID(
+                dp->disp[s->impl].dpy, s->surface);
+    }
+    return setError(EGL_BAD_DISPLAY, (EGLClientBuffer*)0);
 }

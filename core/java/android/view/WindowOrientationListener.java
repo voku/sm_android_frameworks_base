@@ -16,11 +16,14 @@
 
 package android.view;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Config;
 import android.util.Log;
@@ -40,12 +43,20 @@ public abstract class WindowOrientationListener {
     private static final String TAG = "WindowOrientationListener";
     private static final boolean DEBUG = false;
     private static final boolean localLOGV = DEBUG || Config.DEBUG;
-    private static Context mContext;
+    private static final int ROTATION_0_MODE = 8;
+    private static final int ROTATION_90_MODE = 1;
+    private static final int ROTATION_180_MODE = 2;
+    private static final int ROTATION_270_MODE = 4;
+    private static int sAccelerometerMode =
+        ROTATION_0_MODE|ROTATION_90_MODE|ROTATION_270_MODE;
     private SensorManager mSensorManager;
     private boolean mEnabled = false;
     private int mRate;
     private Sensor mSensor;
     private SensorEventListenerImpl mSensorEventListener;
+    private Context mContext;
+    private Handler mHandler;
+    private SettingsObserver mSettingsObserver;
 
     /**
      * Creates a new WindowOrientationListener.
@@ -71,13 +82,14 @@ public abstract class WindowOrientationListener {
      */
     private WindowOrientationListener(Context context, int rate) {
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-        mContext = context;
         mRate = rate;
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (mSensor != null) {
             // Create listener only if sensors do exist
             mSensorEventListener = new SensorEventListenerImpl(this);
         }
+        mContext = context;
+        mHandler = new Handler();
     }
 
     /**
@@ -93,6 +105,10 @@ public abstract class WindowOrientationListener {
             if (localLOGV) Log.d(TAG, "WindowOrientationListener enabled");
             mSensorManager.registerListener(mSensorEventListener, mSensor, mRate);
             mEnabled = true;
+            if (mSettingsObserver == null) {
+                mSettingsObserver = new SettingsObserver(mHandler);
+            }
+            mSettingsObserver.observe();
         }
     }
 
@@ -108,6 +124,10 @@ public abstract class WindowOrientationListener {
             if (localLOGV) Log.d(TAG, "WindowOrientationListener disabled");
             mSensorManager.unregisterListener(mSensorEventListener);
             mEnabled = false;
+            if (mSettingsObserver != null) {
+                mSettingsObserver.stop();
+                mSettingsObserver = null;
+            }
         }
     }
 
@@ -122,6 +142,39 @@ public abstract class WindowOrientationListener {
             return mSensorEventListener.getCurrentRotation(lastRotation);
         }
         return lastRotation;
+    }
+
+    class SettingsObserver extends ContentObserver {
+        SettingsObserver(Handler handler) {
+            super(handler);
+        }
+
+        void observe() {
+            ContentResolver resolver = mContext.getContentResolver();
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.ACCELEROMETER_ROTATION_MODE), false, this);
+            if (localLOGV) Log.i(TAG, "SettingsObserver enabled");
+            update();
+        }
+
+        public void stop() {
+            ContentResolver resolver = mContext.getContentResolver();
+            resolver.unregisterContentObserver(this);
+            if (localLOGV) Log.i(TAG, "SettingsObserver disabled");
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            update();
+        }
+
+        public void update() {
+            ContentResolver resolver = mContext.getContentResolver();
+            sAccelerometerMode = Settings.System.getInt(resolver,
+                    Settings.System.ACCELEROMETER_ROTATION_MODE,
+                    ROTATION_0_MODE|ROTATION_90_MODE|ROTATION_270_MODE);
+            if (localLOGV) Log.i(TAG, "sAccelerometerMode=" + sAccelerometerMode);
+        }
     }
 
     /**
@@ -307,9 +360,7 @@ public abstract class WindowOrientationListener {
 
         private void calculateNewRotation(float orientation, float tiltAngle) {
             if (localLOGV) Log.i(TAG, orientation + ", " + tiltAngle + ", " + mRotation);
-            final boolean allow180Rotation = mAllow180Rotation ||
-                    (Settings.System.getInt(mContext.getContentResolver(),
-                                            Settings.System.ACCELEROMETER_ROTATE_180, 0) != 0);
+            final boolean allow180Rotation = mAllow180Rotation || (sAccelerometerMode & 2) != 0;
             int thresholdRanges[][] = allow180Rotation
                     ? THRESHOLDS_WITH_180[mRotation] : THRESHOLDS[mRotation];
             int row = -1;
@@ -328,6 +379,25 @@ public abstract class WindowOrientationListener {
                 return;
             }
 
+            boolean allowed = true;
+            switch (rotation) {
+                case ROTATION_0:
+                    allowed = (sAccelerometerMode & ROTATION_0_MODE) != 0;
+                    break;
+                case ROTATION_90:
+                    allowed = (sAccelerometerMode & ROTATION_90_MODE) != 0;
+                    break;
+                case ROTATION_180:
+                    allowed = (sAccelerometerMode & ROTATION_180_MODE) != 0;
+                    break;
+                case ROTATION_270:
+                    allowed = (sAccelerometerMode & ROTATION_270_MODE) != 0;
+                    break;
+            }
+            if (!allowed) {
+                if (localLOGV) Log.i(TAG, " not allowed rotation = " + rotation);
+                return;
+            }
             if (localLOGV) Log.i(TAG, "orientation " + orientation + " gives new rotation = "
                     + rotation);
             mRotation = rotation;

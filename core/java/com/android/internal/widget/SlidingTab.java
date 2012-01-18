@@ -15,11 +15,13 @@
  */
 
 package com.android.internal.widget;
-
+import android.provider.Settings;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -57,8 +59,6 @@ public class SlidingTab extends ViewGroup {
 
     // TODO: Make these configurable
     private static final float THRESHOLD = 2.0f / 3.0f;
-    private static final long VIBRATE_SHORT = 30;
-    private static final long VIBRATE_LONG = 40;
     private static final int TRACKING_MARGIN = 50;
     private static final int ANIM_DURATION = 250; // Time for most animations (in ms)
     private static final int ANIM_TARGET_TIME = 500; // Time to show targets (in ms)
@@ -154,7 +154,7 @@ public class SlidingTab extends ViewGroup {
      * {@link #target} is the target the user must drag the slider past to trigger the slider.
      *
      */
-    private static class Slider {
+    private class Slider {
         /**
          * Tab alignment - determines which side the tab should be drawn on
          */
@@ -219,6 +219,10 @@ public class SlidingTab extends ViewGroup {
             tab.setImageResource(iconId);
         }
 
+        void setIcon(Bitmap icon) {
+            tab.setImageBitmap(icon);
+        }
+
         void setTabBackgroundResource(int tabId) {
             tab.setBackgroundResource(tabId);
         }
@@ -229,6 +233,10 @@ public class SlidingTab extends ViewGroup {
 
         void setHintText(int resId) {
             text.setText(resId);
+        }
+
+        void setHintText(CharSequence charText) {
+            text.setText(charText);
         }
 
         void hide() {
@@ -299,12 +307,32 @@ public class SlidingTab extends ViewGroup {
             int dy = horiz ? 0 : (alignment == ALIGN_TOP ? alignment_value - tab.getTop()
                     : alignment_value - tab.getBottom());
             if (animate) {
-                TranslateAnimation trans = new TranslateAnimation(0, dx, 0, dy);
-                trans.setDuration(ANIM_DURATION);
-                trans.setFillAfter(false);
-                text.startAnimation(trans);
-                tab.startAnimation(trans);
+                mAnimating = true;
+                TranslateAnimation trans1 = new TranslateAnimation(0, dx, 0, dy);
+                TranslateAnimation trans2 = new TranslateAnimation(0, dx, 0, dy);
+                trans1.setDuration(ANIM_DURATION);
+                trans2.setDuration(ANIM_DURATION);
+                trans1.setFillAfter(true);
+                trans2.setFillAfter(true);
+                trans1.setAnimationListener(new AnimationListener() {
+                    public void onAnimationEnd(Animation animation) {
+                        mAnimating = false;
+                        reset(false);
+                    }
+
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+
+                    public void onAnimationStart(Animation animation) {
+
+                    }
+
+                });
+                text.startAnimation(trans1);
+                tab.startAnimation(trans2);
             } else {
+                mAnimating = false;
                 if (horiz) {
                     text.offsetLeftAndRight(dx);
                     tab.offsetLeftAndRight(dx);
@@ -464,6 +492,7 @@ public class SlidingTab extends ViewGroup {
                 R.drawable.jog_tab_bar_right_generic,
                 R.drawable.jog_tab_target_gray);
 
+        mVibrator = (android.os.Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
         // setBackgroundColor(0x80808080);
     }
 
@@ -525,7 +554,7 @@ public class SlidingTab extends ViewGroup {
             case MotionEvent.ACTION_DOWN: {
                 mTracking = true;
                 mTriggered = false;
-                vibrate(VIBRATE_SHORT);
+                vibrate();
                 if (leftHit) {
                     mCurrentSlider = mLeftSlider;
                     mOtherSlider = mRightSlider;
@@ -611,7 +640,7 @@ public class SlidingTab extends ViewGroup {
                     mTracking = false;
                     mTriggered = false;
                     mOtherSlider.show(true);
-                    mCurrentSlider.reset(false);
+                    mCurrentSlider.reset(true);
                     mCurrentSlider.hideTarget();
                     mCurrentSlider = null;
                     mOtherSlider = null;
@@ -785,6 +814,14 @@ public class SlidingTab extends ViewGroup {
         mRightSlider.updateDrawableStates();
     }
 
+    public void setRightTabResources(Bitmap icon, int targetId, int barId, int tabId) {
+        mRightSlider.setIcon(icon);
+        mRightSlider.setTarget(targetId);
+        mRightSlider.setBarBackgroundResource(barId);
+        mRightSlider.setTabBackgroundResource(tabId);
+        mRightSlider.updateDrawableStates();
+    }
+
     /**
      * Sets the left handle hint text to a given resource string.
      *
@@ -796,6 +833,12 @@ public class SlidingTab extends ViewGroup {
         }
     }
 
+    public void setRightHintText(CharSequence charText) {
+       if (isHorizontal()) {
+           mRightSlider.setHintText(charText);
+       }
+    }
+
     public void setHoldAfterTrigger(boolean holdLeft, boolean holdRight) {
         mHoldLeftOnTransition = holdLeft;
         mHoldRightOnTransition = holdRight;
@@ -804,12 +847,13 @@ public class SlidingTab extends ViewGroup {
     /**
      * Triggers haptic feedback.
      */
-    private synchronized void vibrate(long duration) {
-        if (mVibrator == null) {
-            mVibrator = (android.os.Vibrator)
-                    getContext().getSystemService(Context.VIBRATOR_SERVICE);
+    private synchronized void vibrate() {
+        ContentResolver cr = mContext.getContentResolver();
+        final boolean hapticsEnabled = Settings.System.getInt(cr, Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) == 1;
+        if (hapticsEnabled) {
+            long[] hapFeedback = Settings.System.getLongArray(cr, Settings.System.HAPTIC_DOWN_ARRAY, new long[] { 0 });
+            mVibrator.vibrate(hapFeedback, -1);
         }
-        mVibrator.vibrate(duration);
     }
 
     /**
@@ -826,7 +870,7 @@ public class SlidingTab extends ViewGroup {
      * @param whichHandle the handle that triggered the event.
      */
     private void dispatchTriggerEvent(int whichHandle) {
-        vibrate(VIBRATE_LONG);
+        vibrate();
         if (mOnTriggerListener != null) {
             mOnTriggerListener.onTrigger(this, whichHandle);
         }

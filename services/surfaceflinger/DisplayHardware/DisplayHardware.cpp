@@ -332,11 +332,20 @@ void DisplayHardware::flip(const Region& dirty) const
     
     mPageFlipCount++;
     eglSwapBuffers(dpy, surface);
+    // glFinish here prevents the impedence mismatch between software-rendered
+    // surfaceflinger surfaces in another thread. Shows no perf loss with vsync on.
+    glFinish();
     checkEGLErrors("eglSwapBuffers");
 
     // for debugging
     //glClearColor(1,0,0,0);
     //glClear(GL_COLOR_BUFFER_BIT);
+}
+
+status_t DisplayHardware::postBypassBuffer(const native_handle_t* handle) const
+{
+   framebuffer_device_t *fbDev = (framebuffer_device_t *)mNativeWindow->getDevice();
+   return fbDev->post(fbDev, handle);
 }
 
 uint32_t DisplayHardware::getFlags() const

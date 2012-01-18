@@ -35,7 +35,7 @@ public class NetworkInfo implements Parcelable {
     String operatorNumeric;
 
     State state = State.UNKNOWN;
-    String NumState = "0";
+
 
     public String
     getOperatorAlphaLong() {
@@ -60,25 +60,22 @@ public class NetworkInfo implements Parcelable {
     NetworkInfo(String operatorAlphaLong,
                 String operatorAlphaShort,
                 String operatorNumeric,
-                State state,
-                String NumState) {
+                State state) {
 
         this.operatorAlphaLong = operatorAlphaLong;
         this.operatorAlphaShort = operatorAlphaShort;
         this.operatorNumeric = operatorNumeric;
 
         this.state = state;
-        this.NumState = NumState;
     }
 
 
     public NetworkInfo(String operatorAlphaLong,
                 String operatorAlphaShort,
                 String operatorNumeric,
-                String stateString,
-                String NumState) {
+                String stateString) {
         this (operatorAlphaLong, operatorAlphaShort,
-                operatorNumeric, rilStateToState(stateString), NumState);
+                operatorNumeric, rilStateToState(stateString));
     }
 
     /**
@@ -104,8 +101,7 @@ public class NetworkInfo implements Parcelable {
         return "NetworkInfo " + operatorAlphaLong
                 + "/" + operatorAlphaShort
                 + "/" + operatorNumeric
-                + "/" + state
-                + "/" + NumState;
+                + "/" + state;
     }
 
     /**
@@ -129,7 +125,6 @@ public class NetworkInfo implements Parcelable {
         dest.writeString(operatorAlphaShort);
         dest.writeString(operatorNumeric);
         dest.writeSerializable(state);
-        dest.writeString(NumState);
     }
 
     /**
@@ -143,8 +138,7 @@ public class NetworkInfo implements Parcelable {
                         in.readString(), /*operatorAlphaLong*/
                         in.readString(), /*operatorAlphaShort*/
                         in.readString(), /*operatorNumeric*/
-                        (State) in.readSerializable(), /*state*/
-                        in.readString());
+                        (State) in.readSerializable()); /*state*/
                 return netInfo;
             }
 

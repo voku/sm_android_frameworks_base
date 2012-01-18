@@ -119,6 +119,9 @@ enum {
 
     /* The input device has switches. */
     INPUT_DEVICE_CLASS_SWITCH        = 0x00000080,
+
+    /* The input device is a mouse. */
+    INPUT_DEVICE_CLASS_MOUSE         = 0x00000100,
 };
 
 /*
@@ -154,6 +157,8 @@ public:
     virtual uint32_t getDeviceClasses(int32_t deviceId) const = 0;
 
     virtual String8 getDeviceName(int32_t deviceId) const = 0;
+
+    virtual bool getDeviceBluetooth(int32_t deviceId) const = 0;
 
     virtual status_t getAbsoluteAxisInfo(int32_t deviceId, int axis,
             RawAbsoluteAxisInfo* outAxisInfo) const = 0;
@@ -198,9 +203,11 @@ public:
     status_t errorCheck() const;
 
     virtual uint32_t getDeviceClasses(int32_t deviceId) const;
-    
+
     virtual String8 getDeviceName(int32_t deviceId) const;
-    
+
+    virtual bool getDeviceBluetooth(int32_t deviceId) const;
+
     virtual status_t getAbsoluteAxisInfo(int32_t deviceId, int axis,
             RawAbsoluteAxisInfo* outAxisInfo) const;
 
@@ -242,9 +249,10 @@ private:
         KeyLayoutMap*   layoutMap;
         String8         keylayoutFilename;
         int             fd;
+        bool            bluetooth;
         device_t*       next;
         
-        device_t(int32_t _id, const char* _path, const char* name);
+        device_t(int32_t _id, const char* _path, const char* name, bool _bluetooth);
         ~device_t();
     };
 

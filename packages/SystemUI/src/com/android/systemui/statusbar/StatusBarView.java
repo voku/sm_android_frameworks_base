@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Patched by Sven Dawitz; Copyright (C) 2011 CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +28,14 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 
+import android.content.Intent;
+import android.os.RemoteException;
+import android.os.ServiceManager;
+import android.view.IWindowManager;
+import android.view.KeyEvent;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.util.Slog;
 import com.android.systemui.R;
 
 public class StatusBarView extends FrameLayout {
@@ -41,7 +50,7 @@ public class StatusBarView extends FrameLayout {
     ViewGroup mStatusIcons;
     View mDate;
     FixedSizeDrawable mBackground;
-    
+
     public StatusBarView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
@@ -63,7 +72,13 @@ public class StatusBarView extends FrameLayout {
         super.onAttachedToWindow();
         mService.onBarViewAttached();
     }
-    
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        mService.onBarViewDetached();
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -137,17 +152,23 @@ public class StatusBarView extends FrameLayout {
      * is always called for the entire gesture.
      */
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(final MotionEvent event) {
         if (event.getAction() != MotionEvent.ACTION_DOWN) {
             mService.interceptTouchEvent(event);
         }
         return true;
     }
 
+    public boolean onInterceptTouchEvent(MotionEvent event, boolean skipService){
+        if(skipService)
+            return super.onInterceptTouchEvent(event);
+
+        return mService.interceptTouchEvent(event)
+                    ? true : super.onInterceptTouchEvent(event);
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        return mService.interceptTouchEvent(event)
-                ? true : super.onInterceptTouchEvent(event);
+        return onInterceptTouchEvent(event, false);
     }
 }
-

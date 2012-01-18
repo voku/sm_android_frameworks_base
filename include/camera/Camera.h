@@ -78,7 +78,21 @@ enum {
     CAMERA_MSG_POSTVIEW_FRAME   = 0x040,
     CAMERA_MSG_RAW_IMAGE        = 0x080,
     CAMERA_MSG_COMPRESSED_IMAGE = 0x100,
+
+#ifdef OMAP_ENHANCEMENT
+
+    CAMERA_MSG_BURST_IMAGE      = 0x200,
+
+#endif
+
+#ifdef CAF_CAMERA_GB_REL
+    CAMERA_MSG_STATS_DATA       = 0x200,
+    CAMERA_MSG_META_DATA        = 0x400,
+    CAMERA_MSG_ALL_MSGS         = 0x7FF
+#else
     CAMERA_MSG_ALL_MSGS         = 0x1FF
+#endif
+
 };
 
 // cmdType in sendCommand functions
@@ -98,11 +112,18 @@ enum {
     // or CAMERA_MSG_COMPRESSED_IMAGE. This is not allowed to be set during
     // preview.
     CAMERA_CMD_SET_DISPLAY_ORIENTATION = 3,
+    CAMERA_CMD_HISTOGRAM_ON     = 4,
+    CAMERA_CMD_HISTOGRAM_OFF     = 5,
+    CAMERA_CMD_HISTOGRAM_SEND_DATA  = 6,
+    CAMERA_CMD_FACE_DETECTION_ON     = 7,
+    CAMERA_CMD_FACE_DETECTION_OFF     = 8,
+    CAMERA_CMD_SEND_META_DATA  = 9,
 };
 
 // camera fatal errors
 enum {
     CAMERA_ERROR_UKNOWN  = 1,
+    CAMERA_ERROR_RESOURCE = 2,
     CAMERA_ERROR_SERVER_DIED = 100
 };
 
@@ -146,7 +167,12 @@ class CameraListener: virtual public RefBase
 public:
     virtual void notify(int32_t msgType, int32_t ext1, int32_t ext2) = 0;
     virtual void postData(int32_t msgType, const sp<IMemory>& dataPtr) = 0;
+#ifdef OMAP_ENHANCEMENT
+    virtual void postDataTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr,
+                    uint32_t offset=0, uint32_t stride=0) = 0;
+#else
     virtual void postDataTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr) = 0;
+#endif
 };
 
 class Camera : public BnCameraClient, public IBinder::DeathRecipient
@@ -175,6 +201,10 @@ public:
 #ifdef USE_GETBUFFERINFO
             // query the recording buffer information from HAL layer.
             status_t    getBufferInfo(sp<IMemory>& Frame, size_t *alignedSize);
+#endif
+#ifdef CAF_CAMERA_GB_REL
+            //encode the YUV data
+            void        encodeData();
 #endif
 
             // start preview mode, must call setPreviewDisplay first
@@ -210,8 +240,18 @@ public:
             // set preview/capture parameters - key/value pairs
             status_t    setParameters(const String8& params);
 
+            #ifdef MOTO_CUSTOM_PARAMETERS
+            // set preview/capture parameters - key/value pairs
+            status_t    setCustomParameters(const String8& params);
+            #endif
+
             // get preview/capture parameters - key/value pairs
             String8     getParameters() const;
+
+            #ifdef MOTO_CUSTOM_PARAMETERS
+            // get preview/capture parameters - key/value pairs
+            String8     getCustomParameters() const;
+            #endif
 
             // send command to camera driver
             status_t    sendCommand(int32_t cmd, int32_t arg1, int32_t arg2);
@@ -222,7 +262,12 @@ public:
     // ICameraClient interface
     virtual void        notifyCallback(int32_t msgType, int32_t ext, int32_t ext2);
     virtual void        dataCallback(int32_t msgType, const sp<IMemory>& dataPtr);
+#ifdef OMAP_ENHANCEMENT
+    virtual void        dataCallbackTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr,
+                                uint32_t offset=0, uint32_t stride=0);
+#else
     virtual void        dataCallbackTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr);
+#endif
 
     sp<ICamera>         remote();
 

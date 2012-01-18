@@ -16,7 +16,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.provider.Settings;
 import android.view.View;
-
+import android.provider.Settings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +50,7 @@ public abstract class PowerButton {
     public static final String BUTTON_MEDIA_PLAY_PAUSE = "toggleMediaPlayPause";
     public static final String BUTTON_MEDIA_PREVIOUS = "toggleMediaPrevious";
     public static final String BUTTON_MEDIA_NEXT = "toggleMediaNext";
+    public static final String BUTTON_WIMAX = "toggleWimax";
     public static final String BUTTON_UNKNOWN = "unknown";
 
     private static final Mode MASK_MODE = Mode.SCREEN;
@@ -75,6 +76,7 @@ public abstract class PowerButton {
         BUTTONS.put(BUTTON_MEDIA_PLAY_PAUSE, MediaPlayPauseButton.class);
         BUTTONS.put(BUTTON_MEDIA_PREVIOUS, MediaPreviousButton.class);
         BUTTONS.put(BUTTON_MEDIA_NEXT, MediaNextButton.class);
+        BUTTONS.put(BUTTON_WIMAX, WimaxButton.class);
     }
     // this is a list of our currently loaded buttons
     private static final HashMap<String, PowerButton> BUTTONS_LOADED = new HashMap<String, PowerButton>();
@@ -87,6 +89,9 @@ public abstract class PowerButton {
     // a static onclicklistener that can be set to register a callback when ANY button is clicked
     private static View.OnClickListener GLOBAL_ON_CLICK_LISTENER = null;
 
+    // a static onlongclicklistener that can be set to register a callback when ANY button is long clicked
+    private static View.OnLongClickListener GLOBAL_ON_LONG_CLICK_LISTENER = null;
+
     // we use this to ensure we update our views on the UI thread
     private Handler mViewUpdateHandler = new Handler() {
             public void handleMessage(Message msg) {
@@ -97,7 +102,12 @@ public abstract class PowerButton {
                     int buttonLayer = R.id.power_widget_button;
                     int buttonIcon = R.id.power_widget_button_image;
                     int buttonState = R.id.power_widget_button_indic;
-
+                    ImageView indic = (ImageView)mView.findViewById(R.id.power_widget_button_indic);
+                    if ((Settings.System.getInt(context.getContentResolver(),Settings.System.EXPANDED_HIDE_INDICATOR, 0)) == 1){
+                        indic.setVisibility(8);
+                    }else{
+                        indic.setVisibility(0);
+                    }
                     updateImageView(buttonIcon, mIcon);
 
                     int sColorMaskBase = Settings.System.getInt(context.getContentResolver(),
@@ -127,6 +137,7 @@ public abstract class PowerButton {
 
     protected abstract void updateState();
     protected abstract void toggleState();
+    protected abstract boolean handleLongClick();
 
     protected void update() {
         updateState();
@@ -156,6 +167,7 @@ public abstract class PowerButton {
         if(mView != null) {
             mView.setTag(mType);
             mView.setOnClickListener(mClickListener);
+            mView.setOnLongClickListener(mLongClickListener);
         }
     }
 
@@ -189,6 +201,24 @@ public abstract class PowerButton {
             if(GLOBAL_ON_CLICK_LISTENER != null) {
                 GLOBAL_ON_CLICK_LISTENER.onClick(v);
             }
+        }
+    };
+
+    private View.OnLongClickListener mLongClickListener = new View.OnLongClickListener() {
+        public boolean onLongClick(View v) {
+            boolean result = false;
+            String type = (String)v.getTag();
+            for (Map.Entry<String, PowerButton> entry : BUTTONS_LOADED.entrySet()) {
+                if(entry.getKey().endsWith(type)) {
+                    result = entry.getValue().handleLongClick();
+                    break;
+                }
+            }
+
+            if(result && GLOBAL_ON_LONG_CLICK_LISTENER != null) {
+                GLOBAL_ON_LONG_CLICK_LISTENER.onLongClick(v);
+            }
+            return result;
         }
     };
 
@@ -319,6 +349,10 @@ public abstract class PowerButton {
 
     public static void setGlobalOnClickListener(View.OnClickListener listener) {
         GLOBAL_ON_CLICK_LISTENER = listener;
+    }
+
+    public static void setGlobalOnLongClickListener(View.OnLongClickListener listener) {
+        GLOBAL_ON_LONG_CLICK_LISTENER = listener;
     }
 
     protected static PowerButton getLoadedButton(String key) {

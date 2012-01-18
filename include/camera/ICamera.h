@@ -57,6 +57,10 @@ public:
     // get the recording buffer information from HAL layer.
     virtual status_t        getBufferInfo(sp<IMemory>& Frame, size_t *alignedSize) = 0;
 #endif
+#ifdef CAF_CAMERA_GB_REL
+    //encode the YUV data
+    virtual void            encodeData() = 0;
+#endif
 
     // start preview mode, must call setPreviewDisplay first
     virtual status_t        startPreview() = 0;
@@ -93,6 +97,14 @@ public:
 
     // get preview/capture parameters - key/value pairs
     virtual String8         getParameters() const = 0;
+
+    #ifdef MOTO_CUSTOM_PARAMETERS
+    // set preview/capture custom parameters - key/value pairs
+    virtual status_t        setCustomParameters(const String8& params) = 0;
+
+    // get preview/capture custom parameters - key/value pairs
+    virtual String8         getCustomParameters() const = 0;
+    #endif
 
     // send command to camera driver
     virtual status_t        sendCommand(int32_t cmd, int32_t arg1, int32_t arg2) = 0;

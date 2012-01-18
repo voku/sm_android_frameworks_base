@@ -21,6 +21,7 @@ import android.net.LocalServerSocket;
 import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
+import android.os.SystemProperties;
 
 import com.android.internal.telephony.cdma.CDMAPhone;
 import com.android.internal.telephony.gsm.GSMPhone;
@@ -107,7 +108,32 @@ public class PhoneFactory {
                 Log.i(LOG_TAG, "Cdma Subscription set to " + Integer.toString(cdmaSubscription));
 
                 //reads the system properties and makes commandsinterface
-                sCommandsInterface = new RIL(context, networkMode, cdmaSubscription);
+
+                String sRILClassname = SystemProperties.get("ro.telephony.ril_class");
+                Log.i(LOG_TAG, "RILClassname is " + sRILClassname);
+
+                if("samsung".equals(sRILClassname))
+                {
+                    Log.i(LOG_TAG, "Using Samsung RIL");
+                    sCommandsInterface = new SamsungRIL(context, networkMode, cdmaSubscription);
+                } else if ("htc".equals(sRILClassname)) {
+                    Log.i(LOG_TAG, "Using HTC RIL");
+                    sCommandsInterface = new HTCRIL(context, networkMode, cdmaSubscription);
+                } else if("lgestar".equals(sRILClassname)) {
+                    Log.i(LOG_TAG, "Using LGE Star RIL");
+                    sCommandsInterface = new LGEStarRIL(context, networkMode, cdmaSubscription);
+                } else if ("semc".equals(sRILClassname)) {
+                    Log.i(LOG_TAG, "Using Semc RIL");
+                    sCommandsInterface = new SemcRIL(context, networkMode, cdmaSubscription);
+                } else if ("lgeqcom".equals(sRILClassname)) {
+                    Log.i(LOG_TAG, "Using LGE Qualcomm RIL");
+                    sCommandsInterface = new LGEQualcommRIL(context, networkMode, cdmaSubscription);
+                } else if ("mototegra".equals(sRILClassname)) {
+                    Log.i(LOG_TAG, "Using Motorola Tegra2 RIL");
+                    sCommandsInterface = new MotoTegraRIL(context, networkMode, cdmaSubscription);
+                } else {
+                    sCommandsInterface = new RIL(context, networkMode, cdmaSubscription);
+                }
 
                 int phoneType = getPhoneType(networkMode);
                 if (phoneType == Phone.PHONE_TYPE_GSM) {

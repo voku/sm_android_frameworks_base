@@ -18,10 +18,12 @@
 package com.android.server;
 
 import com.android.server.am.ActivityManagerService;
+import com.android.server.usb.UsbService;
 import com.android.internal.app.ShutdownThread;
 import com.android.internal.os.BinderInternal;
 import com.android.internal.os.SamplingProfilerIntegration;
 
+import dalvik.system.DexClassLoader;
 import dalvik.system.VMRuntime;
 import dalvik.system.Zygote;
 
@@ -30,6 +32,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentService;
+import android.content.ContextWrapper;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -37,6 +40,7 @@ import android.content.pm.IPackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.AudioService;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.os.ServiceManager;
@@ -47,6 +51,7 @@ import android.provider.Contacts.People;
 import android.provider.Settings;
 import android.server.BluetoothA2dpService;
 import android.server.BluetoothHidService;
+import android.server.BluetoothNetworkService;
 import android.server.BluetoothService;
 import android.server.search.SearchManagerService;
 import android.util.EventLog;
@@ -57,6 +62,10 @@ import android.accounts.AccountManagerService;
 import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.lang.reflect.Constructor;
+
+/* TI-OMAP custom package */
+import com.ti.omap.omap_mm_library.UiCloningService;
 
 class ServerThread extends Thread {
     private static final String TAG = "SystemServer";
@@ -124,12 +133,15 @@ class ServerThread extends Thread {
         BluetoothService bluetooth = null;
         BluetoothA2dpService bluetoothA2dp = null;
         BluetoothHidService bluetoothHid = null;
+        BluetoothNetworkService bluetoothNetwork = null;
         HeadsetObserver headset = null;
+        HDMIObserver hdmi = null;
         DockObserver dock = null;
-        UsbObserver usb = null;
+        UsbService usb = null;
         UiModeManagerService uiMode = null;
         RecognitionManagerService recognition = null;
         ThrottleService throttle = null;
+        UiCloningService uiCloning = null;
         RingerSwitchObserver ringer = null;
 
         // Critical services...
@@ -223,7 +235,10 @@ class ServerThread extends Thread {
                 bluetoothHid = new BluetoothHidService(context, bluetooth);
                 ServiceManager.addService(BluetoothHidService.BLUETOOTH_HID_SERVICE,
                                           bluetoothHid);
-                //Log.e(TAG, "Bluetooth HID Service");
+                bluetoothNetwork = new BluetoothNetworkService(context, bluetooth);
+                ServiceManager.addService(BluetoothNetworkService.BLUETOOTH_NETWORK_SERVICE,
+                                          bluetoothNetwork);
+                Log.v(TAG, "Bluetooth Network Service");
 
                 int bluetoothOn = Settings.Secure.getInt(mContentResolver,
                     Settings.Secure.BLUETOOTH_ON, 0);
@@ -240,6 +255,7 @@ class ServerThread extends Thread {
         StatusBarManagerService statusBar = null;
         InputMethodManagerService imm = null;
         AppWidgetService appWidget = null;
+        ProfileManagerService profile = null;
         NotificationManagerService notification = null;
         WallpaperManagerService wallpaper = null;
         LocationManagerService location = null;
@@ -330,6 +346,14 @@ class ServerThread extends Thread {
             }
 
             try {
+                Slog.i(TAG, "Profile Manager");
+                profile = new ProfileManagerService(context);
+                ServiceManager.addService(Context.PROFILE_SERVICE, profile);
+            } catch (Throwable e) {
+                Slog.e(TAG, "Failure starting Profile Manager", e);
+            }
+
+            try {
                 Slog.i(TAG, "Notification Manager");
                 notification = new NotificationManagerService(context, statusBar, lights);
                 ServiceManager.addService(Context.NOTIFICATION_SERVICE, notification);
@@ -408,6 +432,14 @@ class ServerThread extends Thread {
             }
 
             try {
+                Slog.i(TAG, "HDMI Observer");
+                // Listen for hdmi changes
+                hdmi = new HDMIObserver(context);
+            } catch (Throwable e) {
+                Slog.e(TAG, "Failure starting HDMIObserver", e);
+            }
+
+            try {
                 Slog.i(TAG, "Dock Observer");
                 // Listen for dock station changes
                 dock = new DockObserver(context, power);
@@ -416,11 +448,12 @@ class ServerThread extends Thread {
             }
 
             try {
-                Slog.i(TAG, "USB Observer");
+                Slog.i(TAG, "USB Service");
                 // Listen for USB changes
-                usb = new UsbObserver(context);
+                usb = new UsbService(context);
+                ServiceManager.addService(Context.USB_SERVICE, usb);
             } catch (Throwable e) {
-                Slog.e(TAG, "Failure starting UsbObserver", e);
+                Slog.e(TAG, "Failure starting UsbService", e);
             }
 
             try {
@@ -466,6 +499,51 @@ class ServerThread extends Thread {
                 ServiceManager.addService("assetredirection", new AssetRedirectionManagerService(context));
             } catch (Throwable e) {
                 Slog.e(TAG, "Failure starting AssetRedirectionManager Service", e);
+            }
+
+            String[] vendorServices = context.getResources().getStringArray(
+                    com.android.internal.R.array.config_vendorServices);
+
+            if (vendorServices != null && vendorServices.length > 0) {
+                String cachePath = new ContextWrapper(context).getCacheDir().getAbsolutePath();
+                ClassLoader parentLoader = ClassLoader.getSystemClassLoader();
+
+                for (String service : vendorServices) {
+                    String[] parts = service.split(":");
+                    if (parts.length != 2) {
+                        Slog.e(TAG, "Found invalid vendor service " + service);
+                        continue;
+                    }
+
+                    String jarPath = parts[0];
+                    String className = parts[1];
+
+                    try {
+                        /* Intentionally skipping all null checks in this block, as we also want an
+                           error message if class loading or ctor resolution failed. The catch block
+                           conveniently provides that for us also for NullPointerException */
+                        DexClassLoader loader = new DexClassLoader(jarPath, cachePath, null, parentLoader);
+                        Class<?> klass = loader.loadClass(className);
+                        Constructor<?> ctor = klass.getDeclaredConstructors()[0];
+                        Object instance = ctor.newInstance(context);
+
+                        ServiceManager.addService(klass.getSimpleName(), (IBinder) instance);
+                        Slog.i(TAG, "Vendor service " + className + " started.");
+                    } catch (Exception e) {
+                        Slog.e(TAG, "Starting vendor service " + className + " failed.", e);
+                    }
+                }
+            }
+
+            if (SystemProperties.OMAP_ENHANCEMENT ) {
+                if(SystemProperties.getBoolean("tv.hdmi.uicloning.enable", false)) {
+                    try {
+                        Slog.i(TAG, "UiCloningService");
+                        uiCloning = new UiCloningService(context);
+                    } catch (Throwable e) {
+                        Slog.e(TAG, "Failure starting UiCloningService", e);
+                    }
+                }
             }
         }
 
@@ -528,7 +606,7 @@ class ServerThread extends Thread {
         final BatteryService batteryF = battery;
         final ConnectivityService connectivityF = connectivity;
         final DockObserver dockF = dock;
-        final UsbObserver usbF = usb;
+        final UsbService usbF = usb;
         final ThrottleService throttleF = throttle;
         final UiModeManagerService uiModeF = uiMode;
         final AppWidgetService appWidgetF = appWidget;

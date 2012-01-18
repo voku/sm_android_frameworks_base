@@ -934,6 +934,76 @@ public final class Settings {
 
         /**
          * Convenience function for retrieving a single system settings value
+         * as an array of {@code long}.  Note that internally setting values are always
+         * stored as strings; this function converts the string to a {@code long}
+         * array for you.  The default value will be returned if the setting is
+         * not defined or not a {@code long} array.
+         *
+         * @param cr The ContentResolver to access.
+         * @param name The name of the setting to retrieve.
+         * @param def Value to return if the setting is not defined.
+         *
+         * @return The setting's current value, or 'def' if it is not defined
+         * or not a valid {@code long}.
+         * @hide
+         */
+        public static long[] getLongArray(ContentResolver cr, String name, long[] def) {
+            String valString = getString(cr, name);
+            long[] value;
+
+            try {
+                value = valString != null ? stringToLongArray(valString) : def;
+            } catch (NumberFormatException e) {
+                value = def;
+            }
+            return value;
+        }
+
+        /**
+         * Convenience function for retrieving a single system settings value
+         * as an array of {@code long}.  Note that internally setting values are always
+         * stored as strings; this function converts the string to a {@code long} array
+         * for you.
+         * <p>
+         * This version does not take a default value.  If the setting has not
+         * been set, or the string value is not a number,
+         * it throws {@link SettingNotFoundException}.
+         *
+         * @param cr The ContentResolver to access.
+         * @param name The name of the setting to retrieve.
+         *
+         * @return The setting's current value.
+         * @throws SettingNotFoundException Thrown if a setting by the given
+         * name can't be found or the setting value is not a long array.
+         * @hide
+         */
+        public static long[] getLongArray(ContentResolver cr, String name)
+                throws SettingNotFoundException {
+            String valString = getString(cr, name);
+            try {
+                return stringToLongArray(valString);
+            } catch (NumberFormatException e) {
+                throw new SettingNotFoundException(name);
+            }
+        }
+
+        private static long[] stringToLongArray(String inpString)
+                throws NumberFormatException {
+            if (inpString == null) {
+                throw new NumberFormatException();
+            }
+            String[] splitStr = inpString.split(",");
+            int los = splitStr.length;
+            long[] returnLong = new long[los];
+            int i;
+            for (i = 0; i < los; i++) {
+                returnLong[i] = Long.parseLong(splitStr[i].trim());
+            }
+            return returnLong;
+        }
+
+        /**
+         * Convenience function for retrieving a single system settings value
          * as a floating point number.  Note that internally setting values are
          * always stored as strings; this function converts the string to an
          * float for you. The default value will be returned if the setting
@@ -1011,7 +1081,7 @@ public final class Settings {
         public static void getConfiguration(ContentResolver cr, Configuration outConfig) {
             outConfig.fontScale = Settings.System.getFloat(
                 cr, FONT_SCALE, outConfig.fontScale);
-            if (outConfig.fontScale < 0) {
+            if (outConfig.fontScale <= 0) {
                 outConfig.fontScale = 1;
             }
         }
@@ -1108,6 +1178,12 @@ public final class Settings {
          * Constant for use in AIRPLANE_MODE_RADIOS to specify Cellular radio.
          */
         public static final String RADIO_CELL = "cell";
+
+        /**
+         * Constant for use in AIRPLANE_MODE_RADIOS to specify WiMAX radio.
+         * @hide
+         */
+        public static final String RADIO_WIMAX = "wimax";
 
         /**
          * A comma separated list of radios that need to be disabled when airplane mode
@@ -1546,6 +1622,13 @@ public final class Settings {
         public static final String NOTIFICATIONS_AUDIO_FOCUS = "notifications_audio_focus";
 
         /**
+         * Default volume control to media instead of ring (for tablets)
+         *
+         * @hide
+         */
+         public static final String DEFAULT_VOLUME_CONTROL_MEDIA = "default_volume_control_media";
+
+        /**
          * Whether silent mode should allow vibration feedback. This is used
          * internally in AudioService and the Sound settings activity to
          * coordinate decoupling of vibrate and silent modes. This setting
@@ -1563,6 +1646,13 @@ public final class Settings {
          * @hide
          */
         public static final String VOLUME_CONTROL_SILENT = "volume_contol_silent";
+
+        /**
+         * Whether notifications should vibrate during phone calls or not.
+         *
+         * @hide
+         */
+        public static final String VIBRATE_IN_CALL = "vibrate-in-call";
 
         /**
          * The mapping of stream type (integer) to its setting.
@@ -1726,12 +1816,17 @@ public final class Settings {
         public static final String ACCELEROMETER_ROTATION = "accelerometer_rotation";
 
          /**
-         * Control weather 180 degree rotation should be included if
-         * ACCELEROMETER_ROTATION is enabled. If 0 no 180 degree rotation will be
-         * executed, if 1 the 180 degree rotation is executed when ACCELEROMETER_ROTATION is true.
+         * Control the type of rotation which can be performed using the accelerometer
+         * if ACCELEROMETER_ROTATION is enabled.
+         * Value is a bitwise combination of
+         * 1 = 90 degrees (left)
+         * 2 = 180 degrees (inverted)
+         * 4 = 270 degrees (right)
+         * Normal portrait (0 degrees) is always enabled
+         * Default is 5 (90 & 270 degrees), like stock Android
          * @hide
          */
-        public static final String ACCELEROMETER_ROTATE_180 = "accelerometer_rotate_180";
+        public static final String ACCELEROMETER_ROTATION_MODE = "accelerometer_rotation_mode";
 
         /**
          * Specifies the number of recent apps to show (8, 12, 16)
@@ -1770,6 +1865,18 @@ public final class Settings {
         public static final String USE_CUSTOM_SEARCH_APP_ACTIVITY = "use_custom_search_app_activity";
 
         /**
+         * Contains what to do upon long press menu
+         * @hide
+         */
+        public static final String USE_CUSTOM_LONG_MENU = "use_custom_long_press_menu";
+
+        /**
+         * Contains activity to start on long menu key press
+         * @hide
+         */
+        public static final String USE_CUSTOM_LONG_MENU_APP_ACTIVITY = "use_custom_long_menu_app_activity";
+
+        /**
          * Specifies whether or not to use a custom app on long search key press
          * @hide
          */
@@ -1800,26 +1907,64 @@ public final class Settings {
         public static final String USER_DEFINED_KEY3_APP = "user_defined_key3_app";
 
         /**
+         * Stores the uri of the define application for the envelope key
+         * @hide
+         */
+        public static final String USER_DEFINED_KEY_ENVELOPE = "user_defined_key_envelope";
+
+        /**
+         * Stores the uri of the define application for the explorer key
+         * @hide
+         */
+        public static final String USER_DEFINED_KEY_EXPLORER = "user_defined_key_explorer";
+
+        /**
          * Specifies whether to prompt on the power dialog
          * @hide
          */
         public static final String POWER_DIALOG_PROMPT = "power_dialog_prompt";
 
         /**
-         * How many ms to delay before enabling the screen lock when the screen
-         * goes off due to timeout
-         *
+         * Specifies whether to show share dialog after
+         * taking screenshot
          * @hide
          */
-        public static final String SCREEN_LOCK_TIMEOUT_DELAY = "screen_lock_timeout_delay";
+        public static final String SHARE_SCREENSHOT = "share_screenshot";
 
         /**
-         * How many ms to delay before enabling the screen lock when the screen
-         * is turned off by the user
-         *
+         * How many ms to delay before enabling the security screen lock when
+         * the screen goes off due to timeout
          * @hide
          */
-        public static final String SCREEN_LOCK_SCREENOFF_DELAY = "screen_lock_screenoff_delay";
+        public static final String SCREEN_LOCK_SECURITY_TIMEOUT_DELAY = "screen_lock_security_timeout_delay";
+
+        /**
+         * How many ms to delay before enabling the security screen lock when
+         * the screen is turned off by the user
+         * @hide
+         */
+        public static final String SCREEN_LOCK_SECURITY_SCREENOFF_DELAY = "screen_lock_security_screenoff_delay";
+
+        /**
+         * Whether to use a separate delay for "slide to unlock" and security
+         * lock
+         * @hide
+         */
+        public static final String SCREEN_LOCK_SLIDE_DELAY_TOGGLE = "screen_lock_slide_delay_toggle";
+
+        /**
+         * How many ms to delay before enabling the "slide to unlock" screen
+         * lock when the screen goes off due to timeout
+         * @hide
+         */
+        public static final String SCREEN_LOCK_SLIDE_TIMEOUT_DELAY = "screen_lock_slide_timeout_delay";
+
+        /**
+         * How many ms to delay before enabling the "slide to unlock" screen
+         * lock when the screen is turned off by the user
+         * @hide
+         */
+        public static final String SCREEN_LOCK_SLIDE_SCREENOFF_DELAY = "screen_lock_slide_screenoff_delay";
 
         /**
          * Whether the audible DTMF tones are played by the dialer when dialing. The value is
@@ -2107,6 +2252,223 @@ public final class Settings {
         public static final String LOCK_MMS_IN_MEMORY = "lock_mms_in_memory";
 
         /**
+         * Display style of AM/PM next to clock in status bar
+         * 0: Normal display (Eclair stock)
+         * 1: Small display (Froyo stock)
+         * 2: No display (Gingerbread stock)
+         * default: 2
+         * @hide
+         */
+        public static final String STATUS_BAR_AM_PM = "status_bar_am_pm";
+
+        /**
+         * Display style of the status bar battery information
+         * 0: Display the stock battery information
+         * 1: Display cm battery percentage implementation / dont show stock icon
+         * 2: Hide the battery information
+         * default: 0
+         * @hide
+         */
+        public static final String STATUS_BAR_BATTERY = "status_bar_battery";
+
+        /**
+         * Whether to show the clock in status bar
+         * of the stock battery icon
+         * 0: don't show the clock
+         * 1: show the clock
+         * default: 1
+         * @hide
+         */
+        public static final String STATUS_BAR_CLOCK = "status_bar_clock";
+
+        /**
+         * Whether to show the signal text or signal bars.
+         * default: 0
+         * 0: show signal bars
+         * 1: show signal text numbers
+         * 2: show signal text numbers w/small dBm appended
+         * @hide
+         */
+        public static final String STATUS_BAR_CM_SIGNAL_TEXT = "status_bar_cm_signal";
+
+        /**
+         * Whether to display the status bar on top or bottom
+         * 0: show status bar on top (default for most devices)
+         * 1: show status bar on bottom
+         * default: 0 - can be overridden via CMParts config.xml for some devices
+         * @hide
+         */
+        public static final String STATUS_BAR_BOTTOM = "status_bar_bottom";
+
+        /**
+         * Whether to add a dead zone to the middle of the status bar
+         * 0: no dead zone
+         * 1: enable dead zone
+         * default: 0
+         * @hide
+         */
+        public static final String STATUS_BAR_DEAD_ZONE = "status_bar_dead_zone";
+
+        /**
+         * Whether or not home is displayed in soft buttons.
+         * @hide
+         */
+        public static final String SOFT_BUTTON_SHOW_HOME = "soft_button_show_home";
+
+        /**
+         * Whether or not menu is displayed in soft buttons.
+         * @hide
+         */
+        public static final String SOFT_BUTTON_SHOW_MENU = "soft_button_show_menu";
+
+        /**
+         * Whether or not back is displayed in soft buttons.
+         * @hide
+         */
+        public static final String SOFT_BUTTON_SHOW_BACK = "soft_button_show_back";
+
+        /**
+         * Whether or not search is displayed in soft buttons.
+         * @hide
+         */
+        public static final String SOFT_BUTTON_SHOW_SEARCH = "soft_button_show_search";
+
+        /**
+         * Whether or not QUICK_NA is displayed in soft buttons.
+         * @hide
+         */
+        public static final String SOFT_BUTTON_SHOW_QUICK_NA = "soft_button_show_quick_na";
+
+        /**
+         * Whether to display the soft buttons on left side
+         * 0: shows them default right
+         * 1: shows them left (overlaps with date display when dragging notification area open)
+         * default: 0 - can be overridden via CMParts config.xml for some devices
+         * @hide
+         */
+        public static final String SOFT_BUTTONS_LEFT = "soft_buttons_left";
+
+        /**
+         * Whether to override fullscreen so statusbar always visible
+         * 0: default behavior - fullscreen hides status bar
+         * 1: override fullscreen.
+         * default: 0
+         * @hide
+         */
+        public static final String FULLSCREEN_DISABLED = "fullscreen_disabled";
+
+        /**
+         * Whether to disable lockscreen
+         * 0: default behavior - lockscreen shown when screen off
+         * 1: override lockscreen
+         * default: 0
+         * @hide
+         */
+        public static final String LOCKSCREEN_DISABLED = "lockscreen_disabled";
+
+        /**
+         * Which key triggers unhide of statusbar in fullscreen mode
+         * values described in array.xml of CMParts
+         * default: 0 (power button)
+         * @hide
+         */
+        public static final String UNHIDE_BUTTON = "unhide_button";
+
+        /**
+         * Whether to display extended option (home/menu/back) in power menu
+         * 0: dont extend (default for most devices)
+         * 1: extend
+         * default: 0 - can be overridden via CMParts config.xml for some devices
+         * @hide
+         */
+        public static final String EXTEND_PM = "extend_pm";
+
+        /**
+         * Whether or not home is displayed in the extended power menu.
+         * @hide
+         */
+        public static final String EXTEND_PM_SHOW_HOME = "extend_pm_show_home";
+
+        /**
+         * Whether or not menu is displayed in the extended power menu.
+         * @hide
+         */
+        public static final String EXTEND_PM_SHOW_MENU = "extend_pm_show_menu";
+
+        /**
+         * Whether or not back is displayed in the extended power menu.
+         * @hide
+         */
+        public static final String EXTEND_PM_SHOW_BACK = "extend_pm_show_back";
+
+        /**
+         * Reverses the volume button behavior
+         * 0: press = volume, long-press = user action
+         * 1: press = user action, long-press = volume
+         * default: 0
+         * @hide
+         */
+        public static final String REVERSE_VOLUME_BEHAVIOR = "reverse_volume_behavior";
+
+        /**
+         * Action to be executed on long-press-volume-plus while screen on
+         * 0: none / default action
+         * >0: action defined in arrays.xml of CMParts
+         * default: 0
+         * @hide
+         */
+        public static final String LONG_VOLP_ACTION = "long_volp_action";
+
+        /**
+         * Action to be executed on long-press-volume-minus while screen on
+         * 0: none / default action
+         * >0: action defined in arrays.xml of CMParts
+         * default: 0
+         * @hide
+         */
+        public static final String LONG_VOLM_ACTION = "long_volm_action";
+
+        /**
+         * Action to be executed on pressing both volume bottons while screen on
+         * 0: none / default action
+         * >0: action defined in arrays.xml of CMParts
+         * default: 0
+         * @hide
+         */
+        public static final String VOL_BOTH_ACTION = "vol_both_action";
+
+        /**
+         * Action to be executed on long-press both volume bottons while screen on
+         * 0: none / default action
+         * >0: action defined in arrays.xml of CMParts
+         * default: 0
+         * @hide
+         */
+        public static final String LONG_VOL_BOTH_ACTION = "long_vol_both_action";
+
+        /**
+         * Whether to use compact carrier label layout
+         *
+         * @hide
+         */
+        public static final String STATUS_BAR_COMPACT_CARRIER = "status_bar_compact_carrier";
+
+         /**
+         * Whether to control brightness from status bar
+         *
+         * @hide
+         */
+        public static final String STATUS_BAR_BRIGHTNESS_TOGGLE = "status_bar_brightness_toggle";
+
+        /**
+         * Whether to display headset icon on status bar when headset is plugged in
+         * 0: headset icon is never displayed
+         * 1: headset icon is displayed when headset is plugged in
+         * @hide
+         */
+        public static final String STATUS_BAR_HEADSET = "status_bar_headset";
+
+        /**
          * Whether to wake the screen with the trackball. The value is boolean (1 or 0).
          * @hide
          */
@@ -2117,6 +2479,24 @@ public final class Settings {
          * @hide
          */
         public static final String TRACKBALL_UNLOCK_SCREEN = "trackball_unlock_screen";
+
+        /**
+         * Whether to unlock the screen with the slide-out keyboard. The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String SLIDER_UNLOCK_SCREEN = "slider_unlock_screen";
+
+        /**
+         * Whether to wake the screen with the volume keys. The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String VOLUME_WAKE_SCREEN = "volume_wake_screen";
+
+        /**
+         * Whether the lockscreen should be disabled if security is on
+         * @hide
+         */
+        public static final String LOCKSCREEN_DISABLE_ON_SECURITY = "lockscreen_disable_on_security";
 
         /**
          * Whether to use the custom quick unlock screen control
@@ -2138,12 +2518,29 @@ public final class Settings {
         public static final String LOCKSCREEN_CUSTOM_APP_ACTIVITY = "lockscreen_custom_app_activity";
 
         /**
+         * Ring Apps to launch with ring style and custom app toggle enabled
+         * @hide
+         */
+        public static final String[] LOCKSCREEN_CUSTOM_RING_APP_ACTIVITIES = new String[] {
+            "lockscreen_custom_app_activity_1",
+            "lockscreen_custom_app_activity_2",
+            "lockscreen_custom_app_activity_3",
+            "lockscreen_custom_app_activity_4"
+        };
+
+        /**
          * 1: Show custom app icon (currently cm logo) as with new patch
          * 2: Show messaging app icon as in old lockscreen
          * possibly more in the future (if more png files are drawn)
          * @hide
          */
         public static final String LOCKSCREEN_CUSTOM_ICON_STYLE = "lockscreen_custom_icon_style";
+
+        /**
+         * Modify lockscreen widgets layout (time,date,carrier,msg,status)
+         * @hide
+         */
+        public static final String LOCKSCREEN_WIDGETS_LAYOUT = "lockscreen_widgets_layout";
 
         /**
          * When enabled, rotary lockscreen switches app starter and unlock, so you can drag down to unlock
@@ -2158,10 +2555,47 @@ public final class Settings {
         public static final String LOCKSCREEN_ROTARY_HIDE_ARROWS = "lockscreen_rotary_hide_arrows";
 
         /**
+         * When enabled, ring style lockscreen switches app started and unlock, so the unlock ring
+         * is in the middle
+         * @hide
+         */
+        public static final String LOCKSCREEN_RING_UNLOCK_MIDDLE = "lockscreen_ring_unlock_middle";
+
+        /**
+         * When enabled, ring style lockscreen has only one ring in the middle for unlock
+         * @hide
+         */
+        public static final String LOCKSCREEN_RING_MINIMAL = "lockscreen_ring_minimal";
+
+        /**
          * Sets the lockscreen style
          * @hide
          */
         public static final String LOCKSCREEN_STYLE_PREF = "lockscreen_style_pref";
+
+        /**
+         * Sets the lockscreen background style
+         * @hide
+         */
+        public static final String LOCKSCREEN_BACKGROUND = "lockscreen_background";
+
+        /**
+         * Sets the incoming call accept/reject style
+         * @hide
+         */
+        public static final String IN_CALL_STYLE_PREF = "in_call_style_pref";
+
+        /**
+         * Sets the rotary lock style
+         * @hide
+         */
+        public static final String ROTARY_STYLE_PREF = "rotary_style_pref";
+
+        /**
+         * Sets the ringlock style
+         * @hide
+         */
+        public static final String RINGLOCK_STYLE_PREF = "ringlock_style_pref";
 
         /**
          * Pulse the Trackball with Screen On.  The value is boolean (1 or 0).
@@ -2194,22 +2628,11 @@ public final class Settings {
          public static final String TRACKBALL_NOTIFICATION_BLEND_COLOR = "trackball_blend_color";
 
         /**
-         * Trackball Notification Colors. The value is String  pkg=color|pkg=color
+         * Trackball Notification Colors. The value is a String, containing a list of packages:
+         * pkg=color=blink=mode=category|pkg=color=blink=mode=category|...
          * @hide
          */
-        public static final String NOTIFICATION_PACKAGE_COLORS = "|";
-
-        /**
-         * Trackball Notification List. The value is String  pkg|pkg
-         * @hide
-         */
-        public static final String NOTIFICATION_PACKAGE_LIST = "|";
-
-        /**
-         * Trackball Notification Colors Debugging. The value is boolean (1 or 0)
-         * @hide
-         */
-        public static final String NOTIFICATION_PACKAGE_COLORS_GET_PACK = "0";
+        public static final String NOTIFICATION_PACKAGE_COLORS = "notification_custom_led_colors";
 
         /**
          * Whether to unlock the menu key.  The value is boolean (1 or 0).
@@ -2242,6 +2665,12 @@ public final class Settings {
         public static final String QUIET_HOURS_MUTE = "quiet_hours_mute";
 
         /**
+         * Whether to disable haptic feedback during quiet hours.
+         * @hide
+         */
+        public static final String QUIET_HOURS_HAPTIC = "quiet_hours_haptic";
+
+        /**
          * Whether to remove the vibration from outgoing notifications during quiet hours.
          * @hide
          */
@@ -2258,6 +2687,42 @@ public final class Settings {
          * @hide
          */
         public static final String LOCKSCREEN_ALWAYS_BATTERY = "lockscreen_always_battery";
+
+        /**
+         * Whether to show the next calendar event
+         * @hide
+         */
+        public static final String LOCKSCREEN_CALENDAR_ALARM = "lockscreen_calendar_alarm";
+
+        /**
+         * Whether to show the next calendar event's location
+         * @hide
+         */
+        public static final String LOCKSCREEN_CALENDAR_SHOW_LOCATION = "lockscreen_calendar_show_location";
+
+        /**
+         * Whether to show the next calendar event's description
+         * @hide
+         */
+        public static final String LOCKSCREEN_CALENDAR_SHOW_DESCRIPTION = "lockscreen_calendar_show_description";
+
+        /**
+         * Which calendars to look for events
+         * @hide
+         */
+        public static final String LOCKSCREEN_CALENDARS = "lockscreen_calendars";
+
+        /**
+         * How far in the future to look for events
+         * @hide
+         */
+        public static final String LOCKSCREEN_CALENDAR_LOOKAHEAD = "lockscreen_calendar_lookahead";
+
+        /**
+         * Whether to find only events with reminders
+         * @hide
+         */
+        public static final String LOCKSCREEN_CALENDAR_REMINDERS_ONLY = "lockscreen_calendar_reminders_only";
 
         /**
          * Whether to use lockscreen music controls
@@ -2329,6 +2794,27 @@ public final class Settings {
         public static final String EXPANDED_HIDE_ONCHANGE = "expanded_hide_onchange";
 
         /**
+         * Hide scroll bar in power widget
+         *
+         * @hide
+         */
+        public static final String EXPANDED_HIDE_SCROLLBAR = "expanded_hide_scrollbar";
+
+        /**
+         * Hide indicator in status bar widget
+         *
+         * @hide
+         */
+        public static final String EXPANDED_HIDE_INDICATOR = "expanded_hide_indicator";
+
+        /**
+         * Haptic feedback in power widget
+         *
+         * @hide
+         */
+        public static final String EXPANDED_HAPTIC_FEEDBACK = "expanded_haptic_feedback";
+
+        /**
          * Notification Indicator Color
          *
          * @hide
@@ -2342,28 +2828,52 @@ public final class Settings {
          */
         public static final String WIDGET_BUTTONS = "expanded_widget_buttons";
 
-        /** @hide */
+        /** 
+        * Notification Power Widget - Custom Brightness Mode
+        * @hide
+        */
         public static final String EXPANDED_BRIGHTNESS_MODE = "expanded_brightness_mode";
 
-        /** @hide */
+        /** 
+        * Notification Power Widget - Custom Network Mode
+        * @hide
+        */
         public static final String EXPANDED_NETWORK_MODE = "expanded_network_mode";
 
-        /** @hide */
+        /** 
+        * Notification Power Widget - Custom Screen Timeout
+        * @hide
+        */
         public static final String EXPANDED_SCREENTIMEOUT_MODE = "expanded_screentimeout_mode";
 
-        /** @hide */
+        /** 
+        * Notification Power Widget - Custom Ring Mode
+        * @hide
+        */
         public static final String EXPANDED_RING_MODE = "expanded_ring_mode";
 
-        /** @hide */
+        /** 
+        * Notification Power Widget - Custom Torch Mode
+        * @hide
+        */
         public static final String EXPANDED_FLASH_MODE = "expanded_flash_mode";
 
-        /** @hide */
+        /** 
+        * Enables the Screen-on animation
+        * @hide
+        */
         public static final String ELECTRON_BEAM_ANIMATION_ON = "electron_beam_animation_on";
 
-        /** @hide */
+        /** 
+        * Enables the Screen-off animation
+        * @hide
+        */
         public static final String ELECTRON_BEAM_ANIMATION_OFF = "electron_beam_animation_off";
 
-        /** @hide */
+        /**
+         * Enables the overscroller (edge bounce effect on lists)
+         * @hide
+         */
         public static final String OVERSCROLL_EFFECT = "overscroll_effect";
 
         /**
@@ -2495,7 +3005,7 @@ public final class Settings {
             TIME_12_24,
             DATE_FORMAT,
             ACCELEROMETER_ROTATION,
-            ACCELEROMETER_ROTATE_180,
+            ACCELEROMETER_ROTATION_MODE,
             DTMF_TONE_WHEN_DIALING,
             DTMF_TONE_TYPE_WHEN_DIALING,
             EMERGENCY_TONE,
@@ -3200,6 +3710,12 @@ public final class Settings {
          * @hide
          */
         public static final String ASSISTED_GPS_ENABLED = "assisted_gps_enabled";
+        
+         /**
+         * External BT GPS device
+         * @hide
+         */
+        public static final String EXTERNAL_GPS_BT_DEVICE = "0";
 
         /**
          * The Logging ID (a unique 64-bit value) as a hex string.
@@ -3348,6 +3864,14 @@ public final class Settings {
                 "wifi_networks_available_repeat_delay";
 
         /**
+         * Whether to nofity the user of WiMAX network.
+         * If WiMAX is connected or disconnected, we will put this notification up.
+         * @hide
+         */
+        public static final String WIMAX_NETWORKS_AVAILABLE_NOTIFICATION_ON =
+                "wimax_networks_available_notification_on";
+
+        /**
          * The number of radio channels that are allowed in the local
          * 802.11 regulatory domain.
          * @hide
@@ -3373,27 +3897,6 @@ public final class Settings {
          * @hide
          */
         public static final String WIFI_SAVED_STATE = "wifi_saved_state";
-
-        /**
-         * AP SSID
-         *
-         * @hide
-         */
-        public static final String WIFI_AP_SSID = "wifi_ap_ssid";
-
-        /**
-         * AP security
-         *
-         * @hide
-         */
-        public static final String WIFI_AP_SECURITY = "wifi_ap_security";
-
-        /**
-         * AP passphrase
-         *
-         * @hide
-         */
-        public static final String WIFI_AP_PASSWD = "wifi_ap_passwd";
 
         /**
          * The acceptable packet loss percentage (range 0 - 100) before trying
@@ -3482,6 +3985,12 @@ public final class Settings {
          */
         public static final String WIFI_MOBILE_DATA_TRANSITION_WAKELOCK_TIMEOUT_MS =
             "wifi_mobile_data_transition_wakelock_timeout_ms";
+
+        /**
+         * Whether the Wimax should be on.  Only the WiMAX service should touch this.
+         * @hide
+         */
+        public static final String WIMAX_ON = "wimax_on";
 
         /**
          * Whether background data usage is allowed by the user. See
@@ -4282,6 +4791,12 @@ public final class Settings {
         public static final String MVNO_ROAMING = "button_mvno_roaming_key";
 
         /**
+         * Whether to enable permissions management.
+         * @hide
+         */
+        public static final String ENABLE_PERMISSIONS_MANAGEMENT = "enable_permissions_management";
+
+        /**
          * @hide
          */
         public static final String[] SETTINGS_TO_BACKUP = {
@@ -4568,4 +5083,5 @@ public final class Settings {
     public static String getGTalkDeviceId(long androidId) {
         return "android-" + Long.toHexString(androidId);
     }
+    
 }

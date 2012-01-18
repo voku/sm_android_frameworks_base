@@ -73,7 +73,7 @@ AudioPolicyService::AudioPolicyService()
     // start audio commands thread
     mAudioCommandThread = new AudioCommandThread(String8("ApmCommandThread"));
 
-#if (defined GENERIC_AUDIO) || (defined AUDIO_POLICY_TEST)
+#if defined(GENERIC_AUDIO) || defined(AUDIO_POLICY_TEST)
     mpPolicyManager = new AudioPolicyManagerBase(this);
     LOGV("build for GENERIC_AUDIO - using generic audio policy");
 #else
@@ -123,6 +123,16 @@ status_t AudioPolicyService::setDeviceConnectionState(AudioSystem::audio_devices
             state != AudioSystem::DEVICE_STATE_UNAVAILABLE) {
         return BAD_VALUE;
     }
+
+#ifdef HAS_LGE_STAR_FM_RADIO
+    if (device & AudioSystem::DEVICE_OUT_FM) {
+        if (state == AudioSystem::DEVICE_STATE_AVAILABLE) {
+            setPhoneState(AudioSystem::MODE_FM);
+        } else {
+            setPhoneState(AudioSystem::MODE_NORMAL);
+        }
+    }
+#endif
 
     LOGV("setDeviceConnectionState() tid %d", gettid());
     Mutex::Autolock _l(mLock);
@@ -325,6 +335,13 @@ status_t AudioPolicyService::setStreamVolumeIndex(AudioSystem::stream_type strea
     if (!checkPermission()) {
         return PERMISSION_DENIED;
     }
+#ifdef HAS_LGE_STAR_FM_RADIO
+    /* The star's audio HAL has STREAM_FM as 8. The java layer
+     * sends CM's "standard" STREAM_FM as 10, convert it here */
+    if (stream == AudioSystem::FM) {
+        stream=(AudioSystem::stream_type)8;
+    }
+#endif
     if (stream < 0 || stream >= AudioSystem::NUM_STREAM_TYPES) {
         return BAD_VALUE;
     }
@@ -348,6 +365,9 @@ status_t AudioPolicyService::getStreamVolumeIndex(AudioSystem::stream_type strea
 
 uint32_t AudioPolicyService::getStrategyForStream(AudioSystem::stream_type stream)
 {
+#ifdef FROYO_AUDIOPOLICY
+    return 0;
+#endif
     if (mpPolicyManager == NULL) {
         return 0;
     }
@@ -356,6 +376,9 @@ uint32_t AudioPolicyService::getStrategyForStream(AudioSystem::stream_type strea
 
 audio_io_handle_t AudioPolicyService::getOutputForEffect(effect_descriptor_t *desc)
 {
+#ifdef FROYO_AUDIOPOLICY
+    return NO_INIT;
+#endif
     if (mpPolicyManager == NULL) {
         return NO_INIT;
     }
@@ -369,6 +392,9 @@ status_t AudioPolicyService::registerEffect(effect_descriptor_t *desc,
                                 int session,
                                 int id)
 {
+#ifdef FROYO_AUDIOPOLICY
+    return NO_INIT;
+#endif
     if (mpPolicyManager == NULL) {
         return NO_INIT;
     }
@@ -377,6 +403,9 @@ status_t AudioPolicyService::registerEffect(effect_descriptor_t *desc,
 
 status_t AudioPolicyService::unregisterEffect(int id)
 {
+#ifdef FROYO_AUDIOPOLICY
+    return NO_INIT;
+#endif
     if (mpPolicyManager == NULL) {
         return NO_INIT;
     }
@@ -581,6 +610,16 @@ status_t AudioPolicyService::setStreamOutput(AudioSystem::stream_type stream,
 
     return af->setStreamOutput(stream, output);
 }
+
+#ifdef OMAP_ENHANCEMENT
+status_t AudioPolicyService::setFMRxActive(bool state)
+{
+    sp<IAudioFlinger> af = AudioSystem::get_audio_flinger();
+    if (af == 0) return PERMISSION_DENIED;
+
+    return af->setFMRxActive(state);
+}
+#endif
 
 status_t AudioPolicyService::moveEffects(int session, audio_io_handle_t srcOutput,
                                                audio_io_handle_t dstOutput)

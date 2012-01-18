@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileDescriptor;
 import java.lang.ref.WeakReference;
+import android.os.SystemProperties;
 
 /**
  * Used to record audio and video. The recording control is based on a
@@ -147,16 +148,25 @@ public class MediaRecorder
         public static final int VOICE_RECOGNITION = 6;
 
         /**
+         * @hide
+         * Microphone audio source tuned for voice communications such as VoIP. It
+         * will for instance take advantage of echo cancellation or automatic gain control
+         * if available. It otherwise behaves like {@link #DEFAULT} if no voice processing
+         * is available.
+         */
+        public static final int VOICE_COMMUNICATION = 7;
+
+        /**
          * Default FM radio source
-        * @hide
+         * @hide
         */
-        public static final int FM_RX = 7;
+        public static final int FM_RX = 8;
 
         /**
          * A2DP FM radio source
          * @hide
          */
-        public static final int FM_RX_A2DP = 8;
+        public static final int FM_RX_A2DP = 9;
     }
 
     /**
@@ -190,11 +200,12 @@ public class MediaRecorder
 
         /** The following formats are audio only .aac or .amr formats **/
         /** @deprecated  Deprecated in favor of AMR_NB */
-        /** TODO: change link when AMR_NB is exposed. Deprecated in favor of MediaRecorder.OutputFormat.AMR_NB */
+        /** Deprecated in favor of MediaRecorder.OutputFormat.AMR_NB */
+        /** AMR NB file format */
         public static final int RAW_AMR = 3;
-        /** @hide AMR NB file format */
+        /** AMR NB file format */
         public static final int AMR_NB = 3;
-        /** @hide AMR WB file format */
+        /** AMR WB file format */
         public static final int AMR_WB = 4;
         /** @hide AAC ADIF file format */
         public static final int AAC_ADIF = 5;
@@ -220,9 +231,9 @@ public class MediaRecorder
         public static final int DEFAULT = 0;
         /** AMR (Narrowband) audio codec */
         public static final int AMR_NB = 1;
-        /** @hide AMR (Wideband) audio codec */
+        /** AMR (Wideband) audio codec */
         public static final int AMR_WB = 2;
-        /** @hide AAC audio codec */
+        /** AAC audio codec */
         public static final int AAC = 3;
         /** @hide enhanced AAC audio codec */
         public static final int AAC_PLUS = 4;
@@ -292,11 +303,24 @@ public class MediaRecorder
         setVideoFrameRate(profile.videoFrameRate);
         setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
         setVideoEncodingBitRate(profile.videoBitRate);
-        setAudioEncodingBitRate(profile.audioBitRate);
-        setAudioChannels(profile.audioChannels);
-        setAudioSamplingRate(profile.audioSampleRate);
-        setVideoEncoder(profile.videoCodec);
-        setAudioEncoder(profile.audioCodec);
+
+        if(SystemProperties.OMAP_ENHANCEMENT) {
+            setVideoEncoder(profile.videoCodec);
+
+            if (profile.audioCodec != 0)
+            {
+                setAudioEncodingBitRate(profile.audioBitRate);
+                setAudioChannels(profile.audioChannels);
+                setAudioSamplingRate(profile.audioSampleRate);
+                setAudioEncoder(profile.audioCodec);
+            }
+        } else {
+            setAudioEncodingBitRate(profile.audioBitRate);
+            setAudioChannels(profile.audioChannels);
+            setAudioSamplingRate(profile.audioSampleRate);
+            setVideoEncoder(profile.videoCodec);
+            setAudioEncoder(profile.audioCodec);
+        }
     }
 
     /**

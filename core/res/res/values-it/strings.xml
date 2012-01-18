@@ -35,6 +35,24 @@
     <string name="defaultMsisdnAlphaTag" msgid="2850889754919584674">"MSISDN1"</string>
     <string name="mmiError" msgid="5154499457739052907">"Problema di connessione o codice MMI non valido."</string>
     <string name="mmiFdnError" msgid="5224398216385316471">"Operazione limitata solo ai numeri di selezione fissa."</string>
+
+    <!-- Names of default profiles. -->
+    <string name="profileNameDefault">Default</string>
+    <string name="profileNameWork">Lavoro</string>
+    <string name="profileNameHome">Casa</string>
+    <string name="profileNameSilent">Silenzioso</string>
+    <string name="profileNameNight">Notte</string>
+
+    <!-- Names of application groups. -->
+    <string name="profileGroupPhone">Telefono</string>
+    <string name="profileGroupCalendar">Calendario</string>
+    <string name="profileGroupGmail">Gmail</string>
+    <string name="profileGroupEmail">Email</string>
+    <string name="profileGroupSMS">SMS</string>
+
+    <!-- Name of wildcard profile. -->
+    <string name="wildcardProfile">Altro</string>
+
     <string name="serviceEnabled" msgid="8147278346414714315">"Il servizio è stato attivato."</string>
     <string name="serviceEnabledFor" msgid="6856228140453471041">"Il servizio è stato attivato per:"</string>
     <string name="serviceDisabled" msgid="1937553226592516411">"Il servizio è stato disattivato."</string>
@@ -134,6 +152,7 @@
     <string name="screen_lock" msgid="799094655496098153">"Blocco schermo"</string>
     <string name="power_off" msgid="4266614107412865048">"Spegni"</string>
     <string name="reboot_system">Riavvia</string>
+    <string name="reboot_reboot">Riavvia</string>
     <string name="shutdown_progress" msgid="2281079257329981203">"Spegnimento..."</string>
     <string name="reboot_progress">Riavvio in corso\u2026</string>
     <string name="shutdown_confirm" msgid="649792175242821353">"Il telefono verrà spento."</string>
@@ -141,15 +160,27 @@
     <string name="recent_tasks_title" msgid="3691764623638127888">"Recenti"</string>
     <string name="no_recent_tasks" msgid="279702952298056674">"Nessuna applicazione recente."</string>
     <string name="global_actions" msgid="2406416831541615258">"Opzioni telefono"</string>
+
+    <!-- label for item that emulates the hardware button: home -->
+    <string name="global_action_home">Home</string>
+
+    <!-- label for item that emulates the hardware button: menu -->
+    <string name="global_action_menu">Menu</string>
+
+    <!-- label for item that emulates the hardware button: back -->
+    <string name="global_action_back">Indietro</string>
+
     <string name="global_action_lock" msgid="2844945191792119712">"Blocco schermo"</string>
     <string name="global_action_power_off" msgid="4471879440839879722">"Spegni"</string>
     <string name="global_action_reboot">Riavvia</string>
+    <string name="global_action_choose_profile">Seleziona profilo</string>
     <string name="global_action_toggle_silent_mode" msgid="8219525344246810925">"Modalità silenziosa"</string>
     <string name="global_action_silent_mode_on_status" msgid="3289841937003758806">"Audio non attivo"</string>
     <string name="global_action_silent_mode_off_status" msgid="1506046579177066419">"Audio attivo"</string>
     <string name="global_actions_toggle_airplane_mode" msgid="5884330306926307456">"Modalità aereo"</string>
     <string name="global_actions_airplane_mode_on_status" msgid="2719557982608919750">"Modalità aereo attiva"</string>
     <string name="global_actions_airplane_mode_off_status" msgid="5075070442854490296">"Modalità aereo non attiva"</string>
+    <string name="global_action_screenshot">Cattura schermata</string>
     <string name="safeMode" msgid="2788228061547930246">"Modalità provvisoria"</string>
     <string name="android_system_label" msgid="6577375335728551336">"Sistema Android"</string>
     <string name="permgrouplab_costMoney" msgid="5429808217861460401">"Servizi che prevedono un costo"</string>
@@ -187,6 +218,8 @@
     <string name="permdesc_receiveSms" msgid="6298292335965966117">"Consente il ricevimento e l\'elaborazione di SMS da parte dell\'applicazione. Le applicazioni dannose potrebbero monitorare i messaggi o eliminarli senza visualizzarli."</string>
     <string name="permlab_receiveMms" msgid="8894700916188083287">"ricezione MMS"</string>
     <string name="permdesc_receiveMms" msgid="4563346832000174373">"Consente il ricevimento e l\'elaborazione di MMS da parte dell\'applicazione. Le applicazioni dannose potrebbero monitorare i messaggi o eliminarli senza visualizzarli."</string>
+    <string name="permlab_receiveEmergencyBroadcast" msgid="1803477660846288089">"ricezione di trasmissioni di emergenza"</string>
+    <string name="permdesc_receiveEmergencyBroadcast" msgid="7118393393716546131">"Consente all\'applicazione di ricevere ed elaborare messaggi di trasmissioni di emergenza. Tale autorizzazione è disponibile solo per applicazioni di sistema."</string>
     <string name="permlab_sendSms" msgid="5600830612147671529">"invio SMS"</string>
     <string name="permdesc_sendSms" msgid="1946540351763502120">"Consente all\'applicazione di inviare messaggi SMS. Le applicazioni dannose potrebbero inviare messaggi a tua insaputa facendoti sostenere dei costi."</string>
     <string name="permlab_readSms" msgid="4085333708122372256">"lettura SMS o MMS"</string>
@@ -273,6 +306,8 @@
     <string name="permdesc_movePackage" msgid="6323049291923925277">"Consente a un\'applicazione di spostare risorse applicative da supporti interni a esterni e viceversa."</string>
     <string name="permlab_readLogs" msgid="6615778543198967614">"Lettura dati di registro sensibili"</string>
     <string name="permdesc_readLogs" msgid="8896449437464867766">"Consente a un\'applicazione di leggere vari file di registro del sistema per trovare informazioni generali sulle operazioni effettuate con il telefono. Tali file potrebbero contenere informazioni personali o riservate."</string>
+    <string name="permlab_preventpower">usa tasto accensione</string>
+    <string name="permdesc_preventpower">Permette ad un\'applicazione di associare una funzione al tasto accensione</string>
     <string name="permlab_diagnostic" msgid="8076743953908000342">"lettura/scrittura risorse di proprietà di diag"</string>
     <string name="permdesc_diagnostic" msgid="3121238373951637049">"Consente a un\'applicazione di leggere le risorse del gruppo diag e scrivere a esse, per esempio i file in /dev. Questa capacità potrebbe influire sulla stabilità e sicurezza del sistema. Dovrebbe essere utilizzata SOLTANTO per diagnostiche specifiche dell\'hardware effettuate dal produttore o dall\'operatore."</string>
     <string name="permlab_changeComponentState" msgid="79425198834329406">"attivazione/disattivazione componenti applicazioni"</string>
@@ -317,6 +352,10 @@
     <string name="permdesc_recordAudio" msgid="6493228261176552356">"Consente l\'accesso dell\'applicazione al percorso di registrazione dell\'audio."</string>
     <string name="permlab_camera" msgid="3616391919559751192">"acquisizione di foto e video"</string>
     <string name="permdesc_camera" msgid="6004878235852154239">"Consente di scattare foto e riprendere video nell\'applicazione con la fotocamera. L\'applicazione può acquisire in qualsiasi momento le immagini rilevate dalla fotocamera."</string>
+    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_rawAudio">accesso audio di basso livello</string>
+    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_rawAudio">Consente all\'applicazione di avere accesso completo all\'hardware audio.</string>
     <string name="permlab_brick" msgid="8337817093326370537">"disattivazione telefono"</string>
     <string name="permdesc_brick" msgid="5569526552607599221">"Consente all\'applicazione di disattivare l\'intero telefono in modo definitivo. Questa autorizzazione è molto pericolosa."</string>
     <string name="permlab_reboot" msgid="2898560872462638242">"riavvio forzato del telefono"</string>
@@ -339,8 +378,8 @@
     <string name="permdesc_vibrate" msgid="2886677177257789187">"Consente all\'applicazione di controllare la vibrazione."</string>
     <string name="permlab_flashlight" msgid="2155920810121984215">"controllo flash"</string>
     <string name="permdesc_flashlight" msgid="6433045942283802309">"Consente all\'applicazione di controllare il flash."</string>
-    <string name="permlab_accessUsb" msgid="7362327818655760496">"accesso a dispositivi USB"</string>
-    <string name="permdesc_accessUsb" msgid="2414271762914049292">"Consente all\'applicazione di accedere ai dispositivi USB"</string>
+    <string name="permlab_manageUsb" msgid="1113453430645402723">"gestione preferenze e autorizzazioni per dispositivi USB"</string>
+    <string name="permdesc_manageUsb" msgid="6148489202092166164">"Consente all\'applicazione di gestire le preferenze e le autorizzazioni relative ai dispositivi USB."</string>
     <string name="permlab_hardware_test" msgid="4148290860400659146">"esecuzione test hardware"</string>
     <string name="permdesc_hardware_test" msgid="3668894686500081699">"Consente all\'applicazione di controllare varie periferiche per il test dell\'hardware."</string>
     <string name="permlab_callPhone" msgid="3925836347681847954">"chiamata diretta n. telefono"</string>
@@ -403,6 +442,10 @@
     <string name="permdesc_changeWifiState" msgid="2950383153656873267">"Consente a un\'applicazione di connettersi/disconnettersi da punti di accesso Wi-Fi e di apportare modifiche alle reti Wi-Fi configurate."</string>
     <string name="permlab_changeWifiMulticastState" msgid="1368253871483254784">"consenti ricezione multicast Wi-Fi"</string>
     <string name="permdesc_changeWifiMulticastState" msgid="8199464507656067553">"Consente a un\'applicazione di ricevere pacchetti non direttamente indirizzati al tuo dispositivo. Può essere utile durante la ricerca di servizi offerti nelle vicinanze. Consuma di più rispetto alla modalità non multicast."</string>
+    <string name="permlab_accessWimaxState" msgid="2800410363171809280">"visualizzazione stato WiMAX"</string>
+    <string name="permdesc_accessWimaxState" msgid="8298035866227524023">"Consente a un\'applicazione di visualizzare le informazioni relative allo stato della rete WiMAX."</string>
+    <string name="permlab_changeWimaxState" msgid="340465839241528618">"modifica stato WiMAX"</string>
+    <string name="permdesc_changeWimaxState" msgid="474918005058989421">"Consente a un\'applicazione di connettersi/disconnettersi dalla rete WiMAX."</string>
     <string name="permlab_bluetoothAdmin" msgid="1092209628459341292">"gestione Bluetooth"</string>
     <string name="permdesc_bluetoothAdmin" msgid="7256289774667054555">"Consente a un\'applicazione di configurare il telefono Bluetooth locale e di rilevare e abbinare dispositivi remoti."</string>
     <string name="permlab_bluetooth" msgid="8361038707857018732">"creazione connessioni Bluetooth"</string>
@@ -425,7 +468,7 @@
     <string name="permdesc_readDictionary" msgid="1082972603576360690">"Consente a un\'applicazione di leggere parole, nomi e frasi private che l\'utente potrebbe aver memorizzato nel dizionario utente."</string>
     <string name="permlab_writeDictionary" msgid="6703109511836343341">"scrittura nel dizionario definito dall\'utente"</string>
     <string name="permdesc_writeDictionary" msgid="2241256206524082880">"Consente a un\'applicazione di scrivere nuove parole nel dizionario utente."</string>
-    <string name="permlab_sdcardWrite" product="nosdcard" msgid="85430876310764752">"modifica/eliminaz. archivio USB"</string>
+    <string name="permlab_sdcardWrite" product="nosdcard" msgid="85430876310764752">"modifica/eliminaz. contenuti archivio USB"</string>
     <string name="permlab_sdcardWrite" product="default" msgid="8079403759001777291">"modificare/eliminare i contenuti della scheda SD"</string>
     <string name="permdesc_sdcardWrite" product="nosdcard" msgid="6594393334785738252">"Consente di scrivere nell\'archivio USB."</string>
     <string name="permdesc_sdcardWrite" product="default" msgid="6643963204976471878">"Consente a un\'applicazione di scrivere sulla scheda SD."</string>
@@ -587,8 +630,6 @@
     <string name="lockscreen_sound_off_label" msgid="996822825154319026">"Audio disattivato"</string>
     <!-- Displayed on lock screen's extra left tab - phone -->
     <string name="lockscreen_phone_label">Telefono</string>
-    <!-- Displayed on lock screen's extra right tab - messaging -->
-    <string name="lockscreen_messaging_label">Messaggi</string>
     <string name="password_keyboard_label_symbol_key" msgid="992280756256536042">"?123"</string>
     <string name="password_keyboard_label_alpha_key" msgid="8001096175167485649">"ABC"</string>
     <string name="password_keyboard_label_alt_key" msgid="1284820942620288678">"ALT"</string>
@@ -598,7 +639,7 @@
     <string name="factorytest_not_system" msgid="4435201656767276723">"L\'azione FACTORY_TEST è supportata soltanto per i pacchetti installati in /system/app."</string>
     <string name="factorytest_no_action" msgid="872991874799998561">"Nessun pacchetto trovato che fornisca l\'azione FACTORY_TEST."</string>
     <string name="factorytest_reboot" msgid="6320168203050791643">"Riavvia"</string>
-    <string name="js_dialog_title" msgid="8143918455087008109">"La pagina all\'indirizzo <xliff:g id="TITLE">%s</xliff:g> indica:"</string>
+    <string name="js_dialog_title" msgid="8143918455087008109">"Avviso relativo alla pagina <xliff:g id="TITLE">%s</xliff:g>:"</string>
     <string name="js_dialog_title_default" msgid="6961903213729667573">"JavaScript"</string>
     <string name="js_dialog_before_unload" msgid="1901675448179653089">"Uscire da questa pagina?"\n\n"<xliff:g id="MESSAGE">%s</xliff:g>"\n\n"Seleziona OK per continuare o Annulla per rimanere nella pagina corrente."</string>
     <string name="save_password_label" msgid="6860261758665825069">"Conferma"</string>
@@ -721,6 +762,7 @@
     <string name="elapsed_time_short_format_mm_ss" msgid="4431555943828711473">"<xliff:g id="MINUTES">%1$02d</xliff:g>:<xliff:g id="SECONDS">%2$02d</xliff:g>"</string>
     <string name="elapsed_time_short_format_h_mm_ss" msgid="1846071997616654124">"<xliff:g id="HOURS">%1$d</xliff:g>:<xliff:g id="MINUTES">%2$02d</xliff:g>:<xliff:g id="SECONDS">%3$02d</xliff:g>"</string>
     <string name="selectAll" msgid="6876518925844129331">"Seleziona tutto"</string>
+    <string name="copyAll">Copia tutto</string>
     <string name="selectText" msgid="4862359311088898878">"Seleziona parola"</string>
     <string name="cut" msgid="3092569408438626261">"Taglia"</string>
     <string name="copy" msgid="2681946229533511987">"Copia"</string>
@@ -742,10 +784,15 @@
     <string name="alwaysUse" msgid="4583018368000610438">"Usa come predefinita per questa azione."</string>
     <string name="clearDefaultHintMsg" msgid="4815455344600932173">"Cancella predefinita in Home &gt; Impostazioni &gt; Applicazioni &gt; Gestisci applicazioni."</string>
     <string name="chooseActivity" msgid="1009246475582238425">"Seleziona un\'azione"</string>
+    <string name="chooseUsbActivity" msgid="7892597146032121735">"Seleziona un\'applicazione per il dispositivo USB"</string>
     <string name="noApplications" msgid="1691104391758345586">"Nessuna applicazione è in grado di svolgere questa azione."</string>
     <string name="aerr_title" msgid="653922989522758100">"Spiacenti."</string>
     <string name="aerr_application" msgid="4683614104336409186">"Interruzione imprevista dell\'applicazione <xliff:g id="APPLICATION">%1$s</xliff:g> (processo <xliff:g id="PROCESS">%2$s</xliff:g>). Riprova."</string>
     <string name="aerr_process" msgid="1551785535966089511">"Interruzione imprevista del processo <xliff:g id="PROCESS">%1$s</xliff:g>. Riprova."</string>
+    <!-- Title of the alert when an application is not responding. -->
+    <string name="aerr_revoked_application">Interruzione imprevista dell\'applicazione <xliff:g id="application">%1$s</xliff:g> (processo <xliff:g id="process">%2$s</xliff:g>).\nATTENZIONE!\nA questa applicazione sono state REVOCATE una o più autorizzazioni. Concedi le dovute autorizzazioni e riprova.</string>
+    <!-- Text of the alert that is displayed when an application has crashed. -->
+    <string name="aerr_revoked_process">Interruzione imprevista del processo <xliff:g id="process">%1$s</xliff:g>.\nATTENZIONE!\nA questo processo sono state REVOCATE una o più autorizzazioni. Concedi le dovute autorizzazioni e riprova.</string>
     <string name="anr_title" msgid="3100070910664756057">"Spiacenti."</string>
     <string name="anr_activity_application" msgid="3538242413112507636">"L\'attività <xliff:g id="ACTIVITY">%1$s</xliff:g> (nell\'applicazione <xliff:g id="APPLICATION">%2$s</xliff:g>) non risponde."</string>
     <string name="anr_activity_process" msgid="5420826626009561014">"L\'attività <xliff:g id="ACTIVITY">%1$s</xliff:g> (nel processo <xliff:g id="PROCESS">%2$s</xliff:g>) non risponde."</string>
@@ -753,6 +800,10 @@
     <string name="anr_process" msgid="1246866008169975783">"Il processo <xliff:g id="PROCESS">%1$s</xliff:g> non risponde."</string>
     <string name="force_close" msgid="3653416315450806396">"Termina"</string>
     <string name="report" msgid="4060218260984795706">"Segnala"</string>
+    <!-- Button allowing the user to open the application settings screen to edit permissions. -->
+    <string name="edit_perms">Modifica autorizzazioni</string>
+    <!-- Button allowing the user reset the revoked permissions for application which has encountered an error. -->
+    <string name="reset_perms">Ripristina autorizzazioni</string>
     <string name="wait" msgid="7147118217226317732">"Attendi"</string>
     <string name="launch_warning_title" msgid="8323761616052121936">"Applicazione reindirizzata"</string>
     <string name="launch_warning_replace" msgid="6202498949970281412">"<xliff:g id="APP_NAME">%1$s</xliff:g> è ora in esecuzione."</string>
@@ -881,7 +932,7 @@
     <string name="permission_request_notification_with_subtitle" msgid="4325409589686688000">"Autorizzazione richiesta"\n"per l\'account <xliff:g id="ACCOUNT">%s</xliff:g>"</string>
     <string name="input_method_binding_label" msgid="1283557179944992649">"Metodo inserimento"</string>
     <string name="sync_binding_label" msgid="3687969138375092423">"Sinc"</string>
-    <string name="accessibility_binding_label" msgid="4148120742096474641">"Accesso facilitato"</string>
+    <string name="accessibility_binding_label" msgid="4148120742096474641">"Accessibilità"</string>
     <string name="wallpaper_binding_label" msgid="1240087844304687662">"Sfondo"</string>
     <string name="chooser_wallpaper" msgid="7873476199295190279">"Cambia sfondo"</string>
     <string name="pptp_vpn_description" msgid="2688045385181439401">"Protocollo di tunneling Point-to-Point"</string>
@@ -924,4 +975,10 @@
         <item quantity="one">%d secondo rimasto</item>
         <item quantity="other">%d secondi rimasti</item>
     </plurals>
+
+    <!-- Title of an application permission that lets an application view/edit revoked permissions. -->
+    <string name="permlab_revokePermissions">Permette la visione e la modifica delle autorizzazioni revocate. Non destinata all\'uso da parte delle normali applicazioni.</string>
+    <!-- Description of an application permission that lets lets an application view/edit revoked permissions. -->
+    <string name="permdesc_revokePermissions">Permette la lettura e la scrittura delle autorizzazioni revocate. Non destinata all\'uso da parte delle normali applicazioni.</string>
+
 </resources>

@@ -17,9 +17,12 @@
 package android.os;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Map;
 
+import android.content.pm.ApplicationInfo;
 import android.util.Log;
 import android.util.Printer;
 import android.util.SparseArray;
@@ -120,6 +123,7 @@ public abstract class BatteryStats implements Parcelable {
     private static final long BYTES_PER_GB = 1073741824; //1024^3
     
 
+    private static final String UID_DATA = "uid";
     private static final String APK_DATA = "apk";
     private static final String PROCESS_DATA = "pr";
     private static final String SENSOR_DATA = "sr";
@@ -128,6 +132,7 @@ public abstract class BatteryStats implements Parcelable {
     private static final String NETWORK_DATA = "nt";
     private static final String USER_ACTIVITY_DATA = "ua";
     private static final String BATTERY_DATA = "bt";
+    private static final String BATTERY_DISCHARGE_DATA = "dc";
     private static final String BATTERY_LEVEL_DATA = "lv";
     private static final String WIFI_LOCK_DATA = "wfl";
     private static final String MISC_DATA = "m";
@@ -797,6 +802,30 @@ public abstract class BatteryStats implements Parcelable {
     public abstract int getHighDischargeAmountSinceCharge();
 
     /**
+     * Get the amount the battery has discharged while the screen was on,
+     * since the last time power was unplugged.
+     */
+    public abstract int getDischargeAmountScreenOn();
+
+    /**
+     * Get the amount the battery has discharged while the screen was on,
+     * since the last time the device was charged.
+     */
+    public abstract int getDischargeAmountScreenOnSinceCharge();
+
+    /**
+     * Get the amount the battery has discharged while the screen was off,
+     * since the last time power was unplugged.
+     */
+    public abstract int getDischargeAmountScreenOff();
+
+    /**
+     * Get the amount the battery has discharged while the screen was off,
+     * since the last time the device was charged.
+     */
+    public abstract int getDischargeAmountScreenOffSinceCharge();
+
+    /**
      * Returns the total, last, or current battery uptime in microseconds.
      *
      * @param curTime the elapsed realtime in microseconds.
@@ -1089,6 +1118,17 @@ public abstract class BatteryStats implements Parcelable {
         if (which == STATS_SINCE_UNPLUGGED) {
             dumpLine(pw, 0 /* uid */, category, BATTERY_LEVEL_DATA, getDischargeStartLevel(), 
                     getDischargeCurrentLevel());
+        }
+        
+        if (which == STATS_SINCE_UNPLUGGED) {
+            dumpLine(pw, 0 /* uid */, category, BATTERY_DISCHARGE_DATA,
+                    getDischargeStartLevel()-getDischargeCurrentLevel(),
+                    getDischargeStartLevel()-getDischargeCurrentLevel(),
+                    getDischargeAmountScreenOn(), getDischargeAmountScreenOff());
+        } else {
+            dumpLine(pw, 0 /* uid */, category, BATTERY_DISCHARGE_DATA,
+                    getLowDischargeAmountSinceCharge(), getHighDischargeAmountSinceCharge(),
+                    getDischargeAmountScreenOn(), getDischargeAmountScreenOff());
         }
         
         if (reqUid < 0) {
@@ -1447,6 +1487,10 @@ public abstract class BatteryStats implements Parcelable {
                 pw.print(prefix); pw.print("    Last discharge cycle end level: "); 
                         pw.println(getDischargeCurrentLevel());
             }
+            pw.print(prefix); pw.print("    Amount discharged while screen on: ");
+                    pw.println(getDischargeAmountScreenOn());
+            pw.print(prefix); pw.print("    Amount discharged while screen off: ");
+                    pw.println(getDischargeAmountScreenOff());
             pw.println(" ");
         } else {
             pw.print(prefix); pw.println("  Device battery use since last full charge");
@@ -1454,13 +1498,17 @@ public abstract class BatteryStats implements Parcelable {
                     pw.println(getLowDischargeAmountSinceCharge());
             pw.print(prefix); pw.print("    Amount discharged (upper bound): ");
                     pw.println(getHighDischargeAmountSinceCharge());
+            pw.print(prefix); pw.print("    Amount discharged while screen on: ");
+                    pw.println(getDischargeAmountScreenOnSinceCharge());
+            pw.print(prefix); pw.print("    Amount discharged while screen off: ");
+                    pw.println(getDischargeAmountScreenOffSinceCharge());
             pw.println(" ");
         }
         
 
         for (int iu=0; iu<NU; iu++) {
             final int uid = uidStats.keyAt(iu);
-            if (reqUid >= 0 && uid != reqUid) {
+            if (reqUid >= 0 && uid != reqUid && uid != Process.SYSTEM_UID) {
                 continue;
             }
             
@@ -1877,7 +1925,7 @@ public abstract class BatteryStats implements Parcelable {
     }
     
     @SuppressWarnings("unused")
-    public void dumpCheckinLocked(PrintWriter pw, String[] args) {
+    public void dumpCheckinLocked(PrintWriter pw, String[] args, List<ApplicationInfo> apps) {
         boolean isUnpluggedOnly = false;
         
         for (String arg : args) {
@@ -1887,6 +1935,33 @@ public abstract class BatteryStats implements Parcelable {
             }
         }
         
+        if (apps != null) {
+            SparseArray<ArrayList<String>> uids = new SparseArray<ArrayList<String>>();
+            for (int i=0; i<apps.size(); i++) {
+                ApplicationInfo ai = apps.get(i);
+                ArrayList<String> pkgs = uids.get(ai.uid);
+                if (pkgs == null) {
+                    pkgs = new ArrayList<String>();
+                    uids.put(ai.uid, pkgs);
+                }
+                pkgs.add(ai.packageName);
+            }
+            SparseArray<? extends Uid> uidStats = getUidStats();
+            final int NU = uidStats.size();
+            String[] lineArgs = new String[2];
+            for (int i=0; i<NU; i++) {
+                int uid = uidStats.keyAt(i);
+                ArrayList<String> pkgs = uids.get(uid);
+                if (pkgs != null) {
+                    for (int j=0; j<pkgs.size(); j++) {
+                        lineArgs[0] = Integer.toString(uid);
+                        lineArgs[1] = pkgs.get(j);
+                        dumpLine(pw, 0 /* uid */, "i" /* category */, UID_DATA,
+                                (Object[])lineArgs);
+                    }
+                }
+            }
+        }
         if (isUnpluggedOnly) {
             dumpCheckinLocked(pw, STATS_SINCE_UNPLUGGED, -1);
         }

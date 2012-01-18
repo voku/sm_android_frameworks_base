@@ -193,6 +193,9 @@ public final class ActivityThread {
     final HashMap<IBinder, ProviderClientRecord> mLocalProviders
         = new HashMap<IBinder, ProviderClientRecord>();
 
+    final HashMap<Activity, ArrayList<OnActivityPausedListener>> mOnPauseListeners
+        = new HashMap<Activity, ArrayList<OnActivityPausedListener>>();
+
     final GcIdler mGcIdler = new GcIdler();
     boolean mGcIdlerScheduled = false;
 
@@ -1226,7 +1229,7 @@ public final class ActivityThread {
             }
 
             if (!TextUtils.isEmpty(config.customTheme.getThemePackageName())) {
-                attachThemeAssets(assets, config.customTheme, false);
+                attachThemeAssets(assets, config.customTheme);
             }
         }
 
@@ -1259,7 +1262,7 @@ public final class ActivityThread {
         String themePackageName = assets.getThemePackageName();
         int themeCookie = assets.getThemeCookie();
         if (!TextUtils.isEmpty(themePackageName) && themeCookie != 0) {
-            assets.removeAssetPath(themePackageName, themeCookie);
+            assets.detachThemePath(themePackageName, themeCookie);
             assets.setThemePackageName(null);
             assets.setThemeCookie(0);
             assets.clearRedirections();
@@ -1272,15 +1275,12 @@ public final class ActivityThread {
      *
      * @param assets
      * @param theme
-     * @param updating If true, this AssetManager has already been accessed and
-     *            special steps must be taken to update the underlying resource
-     *            table.
      * @return true if the AssetManager is now theme-aware; false otherwise.
      *         This can fail, for example, if the theme package has been been
      *         removed and the theme manager has yet to revert formally back to
      *         the framework default.
      */
-    private boolean attachThemeAssets(AssetManager assets, CustomTheme theme, boolean updating) {
+    private boolean attachThemeAssets(AssetManager assets, CustomTheme theme) {
         IAssetRedirectionManager rm = getAssetRedirectionManager();
         if (rm == null) {
             return false;
@@ -1292,12 +1292,7 @@ public final class ActivityThread {
         }
         if (pi != null && pi.applicationInfo != null && pi.themeInfos != null) {
             String themeResDir = pi.applicationInfo.publicSourceDir;
-            int cookie;
-            if (updating) {
-                cookie = assets.updateResourcesWithAssetPath(themeResDir);
-            } else {
-                cookie = assets.addAssetPath(themeResDir);
-            }
+            int cookie = assets.attachThemePath(themeResDir);
             if (cookie != 0) {
                 String themePackageName = theme.getThemePackageName();
                 String themeId = theme.getThemeId();
@@ -1323,7 +1318,7 @@ public final class ActivityThread {
                         }
                     } catch (RemoteException e) {
                         Log.e(TAG, "Failure accessing package redirection map, removing theme support.");
-                        assets.removeAssetPath(themePackageName, cookie);
+                        assets.detachThemePath(themePackageName, cookie);
                         return false;
                     }
                 }
@@ -1332,8 +1327,7 @@ public final class ActivityThread {
                 assets.setThemeCookie(cookie);
                 return true;
             } else {
-                Log.e(TAG, "Unable to " + (updating ? "update" : "add") + " theme assets at " +
-                        themeResDir);
+                Log.e(TAG, "Unable to attach theme assets at " + themeResDir);
             }
         }
         return false;
@@ -1541,6 +1535,28 @@ public final class ActivityThread {
         if ((BinderInternal.getLastGcTime()+MIN_TIME_BETWEEN_GCS) < now) {
             //Slog.i(TAG, "**** WE DO, WE DO WANT TO GC!");
             BinderInternal.forceGc("bg");
+        }
+    }
+
+    public void registerOnActivityPausedListener(Activity activity,
+            OnActivityPausedListener listener) {
+        synchronized (mOnPauseListeners) {
+            ArrayList<OnActivityPausedListener> list = mOnPauseListeners.get(activity);
+            if (list == null) {
+                list = new ArrayList<OnActivityPausedListener>();
+                mOnPauseListeners.put(activity, list);
+            }
+            list.add(listener);
+        }
+    }
+
+    public void unregisterOnActivityPausedListener(Activity activity,
+            OnActivityPausedListener listener) {
+        synchronized (mOnPauseListeners) {
+            ArrayList<OnActivityPausedListener> list = mOnPauseListeners.get(activity);
+            if (list != null) {
+                list.remove(listener);
+            }
         }
     }
 
@@ -2463,6 +2479,17 @@ public final class ActivityThread {
             }
         }
         r.paused = true;
+
+        // Notify any outstanding on paused listeners
+        ArrayList<OnActivityPausedListener> listeners;
+        synchronized (mOnPauseListeners) {
+            listeners = mOnPauseListeners.remove(r.activity);
+        }
+        int size = (listeners != null ? listeners.size() : 0);
+        for (int i = 0; i < size; i++) {
+            listeners.get(i).onPaused(r.activity);
+        }
+
         return state;
     }
 
@@ -2664,10 +2691,6 @@ public final class ActivityThread {
                                 + ": " + e.toString(), e);
                     }
                 }
-            }
-            if (r.stopped) {
-                r.activity.performRestart();
-                r.stopped = false;
             }
             deliverResults(r, res.results);
             if (resumed) {
@@ -3094,7 +3117,7 @@ public final class ActivityThread {
                     if (am.hasThemeSupport()) {
                         detachThemeAssets(am);
                         if (!TextUtils.isEmpty(config.customTheme.getThemePackageName())) {
-                            attachThemeAssets(am, config.customTheme, true);
+                            attachThemeAssets(am, config.customTheme);
                         }
                     }
                 }

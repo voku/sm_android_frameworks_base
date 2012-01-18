@@ -393,7 +393,12 @@ public class TelephonyManager {
     public static final int NETWORK_TYPE_IDEN = 11;
     /** Current network is EVDO revision B*/
     public static final int NETWORK_TYPE_EVDO_B = 12;
-
+    /** @hide */
+    public static final int NETWORK_TYPE_LTE = 13;
+    /** @hide */
+    public static final int NETWORK_TYPE_EHRPD = 14;
+    /** @hide */
+    public static final int NETWORK_TYPE_HSPAP = 15;
 
     /**
      * Returns a constant indicating the radio technology (network type)
@@ -412,6 +417,9 @@ public class TelephonyManager {
      * @see #NETWORK_TYPE_EVDO_A
      * @see #NETWORK_TYPE_EVDO_B
      * @see #NETWORK_TYPE_1xRTT
+     * @see #NETWORK_TYPE_EHRPD
+     * @see #NETWORK_TYPE_LTE
+     * @see #NETWORK_TYPE_HSPAP
      */
     public int getNetworkType() {
         try{
@@ -462,6 +470,12 @@ public class TelephonyManager {
                 return "CDMA - EvDo rev. B";
             case NETWORK_TYPE_1xRTT:
                 return "CDMA - 1xRTT";
+            case NETWORK_TYPE_EHRPD:
+                return "CDMA - EHRPD";
+            case NETWORK_TYPE_LTE:
+                return "LTE";
+            case NETWORK_TYPE_HSPAP:
+                return "HSPA+";
             default:
                 return "UNKNOWN";
         }
@@ -820,6 +834,18 @@ public class TelephonyManager {
 
     private ITelephony getITelephony() {
         return ITelephony.Stub.asInterface(ServiceManager.getService(Context.TELEPHONY_SERVICE));
+    }
+
+    /** FastDormancy get/setter */
+    private static boolean sDormancyRejected = false;
+
+    public static boolean isDormancyRejected() {
+        return getDefault().sDormancyRejected;
+    }
+
+    public static boolean setDormancyRejected(boolean rejected) {
+        getDefault().sDormancyRejected = rejected;
+        return true;
     }
 
     //

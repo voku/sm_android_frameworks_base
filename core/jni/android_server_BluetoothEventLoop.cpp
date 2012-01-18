@@ -106,7 +106,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
                                                          "(Ljava/lang/String;Z)V");
 
     method_onAgentAuthorize = env->GetMethodID(clazz, "onAgentAuthorize",
-                                               "(Ljava/lang/String;Ljava/lang/String;)Z");
+                                               "(Ljava/lang/String;Ljava/lang/String;I)V");
     method_onAgentOutOfBandDataAvailable = env->GetMethodID(clazz, "onAgentOutOfBandDataAvailable",
                                                "(Ljava/lang/String;)Z");
     method_onAgentCancel = env->GetMethodID(clazz, "onAgentCancel", "()V");
@@ -238,6 +238,13 @@ static jboolean setUpEventLoop(native_data_t *nat) {
             LOG_AND_FREE_DBUS_ERROR(&err);
             return JNI_FALSE;
         }
+        dbus_bus_add_match(nat->conn,
+                "type='signal',interface='"BLUEZ_DBUS_BASE_IFC".Control'",
+                &err);
+        if (dbus_error_is_set(&err)) {
+            LOG_AND_FREE_DBUS_ERROR(&err);
+            return JNI_FALSE;
+        }
 
         const char *agent_path = "/android/bluetooth/agent";
         const char *capabilities = "DisplayYesNo";
@@ -311,7 +318,7 @@ static int register_agent(native_data_t *nat,
 {
     DBusMessage *msg, *reply;
     DBusError err;
-    bool oob = TRUE;
+    dbus_bool_t oob = TRUE;
 
     if (!dbus_connection_register_object_path(nat->conn, agent_path,
             &agent_vtable, nat)) {
@@ -391,6 +398,12 @@ static void tearDownEventLoop(native_data_t *nat) {
 
         dbus_bus_remove_match(nat->conn,
                 "type='signal',interface='org.bluez.AudioSink'",
+                &err);
+        if (dbus_error_is_set(&err)) {
+            LOG_AND_FREE_DBUS_ERROR(&err);
+        }
+        dbus_bus_remove_match(nat->conn,
+                "type='signal',interface='"BLUEZ_DBUS_BASE_IFC".Control'",
                 &err);
         if (dbus_error_is_set(&err)) {
             LOG_AND_FREE_DBUS_ERROR(&err);
@@ -930,29 +943,11 @@ DBusHandlerResult agent_event_filter(DBusConnection *conn,
         LOGV("... object_path = %s", object_path);
         LOGV("... uuid = %s", uuid);
 
-        bool auth_granted =
-            env->CallBooleanMethod(nat->me, method_onAgentAuthorize,
-                env->NewStringUTF(object_path), env->NewStringUTF(uuid));
+        dbus_message_ref(msg);  // increment refcount because we pass to java
+        env->CallBooleanMethod(nat->me, method_onAgentAuthorize,
+                env->NewStringUTF(object_path), env->NewStringUTF(uuid),
+                int(msg));
 
-        // reply
-        if (auth_granted) {
-            DBusMessage *reply = dbus_message_new_method_return(msg);
-            if (!reply) {
-                LOGE("%s: Cannot create message reply\n", __FUNCTION__);
-                goto failure;
-            }
-            dbus_connection_send(nat->conn, reply, NULL);
-            dbus_message_unref(reply);
-        } else {
-            DBusMessage *reply = dbus_message_new_error(msg,
-                    "org.bluez.Error.Rejected", "Authorization rejected");
-            if (!reply) {
-                LOGE("%s: Cannot create message reply\n", __FUNCTION__);
-                goto failure;
-            }
-            dbus_connection_send(nat->conn, reply, NULL);
-            dbus_message_unref(reply);
-        }
         goto success;
     } else if (dbus_message_is_method_call(msg,
             "org.bluez.Agent", "OutOfBandAvailable")) {
