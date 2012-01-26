@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-#ifdef DEBUG_OMX
-#define LOG_NDEBUG 0
-#endif
-
+//#define LOG_NDEBUG 0
 #define LOG_TAG "OMXCodec"
 #include <utils/Log.h>
 
@@ -1680,8 +1677,12 @@ void OMXCodec::setVideoInputFormat(
         compressionFormat = OMX_VIDEO_CodingMPEG4;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_H263, mime)) {
         compressionFormat = OMX_VIDEO_CodingH263;
-    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV, mime)) {
+#ifdef OMAP_ENHANCEMENT
+    }
+    else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV, mime))
+    {
         compressionFormat = OMX_VIDEO_CodingWMV;
+#endif
     } else {
         LOGE("Not a supported video mime type: %s", mime);
         CHECK(!"Should not be here. Not a supported video mime type.");

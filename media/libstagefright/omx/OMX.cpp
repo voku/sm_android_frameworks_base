@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-#ifdef DEBUG_OMX
-#define LOG_NDEBUG 0
-#endif
-
+//#define LOG_NDEBUG 0
 #define LOG_TAG "OMX"
 #include <utils/Log.h>
 

@@ -1015,11 +1015,8 @@ class PowerManagerService extends IPowerManager.Stub
             if ((wl.flags & LOCK_MASK) == PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK) {
                 mProximityWakeLockCount--;
                 if (mProximityWakeLockCount == 0) {
-                    int buggyProximity = Settings.System.getInt(mContext.getContentResolver(),
-                                                Settings.System.INACCURATE_PROXIMITY_WORKAROUND, 0);
                     if (mProximitySensorActive &&
-                            ((flags & PowerManager.WAIT_FOR_PROXIMITY_NEGATIVE) != 0) && 
-                            (buggyProximity == 0) ) {
+                            ((flags & PowerManager.WAIT_FOR_PROXIMITY_NEGATIVE) != 0)) {
                         // wait for proximity sensor to go negative before disabling sensor
                         if (mDebugProximitySensor) {
                             Slog.d(TAG, "waiting for proximity sensor to go negative");
@@ -2619,7 +2616,12 @@ class PowerManagerService extends IPowerManager.Stub
         if (mLightSensorValue != value) {
             mLightSensorValue = value;
             if ((mPowerState & BATTERY_LOW_BIT) == 0) {
-                int lcdValue = getAutoBrightnessValue(value, mLastLcdValue,
+                // use maximum light sensor value seen since screen went on for LCD to avoid flicker
+                // we only do this if we are undocked, since lighting should be stable when
+                // stationary in a dock.
+                int lcdValue = getAutoBrightnessValue(
+                        (mIsDocked ? value : mHighestLightSensorValue),
+                        mLastLcdValue,
                         (mCustomLightEnabled ? mCustomLightLevels : mAutoBrightnessLevels),
                         (mCustomLightEnabled ? mCustomLcdValues : mLcdBacklightValues));
 
@@ -2860,7 +2862,7 @@ class PowerManagerService extends IPowerManager.Stub
         mCustomLightEnabled = Settings.System.getInt(cr,
                 Settings.System.LIGHT_SENSOR_CUSTOM, 0) != 0;
         mLightDecrease = Settings.System.getInt(cr,
-                Settings.System.LIGHT_DECREASE, 1) != 0;
+                Settings.System.LIGHT_DECREASE, 0) != 0;
         mLightHysteresis = Settings.System.getInt(cr,
                 Settings.System.LIGHT_HYSTERESIS, 50) / 100f;
         mLightFilterEnabled = Settings.System.getInt(cr,

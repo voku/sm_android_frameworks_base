@@ -2212,14 +2212,6 @@ public final class Settings {
         public static final String UNLOCK_SOUND = "unlock_sound";
 
         /**
-         * Always turn on screen after call ignoring proximity?
-         * 0 = no
-         * 1 = yes
-         * @hide
-         */
-        public static final String INACCURATE_PROXIMITY_WORKAROUND = "inaccurate_proximity_sensor";
-
-        /**
          * Receive incoming SIP calls?
          * 0 = no
          * 1 = yes
@@ -2271,6 +2263,23 @@ public final class Settings {
          * @hide
          */
         public static final String LOCK_MMS_IN_MEMORY = "lock_mms_in_memory";
+
+        /**
+         * What text to show as carrier label
+         * 0: use system default
+         * 1: show spn
+         * 2: show plmn
+         * 3: show custom string
+         * default: 0
+         * @hide
+         */
+        public static final String CARRIER_LABEL_TYPE = "carrier_label_type";
+
+        /**
+         * The custom string to show as carrier label
+         * @hide
+         */
+        public static final String CARRIER_LABEL_CUSTOM_STRING = "carrier_label_custom_string";
 
         /**
          * Display style of AM/PM next to clock in status bar
@@ -3559,11 +3568,6 @@ public final class Settings {
          * Whether ADB is enabled.
          */
         public static final String ADB_ENABLED = "adb_enabled";
-
-        /**
-         * The TCP/IP port to run ADB on, or -1 for USB
-         */
-        public static final String ADB_PORT = "adb_port";
 
         /**
          * Whether to show ADB notifications.

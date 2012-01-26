@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifdef DEBUG_OMX
-#define LOG_NDEBUG 0
-#endif
 
+//#define LOG_NDEBUG 0
 #define LOG_TAG "OMXNodeInstance"
 #include <utils/Log.h>
 
