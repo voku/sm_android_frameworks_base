@@ -647,7 +647,7 @@ public class WindowManagerService extends IWindowManager.Stub
             }
         } catch (NumberFormatException e) {
         }
-        mMinWaitTimeBetweenTouchEvents = 1000 / max_events_per_sec;
+        mMinWaitTimeBetweenTouchEvents = 1000 / 35;
 
         mQueue = new KeyQ();
 

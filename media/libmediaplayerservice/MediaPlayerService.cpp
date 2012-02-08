@@ -201,13 +201,11 @@ extmap FILE_EXTS [] =  {
         {".ota", SONIVOX_PLAYER},
         {".ogg", VORBIS_PLAYER},
         {".oga", VORBIS_PLAYER},
-#ifndef NO_OPENCORE
         {".wma", PV_PLAYER},
         {".wmv", PV_PLAYER},
         {".asf", PV_PLAYER},
         {".mp4", PV_PLAYER},
         {".avi", PV_PLAYER},
-#endif
         {".flac", FLAC_PLAYER},
 };
 
@@ -716,7 +714,6 @@ player_type getPlayerType(int fd, int64_t offset, int64_t length)
     if (ident == 0x5367674f) // 'OggS'
         return OverrideStagefrightForVorbis(VORBIS_PLAYER);
 
-#ifndef NO_OPENCORE
     if (ident == 0x75b22630) {
         // The magic number for .asf files, i.e. wmv and wma content.
         // These are not currently supported through stagefright.
@@ -729,7 +726,6 @@ player_type getPlayerType(int fd, int64_t offset, int64_t length)
         //use pv player for mp4 playing. indentity of ftypmp42 or ftypisom.
         return PV_PLAYER;
     }
-#endif
 
     if (ident == 0x43614c66) // 'fLaC'
         return FLAC_PLAYER;
