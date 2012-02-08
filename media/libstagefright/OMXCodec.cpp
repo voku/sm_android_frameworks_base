@@ -117,6 +117,8 @@ static const CodecInfo kDecoderInfo[] = {
     { MEDIA_MIMETYPE_AUDIO_AAC, "OMX.TI.AAC.decode" },
     { MEDIA_MIMETYPE_AUDIO_AAC, "AACDecoder" },
 //    { MEDIA_MIMETYPE_AUDIO_AAC, "OMX.PV.aacdec" },
+//    { MEDIA_MIMETYPE_VIDEO_WMV, "OMX.TI.DUCATI1.VIDEO.DECODER" },
+//    { MEDIA_MIMETYPE_AUDIO_WMA, "OMX.ITTIAM.WMA.decode" },
     { MEDIA_MIMETYPE_VIDEO_MPEG4, "OMX.qcom.video.decoder.mpeg4" },
     { MEDIA_MIMETYPE_VIDEO_MPEG4, "OMX.TI.Video.Decoder" },
     { MEDIA_MIMETYPE_VIDEO_MPEG4, "M4vH263Decoder" },
@@ -717,8 +719,8 @@ void OMXCodec::setVideoInputFormat(
         compressionFormat = OMX_VIDEO_CodingMPEG4;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_H263, mime)) {
         compressionFormat = OMX_VIDEO_CodingH263;
-    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV, mime)) {
-        compressionFormat = OMX_VIDEO_CodingWMV;
+//    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV, mime)) {
+//        compressionFormat = OMX_VIDEO_CodingWMV;
     } else {
         LOGE("Not a supported video mime type: %s", mime);
         CHECK(!"Should not be here. Not a supported video mime type.");
@@ -959,8 +961,8 @@ status_t OMXCodec::setVideoOutputFormat(
         compressionFormat = OMX_VIDEO_CodingMPEG4;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_H263, mime)) {
         compressionFormat = OMX_VIDEO_CodingH263;
-    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV, mime)) {
-        compressionFormat = OMX_VIDEO_CodingWMV;
+//    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV, mime)) {
+//        compressionFormat = OMX_VIDEO_CodingWMV;
     } else {
         LOGE("Not a supported video mime type: %s", mime);
         CHECK(!"Should not be here. Not a supported video mime type.");
@@ -3110,9 +3112,9 @@ void OMXCodec::initOutputFormat(const sp<MetaData> &inputFormat) {
             } else if (video_def->eCompressionFormat == OMX_VIDEO_CodingAVC) {
                 mOutputFormat->setCString(
                         kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_AVC);
-            } else if (video_def->eCompressionFormat == OMX_VIDEO_CodingWMV)
-                mOutputFormat->setCString(
-                        kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_WMV);
+//            } else if (video_def->eCompressionFormat == OMX_VIDEO_CodingWMV)
+//                mOutputFormat->setCString(
+//                        kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_WMV);
             } else {
                 CHECK(!"Unknown compression format.");
             }
