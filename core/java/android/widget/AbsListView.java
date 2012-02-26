@@ -464,6 +464,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
     private Runnable mClearScrollingCache;
     private int mMinimumVelocity;
     private int mMaximumVelocity;
+    private int mDecacheThreshold;
     
     final boolean[] mIsScrap = new boolean[1];
     
@@ -564,7 +565,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         boolean stackFromBottom = a.getBoolean(R.styleable.AbsListView_stackFromBottom, false);
         setStackFromBottom(stackFromBottom);
 
-        boolean scrollingCacheEnabled = a.getBoolean(R.styleable.AbsListView_scrollingCache, false);
+        boolean scrollingCacheEnabled = a.getBoolean(R.styleable.AbsListView_scrollingCache, true);
         setScrollingCacheEnabled(scrollingCacheEnabled);
 
         boolean useTextFilter = a.getBoolean(R.styleable.AbsListView_textFilterEnabled, false);
@@ -592,12 +593,13 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         setFocusableInTouchMode(true);
         setWillNotDraw(false);
         setAlwaysDrawnWithCacheEnabled(false);
-        setScrollingCacheEnabled(false);
+        setScrollingCacheEnabled(true);
 
         final ViewConfiguration configuration = ViewConfiguration.get(mContext);
         mTouchSlop = configuration.getScaledTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+        mDecacheThreshold = mMaximumVelocity / 2;
         mDensityScale = getContext().getResources().getDisplayMetrics().density;
     }
 
@@ -730,7 +732,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         if (mScrollingCacheEnabled && !enabled) {
             clearScrollingCache();
         }
-        mScrollingCacheEnabled = false;
+        mScrollingCacheEnabled = true;
     }
 
     /**
@@ -2312,11 +2314,13 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
                             
                             mFlingRunnable.start(-initialVelocity);
                         } else {
+                            endFling(false);
                             mTouchMode = TOUCH_MODE_REST;
                             reportScrollStateChange(OnScrollListener.SCROLL_STATE_IDLE);
                         }
                     }
                 } else {
+                    endFling();
                     mTouchMode = TOUCH_MODE_REST;
                     reportScrollStateChange(OnScrollListener.SCROLL_STATE_IDLE);
                 }
@@ -2615,6 +2619,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         }
 
         void start(int initialVelocity) {
+            if (Math.abs(initialVelocity) > mDecacheThreshold) {
+                // For long flings, scrolling cache causes stutter, so don't use it
+                clearScrollingCache();
+            }
+
             int initialY = initialVelocity < 0 ? Integer.MAX_VALUE : 0;
             mLastFlingY = initialY;
             mScroller.fling(0, initialY, 0, initialVelocity,
@@ -2665,10 +2674,15 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         }
 
         private void endFling() {
+            endFling(true);
+        }
+
+        void endFling(boolean clearCache) {
             mTouchMode = TOUCH_MODE_REST;
 
             reportScrollStateChange(OnScrollListener.SCROLL_STATE_IDLE);
-            clearScrollingCache();
+            if (clearCache)
+                clearScrollingCache();
 
             removeCallbacks(this);
 
@@ -2680,6 +2694,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         public void run() {
             switch (mTouchMode) {
             default:
+                endFling();
                 return;
                 
             case TOUCH_MODE_FLING: {
