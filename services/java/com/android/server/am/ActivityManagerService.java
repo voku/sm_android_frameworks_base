@@ -9044,7 +9044,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     if (r.state == ActivityState.RESUMED
                             || r.state == ActivityState.PAUSING
                             || r.state == ActivityState.PAUSED) {
-                        if (!r.isHomeActivity) {
+                        if (!r.isHomeActivity || mHomeProcess != r.app) {
                             Slog.w(TAG, "  Force finishing activity "
                                     + r.intent.getComponent().flattenToShortString());
                             finishActivityLocked(r, index,

@@ -2054,7 +2054,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 TAG, "New client " + client.asBinder()
                 + ": window=" + win);
             
-            if (win.isVisibleOrAdding() && updateOrientationFromAppTokensLocked()) {
+            if (win.isVisibleOrAdding() && updateOrientationFromAppTokensLocked(false)) {
                 reportNewConfig = true;
             }
         }
@@ -2143,7 +2143,7 @@ public class WindowManagerService extends IWindowManager.Stub
         // So just update orientation if needed.
         if (wasVisible && computeForcedAppOrientationLocked()
                 != mForcedAppOrientation
-                && updateOrientationFromAppTokensLocked()) {
+                && updateOrientationFromAppTokensLocked(false)) {
             mH.sendEmptyMessage(H.SEND_NEW_CONFIGURATION);
         }
         updateFocusedWindowLocked(UPDATE_FOCUS_NORMAL);
@@ -2595,7 +2595,7 @@ public class WindowManagerService extends IWindowManager.Stub
             if (assignLayers) {
                 assignLayersLocked();
             }
-            configChanged = updateOrientationFromAppTokensLocked();
+            configChanged = updateOrientationFromAppTokensLocked(false);
             performLayoutAndPlaceSurfacesLocked();
             if (displayed && win.mIsWallpaper) {
                 updateWallpaperOffsetLocked(win, mDisplay.getWidth(),
@@ -3151,7 +3151,7 @@ public class WindowManagerService extends IWindowManager.Stub
         long ident = Binder.clearCallingIdentity();
         
         synchronized(mWindowMap) {
-            if (updateOrientationFromAppTokensLocked()) {
+            if (updateOrientationFromAppTokensLocked(false)) {
                 if (freezeThisOneIfNeeded != null) {
                     AppWindowToken wtoken = findAppWindowToken(
                             freezeThisOneIfNeeded);
@@ -3170,7 +3170,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     if (currentConfig.diff(mTempConfiguration) != 0) {
                         mWaitingForConfig = true;
                         mLayoutNeeded = true;
-                        startFreezingDisplayLocked();
+                        startFreezingDisplayLocked(false);
                         config = new Configuration(mTempConfiguration);
                     }
                 }
@@ -3195,7 +3195,7 @@ public class WindowManagerService extends IWindowManager.Stub
      * @see android.view.IWindowManager#updateOrientationFromAppTokens(
      * android.os.IBinder)
      */
-    boolean updateOrientationFromAppTokensLocked() {
+    boolean updateOrientationFromAppTokensLocked(boolean inTransaction) {
         if (mDisplayFrozen) {
             // If the display is frozen, some activities may be in the middle
             // of restarting, and thus have removed their old window.  If the
@@ -3216,7 +3216,8 @@ public class WindowManagerService extends IWindowManager.Stub
                 //action like disabling/enabling sensors etc.,
                 mPolicy.setCurrentOrientationLw(req);
                 if (setRotationUncheckedLocked(WindowManagerPolicy.USE_LAST_ROTATION,
-                        mLastRotationFlags | Surface.FLAGS_ORIENTATION_ANIMATION_DISABLE)) {
+                        mLastRotationFlags | Surface.FLAGS_ORIENTATION_ANIMATION_DISABLE,
+                        inTransaction)) {
                     changed = true;
                 }
             }
@@ -3747,6 +3748,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 if (w.mAppFreezing) {
                     w.mAppFreezing = false;
                     if (w.mSurface != null && !w.mOrientationChanging) {
+                        if (DEBUG_ORIENTATION) Slog.v(TAG, "set mOrientationChanging of " + w);
                         w.mOrientationChanging = true;
                     }
                     unfrozeWindows = true;
@@ -3784,7 +3786,7 @@ public class WindowManagerService extends IWindowManager.Stub
                 wtoken.freezingScreen = true;
                 mAppsFreezingScreen++;
                 if (mAppsFreezingScreen == 1) {
-                    startFreezingDisplayLocked();
+                    startFreezingDisplayLocked(false);
                     mH.removeMessages(H.APP_FREEZE_TIMEOUT);
                     mH.sendMessageDelayed(mH.obtainMessage(H.APP_FREEZE_TIMEOUT),
                             5000);
@@ -4534,7 +4536,7 @@ public class WindowManagerService extends IWindowManager.Stub
         long origId = Binder.clearCallingIdentity();
         boolean changed;
         synchronized(mWindowMap) {
-            changed = setRotationUncheckedLocked(rotation, animFlags);
+            changed = setRotationUncheckedLocked(rotation, animFlags, false);
         }
 
         if (changed || alwaysSendConfiguration) {
@@ -4552,7 +4554,7 @@ public class WindowManagerService extends IWindowManager.Stub
      * Returns null if the rotation has been changed.  In this case YOU
      * MUST CALL setNewConfiguration() TO UNFREEZE THE SCREEN.
      */
-    public boolean setRotationUncheckedLocked(int rotation, int animFlags) {
+    public boolean setRotationUncheckedLocked(int rotation, int animFlags, boolean inTransaction) {
         boolean changed;
         if (rotation == WindowManagerPolicy.USE_LAST_ROTATION) {
             rotation = mRequestedRotation;
@@ -4579,15 +4581,17 @@ public class WindowManagerService extends IWindowManager.Stub
                     2000);
             mWaitingForConfig = true;
             mLayoutNeeded = true;
-            startFreezingDisplayLocked();
+            startFreezingDisplayLocked(inTransaction);
             Slog.i(TAG, "Setting rotation to " + rotation + ", animFlags=" + animFlags);
             mQueue.setOrientation(rotation);
             if (mDisplayEnabled) {
                 Surface.setOrientation(0, rotation, animFlags);
+                Surface.unfreezeDisplay(0);
             }
             for (int i=mWindows.size()-1; i>=0; i--) {
                 WindowState w = (WindowState)mWindows.get(i);
                 if (w.mSurface != null) {
+                    if (DEBUG_ORIENTATION) Slog.v(TAG, "Set mOrientationChanging of " + w);
                     w.mOrientationChanging = true;
                 }
             }
@@ -4896,7 +4900,13 @@ public class WindowManagerService extends IWindowManager.Stub
 
     public Configuration computeNewConfiguration() {
         synchronized (mWindowMap) {
-            return computeNewConfigurationLocked();
+            Configuration config = computeNewConfigurationLocked();
+            if (config == null && mWaitingForConfig) {
+                // Nothing changed but we are waiting for something... stop that!
+                mWaitingForConfig = false;
+                performLayoutAndPlaceSurfacesLocked();
+            }
+            return config;
         }
     }
 
@@ -7429,6 +7439,8 @@ public class WindowManagerService extends IWindowManager.Stub
                     mAppToken.allDrawn = false;
                 }
 
+                makeWindowFreezingScreenIfNeededLocked(this);
+
                 int flags = 0;
                 if (mAttrs.memoryType == MEMORY_TYPE_PUSH_BUFFERS) {
                     flags |= Surface.PUSH_BUFFERS;
@@ -9600,6 +9612,25 @@ public class WindowManagerService extends IWindowManager.Stub
         return mPolicy.finishLayoutLw();
     }
 
+    void makeWindowFreezingScreenIfNeededLocked(WindowState w) {
+        // If the screen is currently frozen, then keep
+        // it frozen until this window draws at its new
+        // orientation.
+        if (mDisplayFrozen) {
+            if (DEBUG_ORIENTATION) Slog.v(TAG,
+                    "Resizing while display frozen: " + w);
+            w.mOrientationChanging = true;
+            if (!mWindowsFreezingScreen) {
+                mWindowsFreezingScreen = true;
+                // XXX should probably keep timeout from
+                // when we first froze the display.
+                mH.removeMessages(H.WINDOW_FREEZE_TIMEOUT);
+                mH.sendMessageDelayed(mH.obtainMessage(
+                        H.WINDOW_FREEZE_TIMEOUT), 2000);
+            }
+        }
+    }
+
     private final void performLayoutAndPlaceSurfacesLockedInner(
             boolean recoveringMemory) {
         final long currentTime = SystemClock.uptimeMillis();
@@ -9661,7 +9692,7 @@ public class WindowManagerService extends IWindowManager.Stub
                     }
                     if ((changes&WindowManagerPolicy.FINISH_LAYOUT_REDO_CONFIG) != 0) {
                         if (DEBUG_LAYOUT) Slog.v(TAG, "Computing new config from layout");
-                        if (updateOrientationFromAppTokensLocked()) {
+                        if (updateOrientationFromAppTokensLocked(true)) {
                             mLayoutNeeded = true;
                             mH.sendEmptyMessage(H.SEND_NEW_CONFIGURATION);
                         }
@@ -10081,7 +10112,8 @@ public class WindowManagerService extends IWindowManager.Stub
 
                         // This has changed the visibility of windows, so perform
                         // a new layout to get them all up-to-date.
-                        changes |= PhoneWindowManager.FINISH_LAYOUT_REDO_LAYOUT;
+                        changes |= PhoneWindowManager.FINISH_LAYOUT_REDO_LAYOUT
+                                | WindowManagerPolicy.FINISH_LAYOUT_REDO_CONFIG;
                         mLayoutNeeded = true;
                         if (!moveInputMethodWindowsIfNeededLocked(true)) {
                             assignLayersLocked();
@@ -10331,22 +10363,7 @@ public class WindowManagerService extends IWindowManager.Stub
                             w.mLastFrame.set(w.mFrame);
                             w.mLastContentInsets.set(w.mContentInsets);
                             w.mLastVisibleInsets.set(w.mVisibleInsets);
-                            // If the screen is currently frozen, then keep
-                            // it frozen until this window draws at its new
-                            // orientation.
-                            if (mDisplayFrozen) {
-                                if (DEBUG_ORIENTATION) Slog.v(TAG,
-                                        "Resizing while display frozen: " + w);
-                                w.mOrientationChanging = true;
-                                if (!mWindowsFreezingScreen) {
-                                    mWindowsFreezingScreen = true;
-                                    // XXX should probably keep timeout from
-                                    // when we first froze the display.
-                                    mH.removeMessages(H.WINDOW_FREEZE_TIMEOUT);
-                                    mH.sendMessageDelayed(mH.obtainMessage(
-                                            H.WINDOW_FREEZE_TIMEOUT), 2000);
-                                }
-                            }
+                            makeWindowFreezingScreenIfNeededLocked(w);
                             // If the orientation is changing, then we need to
                             // hold off on unfreezing the display until this
                             // window has been redrawn; to do that, we need
@@ -10887,7 +10904,7 @@ public class WindowManagerService extends IWindowManager.Stub
                         i--;
                         N--;
                         leakedSurface = true;
-                    } else if (win.mAppToken != null && win.mAppToken.clientHidden) {
+                    } else if (ws.mAppToken != null && ws.mAppToken.clientHidden) {
                         Slog.w(TAG, "LEAKED SURFACE (app token hidden): "
                                 + ws + " surface=" + ws.mSurface
                                 + " token=" + win.mAppToken);
@@ -11049,7 +11066,7 @@ public class WindowManagerService extends IWindowManager.Stub
         return result;
     }
 
-    private void startFreezingDisplayLocked() {
+    private void startFreezingDisplayLocked(boolean inTransaction) {
         if (mDisplayFrozen) {
             // Freezing the display also suspends key event delivery, to
             // keep events from going astray while the display is reconfigured.
@@ -11123,7 +11140,7 @@ public class WindowManagerService extends IWindowManager.Stub
         // to avoid inconsistent states.  However, something interesting
         // could have actually changed during that time so re-evaluate it
         // now to catch that.
-        if (updateOrientationFromAppTokensLocked()) {
+        if (updateOrientationFromAppTokensLocked(false)) {
             mH.sendEmptyMessage(H.SEND_NEW_CONFIGURATION);
         }
 
