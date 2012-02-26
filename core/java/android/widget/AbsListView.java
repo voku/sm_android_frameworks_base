@@ -2123,7 +2123,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         }
 
         case MotionEvent.ACTION_MOVE: {
-            final int pointerIndex = ev.findPointerIndex(mActivePointerId);
+            int pointerIndex = ev.findPointerIndex(mActivePointerId);
+            if (pointerIndex == -1) {
+                pointerIndex = 0;
+                mActivePointerId = ev.getPointerId(pointerIndex);
+            }
             final int y = (int) ev.getY(pointerIndex);
             deltaY = y - mMotionY;
             switch (mTouchMode) {
@@ -2314,13 +2318,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
                             
                             mFlingRunnable.start(-initialVelocity);
                         } else {
-                            endFling(false);
                             mTouchMode = TOUCH_MODE_REST;
                             reportScrollStateChange(OnScrollListener.SCROLL_STATE_IDLE);
                         }
                     }
                 } else {
-                    endFling();
                     mTouchMode = TOUCH_MODE_REST;
                     reportScrollStateChange(OnScrollListener.SCROLL_STATE_IDLE);
                 }
@@ -2515,7 +2517,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         case MotionEvent.ACTION_MOVE: {
             switch (mTouchMode) {
             case TOUCH_MODE_DOWN:
-                final int pointerIndex = ev.findPointerIndex(mActivePointerId);
+                int pointerIndex = ev.findPointerIndex(mActivePointerId);
+                if (pointerIndex == -1) {
+                    pointerIndex = 0;
+                    mActivePointerId = ev.getPointerId(pointerIndex);
+                }
                 final int y = (int) ev.getY(pointerIndex);
                 if (startScrollIfNeeded(y - mMotionY)) {
                     return true;
@@ -2694,10 +2700,14 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         public void run() {
             switch (mTouchMode) {
             default:
-                endFling();
+                endFling(false);
                 return;
                 
             case TOUCH_MODE_FLING: {
+                if (mDataChanged) {
+                    layoutChildren();
+                }
+
                 if (mItemCount == 0 || getChildCount() == 0) {
                     endFling();
                     return;
@@ -4465,7 +4475,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
                     final ArrayList<View> scrap = mScrapViews[i];
                     final int scrapCount = scrap.size();
                     for (int j = 0; j < scrapCount; j++) {
-                        scrap.get(i).setDrawingCacheBackgroundColor(color);
+                        scrap.get(j).setDrawingCacheBackgroundColor(color);
                     }
                 }
             }
