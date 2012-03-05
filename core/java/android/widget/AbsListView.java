@@ -2700,7 +2700,6 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
         public void run() {
             switch (mTouchMode) {
             default:
-                endFling(false);
                 return;
                 
             case TOUCH_MODE_FLING: {
@@ -2763,8 +2762,10 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Te
                     invalidate();
                     mLastFlingY = y;
                     post(this);
+                } else if (!more && atEnd) {
+		    endFling();
                 } else {
-                    endFling();
+                    endFling(false);
                     
                     if (PROFILE_FLINGING) {
                         if (mFlingProfilingStarted) {
