@@ -76,7 +76,6 @@ public class GsmConnection extends Connection {
     PostDialState postDialState = PostDialState.NOT_STARTED;
     int numberPresentation = Connection.PRESENTATION_ALLOWED;
     int cnapNamePresentation = Connection.PRESENTATION_ALLOWED;
-    UUSInfo uusInfo;
 
     Handler h;
 
@@ -132,7 +131,6 @@ public class GsmConnection extends Connection {
         cnapName = dc.name;
         cnapNamePresentation = dc.namePresentation;
         numberPresentation = dc.numberPresentation;
-        uusInfo = dc.uusInfo;
 
         this.index = index;
 
@@ -763,10 +761,5 @@ public class GsmConnection extends Connection {
     @Override
     public int getNumberPresentation() {
         return numberPresentation;
-    }
-
-    @Override
-    public UUSInfo getUUSInfo() {
-        return uusInfo;
     }
 }

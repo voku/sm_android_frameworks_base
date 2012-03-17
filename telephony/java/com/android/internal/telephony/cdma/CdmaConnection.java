@@ -946,10 +946,4 @@ public class CdmaConnection extends Connection {
         return numberPresentation;
     }
 
-    @Override
-    public UUSInfo getUUSInfo() {
-        // UUS information not supported in CDMA
-        return null;
-    }
-
 }
