@@ -1274,6 +1274,9 @@ status_t Parcel::continueWrite(size_t desired)
         if (objectsSize) {
             objects = (size_t*)malloc(objectsSize*sizeof(size_t));
             if (!objects) {
+                //free resource
+                free(data);
+                //
                 mError = NO_MEMORY;
                 return NO_MEMORY;
             }
