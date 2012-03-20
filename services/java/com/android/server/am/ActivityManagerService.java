@@ -6804,9 +6804,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         outInfo.threshold = HOME_APP_MEM;
         outInfo.lowMemory = outInfo.availMem <
                 (HOME_APP_MEM + ((HIDDEN_APP_MEM-HOME_APP_MEM)/2));
-        Log.w(TAG, "avail mem " + outInfo.availMem);
-        Log.w(TAG, "threshold mem aka home_app" + outInfo.threshold);
-        Log.w(TAG, "lowMemory if avail is less home + (hidden-home)/2" + outInfo.lowMemory + " " +  HIDDEN_APP_MEM + " " + HOME_APP_MEM);
+//        Log.w(TAG, "avail mem " + outInfo.availMem);
+//        Log.w(TAG, "threshold mem aka home_app" + outInfo.threshold);
+//        Log.w(TAG, "lowMemory if avail is less home + (hidden-home)/2" + outInfo.lowMemory + " " +  HIDDEN_APP_MEM + " " + HOME_APP_MEM);
     }
     
     // =========================================================
