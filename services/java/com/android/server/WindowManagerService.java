@@ -4584,6 +4584,7 @@ public class WindowManagerService extends IWindowManager.Stub
             mQueue.setOrientation(rotation);
             if (mDisplayEnabled) {
                 Surface.setOrientation(0, rotation, animFlags);
+                Surface.unfreezeDisplay(0);
             }
             for (int i=mWindows.size()-1; i>=0; i--) {
                 WindowState w = (WindowState)mWindows.get(i);
