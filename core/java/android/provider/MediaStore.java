@@ -869,18 +869,30 @@ public final class MediaStore {
             public static final String ARTIST = "artist";
 
             /**
-             * The artist credited for the album that contains the audio file
-             * <P>Type: TEXT</P>
-             * @hide
-             */
-            public static final String ALBUM_ARTIST = "album_artist";
-
-            /**
              * A non human readable key calculated from the ARTIST, used for
              * searching, sorting and grouping
              * <P>Type: TEXT</P>
              */
             public static final String ARTIST_KEY = "artist_key";
+
+            /**
+             * The id of the artist credited for the album that contains the audio file
+             * <P>Type: INTEGER (long)</P>
+             */
+            public static final String ALBUM_ARTIST_ID = "album_artist_id";
+
+            /**
+             * The artist credited for the album that contains the audio file
+             * <P>Type: TEXT</P>
+             */
+            public static final String ALBUM_ARTIST = "album_artist";
+
+            /**
+             * A non human readable key calculated from the ALBUM_ARTIST, used for
+             * searching, sorting and grouping
+             * <P>Type: TEXT</P>
+             */
+            public static final String ALBUM_ARTIST_KEY = "album_artist_key";
 
             /**
              * The composer of the audio file, if any
