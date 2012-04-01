@@ -61,6 +61,7 @@ class ProcessRecord implements Watchdog.PssRequestor {
     int setAdj;                 // Last set OOM adjustment for this process
     int curSchedGroup;          // Currently desired scheduling class
     int setSchedGroup;          // Last set to background scheduling class
+    boolean keeping;            // Actively running code so don't kill due to that?
     boolean setIsForeground;    // Running foreground UI when last set?
     boolean foregroundServices; // Running any services that are foreground?
     boolean bad;                // True if disabled in the bad process list

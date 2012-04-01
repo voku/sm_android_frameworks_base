@@ -152,7 +152,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     
     // Control over CPU and battery monitoring.
     static final long BATTERY_STATS_TIME = 30*60*1000;      // write battery stats every 30 minutes.
-    static final boolean MONITOR_CPU_USAGE = true;
+    static final boolean MONITOR_CPU_USAGE = false;
     static final long MONITOR_CPU_MIN_TIME = 5*1000;        // don't sample cpu less than every 5 seconds.
     static final long MONITOR_CPU_MAX_TIME = 0x0fffffff;    // wait possibly forever for next cpu sample.
     static final boolean MONITOR_THREAD_CPU_USAGE = false;
@@ -335,7 +335,6 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     static final String KEEP_APP_2;
     static final String KEEP_APP_3;
     static final String KEEP_APP_4;
-
 
     // Gmaps bg service ident
     static final boolean GMAPS_HACK;
@@ -11242,6 +11241,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                 if (GMAPS_HACK && r.shortName.equals(GMAPS_NLS)
                 && getProcessRecordLocked("com.google.android.apps.maps",
                 r.appInfo.uid) == null) {
+            // Slog.i(TAG, "Not starting Gmaps NetworkLocationService, Gmaps are not running!");
             return true;
         }
 
@@ -13866,6 +13866,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             app.adjType = "fixed";
             app.adjSeq = mAdjSeq;
             app.curRawAdj = app.maxAdj;
+            app.keeping = true;
             app.curSchedGroup = Process.THREAD_GROUP_DEFAULT;
             return (app.curAdj=app.maxAdj);
        }
@@ -13873,6 +13874,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         app.adjTypeCode = ActivityManager.RunningAppProcessInfo.REASON_UNKNOWN;
         app.adjSource = null;
         app.adjTarget = null;
+        app.keeping = false;
         app.empty = false;
         app.hidden = false;
 
@@ -14033,10 +14035,15 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     if (adj > SECONDARY_SERVER_ADJ) {
                         app.adjType = "started-bg-services";
                     }
-					// let the Gmaps NetworkLocationService die if Gmaps is not running
-                                        if (GMAPS_HACK && s.shortName.equals(GMAPS_NLS)
+                    // Don't kill this process because it is doing work; it
+                    // has said it is doing work.
+                    app.keeping = true;
+                    // let the Gmaps NetworkLocationService die if Gmaps is not running
+                    if (GMAPS_HACK && s.shortName.equals(GMAPS_NLS)
                             && getProcessRecordLocked("com.google.android.apps.maps",
                             s.appInfo.uid) == null) {
+                        // Slog.i(TAG, "Let the Gmaps NetworkLocationService die! Gmaps are not running!");
+                        app.keeping = false;
                         adj = hiddenAdj;
                         app.hidden = true;
                         app.adjType = "bg-services";
@@ -14071,6 +14078,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                                         ? clientAdj : VISIBLE_APP_ADJ;
                                 if (!client.hidden) {
                                     app.hidden = false;
+                                }
+                                if (client.keeping) {
+                                    app.keeping = true;
                                 }
                                 app.adjType = "service";
                                 app.adjTypeCode = ActivityManager.RunningAppProcessInfo
@@ -14146,6 +14156,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                             if (!client.hidden) {
                                 app.hidden = false;
                             }
+                            if (client.keeping) {
+                                app.keeping = true;
+                            }
                             app.adjType = "provider";
                             app.adjTypeCode = ActivityManager.RunningAppProcessInfo
                                     .REASON_PROVIDER_IN_USE;
@@ -14165,6 +14178,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                         adj = FOREGROUND_APP_ADJ;
                         schedGroup = Process.THREAD_GROUP_DEFAULT;
                         app.hidden = false;
+                        app.keeping = true;
                         app.adjType = "provider";
                         app.adjTarget = cpr.info.name;
                     }
@@ -14181,6 +14195,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             if (app.maxAdj <= VISIBLE_APP_ADJ) {
                 schedGroup = Process.THREAD_GROUP_DEFAULT;
             }
+        }
+        if (adj < HIDDEN_APP_MIN_ADJ) {
+            app.keeping = true;
         }
 
         app.curAdj = adj;
@@ -14448,31 +14465,33 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         while (i > 0) {
             i--;
             ProcessRecord app = mLruProcesses.get(i);
-            //Slog.i(TAG, "OOM " + app + ": cur hidden=" + curHiddenAdj);
-            if (updateOomAdjLocked(app, curHiddenAdj, TOP_APP)) {
-                if (curHiddenAdj < EMPTY_APP_ADJ
-                    && app.curAdj == curHiddenAdj) {
-                    step++;
-                    if (step >= factor) {
-                        step = 0;
-                        curHiddenAdj++;
-                    }
-                }
-                if (app.curAdj >= HIDDEN_APP_MIN_ADJ) {
-                    if (!app.killedBackground) {
-                        numHidden++;
-                        if (numHidden > MAX_HIDDEN_APPS) {
-                            Slog.i(TAG, "No longer want " + app.processName
-                                    + " (pid " + app.pid + "): hidden #" + numHidden);
-                            EventLog.writeEvent(EventLogTags.AM_KILL, app.pid,
-                                    app.processName, app.setAdj, "too many background");
-                            app.killedBackground = true;
-                            Process.killProcessQuiet(app.pid);
+            if (!app.keeping) {
+                //Slog.i(TAG, "OOM " + app + ": cur hidden=" + curHiddenAdj);
+                if (updateOomAdjLocked(app, curHiddenAdj, TOP_APP)) {
+                    if (curHiddenAdj < EMPTY_APP_ADJ
+                        && app.curAdj == curHiddenAdj) {
+                        step++;
+                        if (step >= factor) {
+                            step = 0;
+                            curHiddenAdj++;
                         }
                     }
+                    if (app.curAdj >= HIDDEN_APP_MIN_ADJ) {
+                        if (!app.killedBackground) {
+                            numHidden++;
+                            if (numHidden > MAX_HIDDEN_APPS) {
+                                Slog.i(TAG, "No longer want " + app.processName
+                                        + " (pid " + app.pid + "): hidden #" + numHidden);
+                                EventLog.writeEvent(EventLogTags.AM_KILL, app.pid,
+                                        app.processName, app.setAdj, "too many background");
+                                app.killedBackground = true;
+                                Process.killProcessQuiet(app.pid);
+                            }
+                        }
+                    }
+                } else {
+                    didOomAdj = false;
                 }
-            } else {
-                didOomAdj = false;
             }
         }
 

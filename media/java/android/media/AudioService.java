@@ -426,8 +426,8 @@ public class AudioService extends IAudioService.Stub {
                     && !AudioSystem.isStreamActive(AudioSystem.STREAM_MUSIC))
                     && streamType != AudioSystem.STREAM_RING) {
                 flags &= ~AudioManager.FLAG_PLAY_SOUND;
-            }
         }
+}
 
         adjustStreamVolume(streamType, direction, flags);
     }
