@@ -1429,7 +1429,7 @@ public class TextUtils {
                 sb.append("&amp;"); //$NON-NLS-1$
                 break;
             case '\'':
-		sb.append("&#39;"); //$NON-NLS-1$
+                sb.append("&#39;"); //$NON-NLS-1$
                 break;
             case '"':
                 sb.append("&quot;"); //$NON-NLS-1$

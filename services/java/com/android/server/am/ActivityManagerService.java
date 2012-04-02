@@ -13866,10 +13866,9 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             app.adjType = "fixed";
             app.adjSeq = mAdjSeq;
             app.curRawAdj = app.maxAdj;
-            app.keeping = true;
             app.curSchedGroup = Process.THREAD_GROUP_DEFAULT;
             return (app.curAdj=app.maxAdj);
-       }
+        }
         
         app.adjTypeCode = ActivityManager.RunningAppProcessInfo.REASON_UNKNOWN;
         app.adjSource = null;
@@ -14079,9 +14078,6 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                                 if (!client.hidden) {
                                     app.hidden = false;
                                 }
-                                if (client.keeping) {
-                                    app.keeping = true;
-                                }
                                 app.adjType = "service";
                                 app.adjTypeCode = ActivityManager.RunningAppProcessInfo
                                         .REASON_SERVICE_IN_USE;
@@ -14156,9 +14152,6 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                             if (!client.hidden) {
                                 app.hidden = false;
                             }
-                            if (client.keeping) {
-                                app.keeping = true;
-                            }
                             app.adjType = "provider";
                             app.adjTypeCode = ActivityManager.RunningAppProcessInfo
                                     .REASON_PROVIDER_IN_USE;
@@ -14195,9 +14188,6 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             if (app.maxAdj <= VISIBLE_APP_ADJ) {
                 schedGroup = Process.THREAD_GROUP_DEFAULT;
             }
-        }
-        if (adj < HIDDEN_APP_MIN_ADJ) {
-            app.keeping = true;
         }
 
         app.curAdj = adj;
